@@ -1,27 +1,24 @@
 # core/adaptive_risk_manager.py
 """
-Gestionnaire de risque adaptatif basé sur l'IA
-Ajuste la gestion du risque en fonction des prédictions du modèle LSTM
+Gestionnaire de risque adaptatif avancé qui ajuste dynamiquement 
+les paramètres de trading en fonction des conditions de marché,
+des prédictions du modèle et de l'historique des trades
 """
 import os
+import json
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Optional, Union, Tuple
+from typing import Dict, List, Tuple, Optional, Union
 from datetime import datetime, timedelta
-import json
 import math
 
-from config.config import DATA_DIR, INITIAL_CAPITAL, MAX_DRAWDOWN_LIMIT
+from config.config import DATA_DIR
 from config.trading_params import (
-    RISK_PER_TRADE_PERCENT,
-    MAX_CONCURRENT_TRADES,
-    MAX_DAILY_TRADES,
-    LEVERAGE,
+    RISK_PER_TRADE_PERCENT, 
     STOP_LOSS_PERCENT,
-    TAKE_PROFIT_PERCENT
+    TAKE_PROFIT_PERCENT,
+    LEVERAGE
 )
-from ai.models.lstm_model import LSTMModel
-from ai.models.feature_engineering import FeatureEngineering
 from ai.market_anomaly_detector import MarketAnomalyDetector
 from utils.logger import setup_logger
 
@@ -29,1242 +26,1112 @@ logger = setup_logger("adaptive_risk_manager")
 
 class AdaptiveRiskManager:
     """
-    Gère les risques et le capital du bot de trading de manière adaptative
-    en utilisant les prédictions du modèle LSTM pour ajuster les paramètres
+    Gestionnaire de risque adaptatif qui ajuste dynamiquement les paramètres de trading
+    
+    Caractéristiques:
+    - Ajuste la taille des positions en fonction de la confiance du modèle
+    - Adapte les niveaux de stop-loss et take-profit selon la volatilité prédite
+    - Devient plus conservateur après des séquences de pertes
+    - Détecte les conditions de marché extrêmes et réduit l'exposition
+    - Intègre un système anti-fragile qui apprend des pertes passées
     """
-    def __init__(self, initial_capital: float = INITIAL_CAPITAL, 
-                model: Optional[LSTMModel] = None,
-                feature_engineering: Optional[FeatureEngineering] = None,
-                max_risk_per_trade: float = 10.0):
+    def __init__(self, 
+                initial_capital: float = 200,
+                max_open_positions: int = 3,
+                max_risk_per_day: float = 15.0,  # % max du capital risqué par jour
+                recovery_factor: float = 0.5,     # Facteur de récupération après une perte
+                enable_martingale: bool = False,   # Activer la stratégie de martingale (dangereux)
+                enable_anti_martingale: bool = True,  # Stratégie anti-martingale (plus sûre)
+                volatility_scaling: bool = True,   # Ajuster le risque selon la volatilité
+                use_kelly_criterion: bool = True,  # Utiliser le critère de Kelly pour le sizing
+                kelly_fraction: float = 0.5,      # Fraction du critère de Kelly (0.5 = demi-Kelly)
+                risk_control_mode: str = "balanced"  # "conservative", "balanced", "aggressive"
+                ):
         """
         Initialise le gestionnaire de risque adaptatif
         
         Args:
-            initial_capital: Capital initial
-            model: Modèle LSTM pour les prédictions
-            feature_engineering: Module d'ingénierie des caractéristiques
-            max_risk_per_trade: Risque maximum par trade (%)
+            initial_capital: Capital initial en USDT
+            max_open_positions: Nombre max de positions ouvertes simultanément
+            max_risk_per_day: Pourcentage max du capital risqué par jour
+            recovery_factor: Facteur de réduction du risque après une perte
+            enable_martingale: Active la stratégie de martingale (augmente le risque après une perte)
+            enable_anti_martingale: Active la stratégie anti-martingale (augmente la taille après un gain)
+            volatility_scaling: Ajuster la taille en fonction de la volatilité
+            use_kelly_criterion: Utiliser le critère de Kelly pour le sizing optimal
+            kelly_fraction: Fraction du critère de Kelly à utiliser (1.0 = Kelly complet)
+            risk_control_mode: Mode de contrôle du risque (conservateur/équilibré/agressif)
         """
         # Paramètres de base
         self.initial_capital = initial_capital
-        self.available_balance = initial_capital
-        self.equity = initial_capital
-        self.model = model
-        self.feature_engineering = feature_engineering or FeatureEngineering()
-        self.max_risk_per_trade = max_risk_per_trade
+        self.current_capital = initial_capital
+        self.max_open_positions = max_open_positions
+        self.max_risk_per_day = max_risk_per_day
+        self.recovery_factor = recovery_factor
+        self.enable_martingale = enable_martingale
+        self.enable_anti_martingale = enable_anti_martingale
+        self.volatility_scaling = volatility_scaling
+        self.use_kelly_criterion = use_kelly_criterion
+        self.kelly_fraction = kelly_fraction
         
-        # Statistiques de trading
-        self.daily_losses = 0
-        self.daily_profits = 0
-        self.positions_count = 0
-        self.daily_trade_count = 0
-        self.last_reset_date = datetime.now().date()
+        # Historique de trading
+        self.trade_history = []
+        self.daily_risk_used = 0.0
+        self.last_risk_reset = datetime.now()
         self.consecutive_losses = 0
-        self.win_streak = 0
-        self.loss_streak = 0
-        self.max_loss_streak = 0
-        self.max_win_streak = 0
-        self.current_drawdown = 0
-        self.peak_equity = initial_capital
+        self.consecutive_wins = 0
         
-        # Paramètres adaptatifs
-        self.risk_levels = {
-            'aggressive': {
-                'risk_per_trade': 5.0,
-                'stop_loss': 3.0,
-                'take_profit': 9.0,
-                'leverage': LEVERAGE
-            },
-            'balanced': {
-                'risk_per_trade': 3.0,
-                'stop_loss': 4.0,
-                'take_profit': 7.0,
-                'leverage': LEVERAGE
-            },
-            'conservative': {
-                'risk_per_trade': 2.0,
-                'stop_loss': 5.0,
-                'take_profit': 6.0,
-                'leverage': LEVERAGE-1 if LEVERAGE > 1 else 1
-            },
-            'defensive': {
-                'risk_per_trade': 1.0,
-                'stop_loss': 6.0,
-                'take_profit': 5.0,
-                'leverage': max(1, LEVERAGE-2)
-            }
+        # Profils de risque dynamiques
+        self.risk_profiles = self._initialize_risk_profiles(risk_control_mode)
+        self.current_risk_profile = "balanced"  # Commence en mode équilibré
+        
+        # Paramètres par défaut si aucun modèle LSTM n'est disponible
+        self.default_params = {
+            "risk_per_trade": RISK_PER_TRADE_PERCENT,
+            "stop_loss": STOP_LOSS_PERCENT,
+            "take_profit": TAKE_PROFIT_PERCENT,
+            "leverage": LEVERAGE
         }
         
-        # État de risque actuel
-        self.current_risk_profile = 'balanced'
+        # Indicateurs d'état du système
+        self.market_state = "normal"  # normal, volatile, extreme
+        self.risk_capacity = 1.0  # Facteur multiplicateur de risque (0.1 à 1.0)
         
         # Détecteur d'anomalies de marché
         self.anomaly_detector = MarketAnomalyDetector(
-            lookback_period=100,
-            confidence_level=0.99,
-            volatility_threshold=3.0,
-            volume_threshold=5.0,
-            price_gap_threshold=3.0,
-            use_ml_models=True,
-            model_dir=os.path.join(DATA_DIR, "models", "anomaly_detection")
+            model_dir=os.path.join(DATA_DIR, "models", "anomaly")
         )
         
-        # Historique des ajustements de risque
-        self.risk_adjustments = []
+        # Initialiser le journal pour la traçabilité des décisions
+        self.risk_log = []
         
-        # Répertoire pour la sauvegarde des données
-        self.data_dir = os.path.join(DATA_DIR, "risk_manager")
-        os.makedirs(self.data_dir, exist_ok=True)
+        # Charger l'historique précédent si disponible
+        self._load_history()
+    
+    def _initialize_risk_profiles(self, mode: str) -> Dict:
+        """
+        Initialise les profils de risque pour différentes conditions de marché
         
-        # Modèle VaR pour la prédiction des risques extrêmes
-        self.var_confidence_level = 0.95  # Niveau de confiance pour VaR (95%)
-        self.var_window = 100  # Taille de la fenêtre pour le calcul de la VaR
-        self.historical_returns = []  # Historique des rendements pour VaR
+        Args:
+            mode: Mode de contrôle du risque (conservative/balanced/aggressive)
+            
+        Returns:
+            Dictionnaire des profils de risque
+        """
+        # Base des profils de risque
+        profiles = {
+            # Profil par défaut/équilibré
+            "balanced": {
+                "risk_per_trade_percent": RISK_PER_TRADE_PERCENT,
+                "stop_loss_percent": STOP_LOSS_PERCENT,
+                "take_profit_percent": TAKE_PROFIT_PERCENT,
+                "leverage": LEVERAGE,
+                "trailing_stop_activation": 2.0,  # % de profit pour activer le trailing stop
+                "trailing_stop_step": 0.5,        # % de distance pour le trailing stop
+                "risk_scaling_factor": 1.0        # Facteur d'échelle pour le risque
+            },
+            
+            # Profil conservateur pour les conditions volatiles
+            "conservative": {
+                "risk_per_trade_percent": RISK_PER_TRADE_PERCENT * 0.5,
+                "stop_loss_percent": STOP_LOSS_PERCENT * 1.25,  # Stop loss plus large
+                "take_profit_percent": TAKE_PROFIT_PERCENT * 1.25, # TP plus large
+                "leverage": max(1, LEVERAGE - 1),    # Levier réduit
+                "trailing_stop_activation": 1.5,
+                "trailing_stop_step": 0.3,
+                "risk_scaling_factor": 0.5
+            },
+            
+            # Profil ultra-conservateur pour les conditions extrêmes
+            "defensive": {
+                "risk_per_trade_percent": RISK_PER_TRADE_PERCENT * 0.25,
+                "stop_loss_percent": STOP_LOSS_PERCENT * 1.5,
+                "take_profit_percent": TAKE_PROFIT_PERCENT * 1.5,
+                "leverage": 1,  # Pas de levier en mode défensif
+                "trailing_stop_activation": 1.0,
+                "trailing_stop_step": 0.2,
+                "risk_scaling_factor": 0.25
+            },
+            
+            # Profil agressif pour les conditions favorables
+            "aggressive": {
+                "risk_per_trade_percent": min(10.0, RISK_PER_TRADE_PERCENT * 1.25),
+                "stop_loss_percent": STOP_LOSS_PERCENT * 0.8,
+                "take_profit_percent": TAKE_PROFIT_PERCENT * 0.8,
+                "leverage": min(5, LEVERAGE + 1),
+                "trailing_stop_activation": 3.0,
+                "trailing_stop_step": 0.8,
+                "risk_scaling_factor": 1.25
+            },
+            
+            # Profil très agressif pour les conditions très favorables
+            "very_aggressive": {
+                "risk_per_trade_percent": min(12.5, RISK_PER_TRADE_PERCENT * 1.5),
+                "stop_loss_percent": STOP_LOSS_PERCENT * 0.7,
+                "take_profit_percent": TAKE_PROFIT_PERCENT * 0.7,
+                "leverage": min(5, LEVERAGE + 2),
+                "trailing_stop_activation": 4.0,
+                "trailing_stop_step": 1.0,
+                "risk_scaling_factor": 1.5
+            }
+        }
         
-        # Chargement de l'état si disponible
-        self._load_state()
+        # Ajuster les profils en fonction du mode sélectionné
+        if mode == "conservative":
+            # Rendre tous les profils plus conservateurs
+            for profile in profiles.values():
+                profile["risk_per_trade_percent"] *= 0.8
+                profile["leverage"] = max(1, profile["leverage"] - 1)
+                profile["risk_scaling_factor"] *= 0.8
+        
+        elif mode == "aggressive":
+            # Rendre tous les profils plus agressifs
+            for profile in profiles.values():
+                profile["risk_per_trade_percent"] *= 1.2
+                profile["leverage"] = min(5, profile["leverage"] + 1)
+                profile["risk_scaling_factor"] *= 1.2
+        
+        return profiles
     
     def update_account_balance(self, account_info: Dict) -> None:
         """
-        Met à jour les informations de solde du compte
+        Met à jour le capital disponible
         
         Args:
-            account_info: Informations du compte depuis l'API
+            account_info: Informations sur le compte
         """
-        # Extraire le solde USDT
-        for asset in account_info.get("balances", []):
-            if asset["asset"] == "USDT":
-                self.available_balance = float(asset["free"])
-                self.equity = float(asset["free"]) + float(asset["locked"])
-                logger.info(f"Solde mis à jour: {self.available_balance} USDT disponible, {self.equity} USDT total")
-                break
-        
-        # Mettre à jour le drawdown
-        if self.equity > self.peak_equity:
-            self.peak_equity = self.equity
-            self.current_drawdown = 0
+        # Mettre à jour le capital
+        if "totalWalletBalance" in account_info:
+            # Pour Binance Futures
+            self.current_capital = float(account_info["totalWalletBalance"])
+        elif "totalBalance" in account_info:
+            # Pour Binance Spot
+            self.current_capital = float(account_info["totalBalance"])
         else:
-            self.current_drawdown = (self.peak_equity - self.equity) / self.peak_equity * 100
+            logger.warning("Format d'information de compte non reconnu")
         
-        # Réinitialiser les compteurs journaliers si nécessaire
-        current_date = datetime.now().date()
-        if current_date > self.last_reset_date:
-            self.reset_daily_stats()
-            self.last_reset_date = current_date
-            
-            # Ajuster le profil de risque en fonction de la performance
-            self._adjust_risk_profile_daily()
+        logger.info(f"Capital mis à jour: {self.current_capital} USDT")
+        
+        # Réinitialiser le risque quotidien si nécessaire
+        current_time = datetime.now()
+        if (current_time - self.last_risk_reset).days >= 1:
+            self.daily_risk_used = 0.0
+            self.last_risk_reset = current_time
+            logger.info("Limite de risque quotidien réinitialisée")
     
-    def reset_daily_stats(self) -> None:
+    def can_open_new_position(self, position_tracker) -> Dict:
         """
-        Réinitialise les statistiques journalières
-        """
-        self.daily_losses = 0
-        self.daily_profits = 0
-        self.daily_trade_count = 0
-        logger.info("Statistiques journalières réinitialisées")
-    
-    def update_position_stats(self, position_tracker) -> None:
-        """
-        Met à jour les statistiques de positions
+        Vérifie si une nouvelle position peut être ouverte selon les règles de gestion des risques
         
         Args:
-            position_tracker: Tracker de positions
-        """
-        self.positions_count = len(position_tracker.get_open_positions())
-        self.daily_trade_count = position_tracker.get_daily_trades_count()
-        
-        # Calculer les profits/pertes journaliers
-        today = datetime.now().date()
-        
-        daily_closed_positions = [
-            p for p in position_tracker.get_closed_positions(limit=1000)
-            if p.get("close_time") and p.get("close_time").date() == today
-        ]
-        
-        self.daily_profits = sum([
-            p.get("pnl_absolute", 0) for p in daily_closed_positions 
-            if p.get("pnl_absolute", 0) > 0
-        ])
-        
-        self.daily_losses = sum([
-            p.get("pnl_absolute", 0) for p in daily_closed_positions 
-            if p.get("pnl_absolute", 0) < 0
-        ])
-        
-        logger.debug(f"Stats mises à jour: {self.positions_count} positions, {self.daily_trade_count} trades aujourd'hui")
-    
-    def can_open_new_position(self, position_tracker, market_data: Optional[Dict] = None) -> Dict:
-        """
-        Vérifie si une nouvelle position peut être ouverte avec vérification avancée
-        des risques systémiques
-        
-        Args:
-            position_tracker: Tracker de positions
-            market_data: Données de marché actuelles (optionnel)
+            position_tracker: Objet qui suit les positions ouvertes
             
         Returns:
-            Dict avec résultat et raison
+            Dictionnaire avec décision et raison
         """
-        # Mettre à jour les statistiques
-        self.update_position_stats(position_tracker)
+        # 1. Vérifier le nombre de positions ouvertes
+        open_positions = position_tracker.get_all_open_positions()
+        total_open_positions = sum(len(positions) for positions in open_positions.values())
         
-        # 1. Vérifications de base
-        # Vérifier le nombre maximum de positions simultanées
-        if self.positions_count >= MAX_CONCURRENT_TRADES:
+        if total_open_positions >= self.max_open_positions:
             return {
                 "can_open": False,
-                "reason": f"Nombre maximum de positions simultanées atteint ({MAX_CONCURRENT_TRADES})"
+                "reason": f"Nombre maximum de positions atteint ({self.max_open_positions})"
             }
         
-        # Vérifier le nombre maximum de trades par jour
-        if self.daily_trade_count >= MAX_DAILY_TRADES:
+        # 2. Vérifier le risque quotidien utilisé
+        max_risk_amount = self.current_capital * (self.max_risk_per_day / 100)
+        
+        if self.daily_risk_used >= max_risk_amount:
             return {
                 "can_open": False,
-                "reason": f"Nombre maximum de trades journaliers atteint ({MAX_DAILY_TRADES})"
+                "reason": f"Limite de risque quotidien atteinte ({self.max_risk_per_day}% du capital)"
             }
         
-        # Vérifier si le solde disponible est suffisant
-        if self.available_balance <= 0:
-            return {
-                "can_open": False,
-                "reason": "Solde insuffisant pour ouvrir une nouvelle position"
-            }
-        
-        # 2. Vérifications avancées
-        # Vérifier si nous sommes en drawdown critique
-        if self.current_drawdown > MAX_DRAWDOWN_LIMIT:
-            return {
-                "can_open": False,
-                "reason": f"Drawdown maximum dépassé ({self.current_drawdown:.2f}% > {MAX_DRAWDOWN_LIMIT}%)"
-            }
-        
-        # Vérifier si nous avons trop de pertes consécutives
-        if self.consecutive_losses >= 5:
-            return {
-                "can_open": False,
-                "reason": f"Trop de pertes consécutives ({self.consecutive_losses})"
-            }
-        
-        # Vérifier si les pertes journalières sont trop importantes
-        daily_pnl = self.daily_profits + self.daily_losses
-        max_daily_loss = -self.initial_capital * 0.05  # Max 5% de perte journalière
-        
-        if daily_pnl < max_daily_loss:
-            return {
-                "can_open": False,
-                "reason": f"Perte journalière maximale atteinte ({daily_pnl:.2f} USDT)"
-            }
-        
-        # 3. Vérification avancée des risques systémiques
-        if market_data is not None:
-            # Calculer la VaR (Value at Risk)
-            if len(self.historical_returns) >= self.var_window:
-                var = self._calculate_var()
-                current_capital_at_risk = var * self.equity * self.positions_count
+        # 3. Vérifier l'état du marché
+        if self.market_state == "extreme":
+            # En conditions extrêmes, être plus restrictif
+            if self.current_risk_profile != "defensive":
+                self.set_risk_profile("defensive")
                 
-                # Si le risque est trop élevé, refuser de nouvelles positions
-                max_capital_at_risk = self.equity * 0.2  # Max 20% du capital à risque
-                
-                if current_capital_at_risk > max_capital_at_risk:
-                    return {
-                        "can_open": False,
-                        "reason": f"Risque systémique trop élevé (VaR: {var:.2f}%)"
-                    }
+            if total_open_positions > 0:
+                return {
+                    "can_open": False,
+                    "reason": "Conditions de marché extrêmes - aucune nouvelle position"
+                }
         
-        # 4. Vérifier les conditions de marché extrêmes
-        extreme_conditions = self._detect_extreme_market_conditions(market_data)
-        if extreme_conditions["detected"]:
+        # 4. Ajuster en fonction de l'historique récent
+        if self.consecutive_losses >= 3:
+            # Après 3 pertes consécutives, être plus conservateur
+            if self.current_risk_profile not in ["conservative", "defensive"]:
+                self.set_risk_profile("conservative")
+                logger.info("Passage en mode conservateur après 3 pertes consécutives")
+        
+        elif self.consecutive_wins >= 3:
+            # Après 3 gains consécutifs, être légèrement plus agressif
+            if self.current_risk_profile == "balanced":
+                self.set_risk_profile("aggressive")
+                logger.info("Passage en mode agressif après 3 gains consécutifs")
+        
+        # 5. Vérifier le capital minimum
+        min_capital_required = 50  # Montant minimum pour trader raisonnablement
+        
+        if self.current_capital < min_capital_required:
             return {
                 "can_open": False,
-                "reason": f"Conditions de marché extrêmes détectées: {extreme_conditions['reason']}"
+                "reason": f"Capital insuffisant ({self.current_capital} < {min_capital_required} USDT)"
             }
         
         return {
             "can_open": True,
-            "reason": "Conditions de risque respectées",
-            "risk_profile": self.current_risk_profile
+            "risk_profile": self.current_risk_profile,
+            "available_risk": max_risk_amount - self.daily_risk_used
         }
     
     def calculate_position_size(self, symbol: str, opportunity: Dict, 
                               lstm_prediction: Optional[Dict] = None) -> float:
         """
-        Calcule la taille de position optimale en fonction du risque adaptatif
+        Calcule la taille optimale de position en fonction de multiples facteurs
         
         Args:
             symbol: Paire de trading
-            opportunity: Opportunité de trading avec entrée et stop-loss
+            opportunity: Opportunité de trading détectée
             lstm_prediction: Prédictions du modèle LSTM (optionnel)
             
         Returns:
-            Quantité à trader
+            Taille de position en USDT
         """
-        entry_price = opportunity.get("entry_price", 0)
-        stop_loss_price = opportunity.get("stop_loss", 0)
-        opportunity_score = opportunity.get("score", 50)
+        # Obtenir les paramètres du profil de risque actuel
+        profile = self.risk_profiles[self.current_risk_profile]
         
-        if entry_price <= 0 or stop_loss_price <= 0:
-            logger.error("Prix d'entrée ou de stop-loss invalide")
-            return 0
+        # Paramètres de base
+        base_risk_percent = profile["risk_per_trade_percent"]
+        risk_factor = profile["risk_scaling_factor"]
+        stop_loss_percent = profile["stop_loss_percent"]
+        leverage = profile["leverage"]
         
-        # Récupérer le profil de risque actuel
-        risk_profile = self.risk_levels[self.current_risk_profile]
+        # 1. Ajuster le risque en fonction du score de l'opportunité
+        score = opportunity.get("score", 70)
+        score_factor = self._calculate_score_factor(score)
         
-        # Ajuster le risque en fonction du score de l'opportunité
-        base_risk = risk_profile["risk_per_trade"]
-        adjusted_risk = self._adjust_risk_by_opportunity(base_risk, opportunity_score)
+        # 2. Intégrer les prédictions LSTM si disponibles
+        model_confidence = 0.5  # Valeur par défaut (neutre)
+        volatility_factor = 1.0
         
-        # Si les prédictions LSTM sont disponibles, ajuster le risque
-        if lstm_prediction is not None:
-            adjusted_risk = self._adjust_risk_by_lstm_prediction(adjusted_risk, lstm_prediction)
+        if lstm_prediction:
+            # Trouver l'horizon pertinent (court terme pour le sizing)
+            short_term = None
+            for horizon_name, prediction in lstm_prediction.items():
+                if horizon_name in ["3h", "4h", "short_term", "horizon_12"]:
+                    short_term = prediction
+                    break
+            
+            if short_term:
+                # Confiance dans la direction prédite
+                direction_prob = short_term.get("direction_probability", 50) / 100
+                
+                # Ajuster la confiance en fonction de l'écart par rapport à 0.5
+                model_confidence = abs(direction_prob - 0.5) * 2
+                
+                # Si la direction prédite est opposée à celle de l'opportunité, réduire la taille
+                predicted_direction = direction_prob > 0.5
+                opportunity_direction = opportunity.get("side", "BUY") == "BUY"
+                
+                if predicted_direction != opportunity_direction:
+                    model_confidence = 0.2  # Faible confiance en cas de contradiction
+                
+                # Ajuster en fonction de la volatilité prédite
+                predicted_volatility = short_term.get("predicted_volatility", 0.03)
+                volatility_factor = self._volatility_adjustment(predicted_volatility)
         
-        # Limiter le risque maximum
-        adjusted_risk = min(adjusted_risk, self.max_risk_per_trade)
+        # 3. Calcul de la taille de base (basée sur le risque)
+        risk_amount = self.current_capital * (base_risk_percent / 100) * risk_factor
         
-        # Calculer le risque en pourcentage (distance au stop-loss)
-        if opportunity.get("side") == "BUY":
-            risk_percent = (entry_price - stop_loss_price) / entry_price * 100
-        else:
-            risk_percent = (stop_loss_price - entry_price) / entry_price * 100
+        # 4. Appliquer le facteur de Kelly si activé
+        if self.use_kelly_criterion and len(self.trade_history) >= 10:
+            kelly_size = self._calculate_kelly_criterion()
+            # Appliquer la fraction de Kelly
+            kelly_adjusted_risk = risk_amount * kelly_size * self.kelly_fraction
+            risk_amount = min(risk_amount, kelly_adjusted_risk)
         
-        if risk_percent <= 0:
-            logger.error(f"Risque en pourcentage invalide: {risk_percent}%")
-            return 0
+        # 5. Ajuster avec les facteurs de confiance
+        confidence_factor = (score_factor + model_confidence) / 2
+        adjusted_risk = risk_amount * confidence_factor
         
-        # Calculer le montant à risquer
-        risk_amount = self.equity * (adjusted_risk / 100)
+        # 6. Appliquer le facteur de volatilité si activé
+        if self.volatility_scaling:
+            adjusted_risk *= volatility_factor
         
-        # Ajuster le risque en fonction de l'historique récent
-        if self.consecutive_losses > 0:
-            # Réduire progressivement le risque après des pertes
-            reduction_factor = max(0.5, 1.0 - (self.consecutive_losses * 0.1))
-            risk_amount *= reduction_factor
-            logger.info(f"Risque réduit de {(1-reduction_factor)*100:.0f}% après {self.consecutive_losses} pertes consécutives")
+        # 7. Appliquer les stratégies de martingale/anti-martingale si activées
+        if self.consecutive_losses > 0 and self.enable_martingale:
+            # Augmenter légèrement la taille après une perte (risqué!)
+            martingale_factor = 1.0 + (0.1 * min(self.consecutive_losses, 3))
+            adjusted_risk *= martingale_factor
         
-        # Calculer la taille de position en fonction du risque
-        position_size = risk_amount / (risk_percent / 100 * entry_price)
+        elif self.consecutive_wins > 0 and self.enable_anti_martingale:
+            # Augmenter la taille après un gain
+            anti_martingale_factor = 1.0 + (0.15 * min(self.consecutive_wins, 3))
+            adjusted_risk *= anti_martingale_factor
         
-        # Prendre en compte l'effet de levier
-        leverage = risk_profile["leverage"]
-        position_size = position_size * leverage
+        # 8. Ajuster en fonction de la capacity de risque globale
+        adjusted_risk *= self.risk_capacity
         
-        # Limiter la taille de position au solde disponible
-        max_position_size = self.available_balance * leverage / entry_price
-        position_size = min(position_size, max_position_size)
+        # 9. Limites de sécurité pour éviter les overrides manuels
+        # Plafond à 15% du capital quelle que soit la configuration
+        max_risk_allowed = self.current_capital * 0.15
+        adjusted_risk = min(adjusted_risk, max_risk_allowed)
         
-        # Limiter la taille maximale de position à 25% du capital
-        max_allowed_size = self.equity * 0.25 * leverage / entry_price
-        position_size = min(position_size, max_allowed_size)
+        # Calculer la taille finale
+        # Position size = (Capital * Risk%) / (StopLoss% * Leverage)
+        position_size = adjusted_risk / (stop_loss_percent / 100) * leverage
         
-        # Arrondir la taille de position à la précision requise
-        position_size = round(position_size, 5)
+        # Limiter la taille aux fonds disponibles
+        position_size = min(position_size, self.current_capital * 0.95)
         
-        logger.info(f"Taille de position calculée pour {symbol}: {position_size} ({risk_amount:.2f} USDT à risque)")
+        # Mettre à jour le risque quotidien utilisé
+        self.daily_risk_used += adjusted_risk
+        
+        # Journaliser la décision
+        self._log_position_sizing(
+            symbol=symbol,
+            base_risk=risk_amount,
+            final_size=position_size,
+            factors={
+                "score_factor": score_factor,
+                "model_confidence": model_confidence,
+                "volatility_factor": volatility_factor,
+                "risk_capacity": self.risk_capacity,
+                "kelly_criterion": self.use_kelly_criterion,
+                "profile": self.current_risk_profile
+            }
+        )
         
         return position_size
     
-    def calculate_optimal_exit_levels(self, entry_price: float, side: str, 
-                                    opportunity: Dict,
-                                    lstm_prediction: Optional[Dict] = None) -> Dict:
+    def update_stop_loss(self, symbol: str, original_stop: float, 
+                       current_price: float, lstm_prediction: Dict) -> Dict:
         """
-        Calcule les niveaux optimaux de stop-loss et take-profit basés sur les prédictions
+        Calcule un niveau de stop-loss adaptatif basé sur la volatilité prédite
         
         Args:
-            entry_price: Prix d'entrée
-            side: Direction (BUY/SELL)
-            opportunity: Opportunité de trading
-            lstm_prediction: Prédictions du modèle LSTM (optionnel)
-            
-        Returns:
-            Dictionnaire avec les niveaux de sortie
-        """
-        # Récupérer le profil de risque actuel
-        risk_profile = self.risk_levels[self.current_risk_profile]
-        
-        # Valeurs par défaut du profil de risque
-        default_stop_percent = risk_profile["stop_loss"]
-        default_tp_percent = risk_profile["take_profit"]
-        
-        # Ajuster en fonction du score de l'opportunité
-        opportunity_score = opportunity.get("score", 50)
-        
-        # Plus le score est élevé, plus le ratio risque/récompense peut être agressif
-        tp_multiplier = 1.0 + (opportunity_score - 50) / 100
-        stop_multiplier = 1.0 - (opportunity_score - 50) / 200  # Moins sensible pour le stop
-        
-        stop_percent = default_stop_percent * stop_multiplier
-        tp_percent = default_tp_percent * tp_multiplier
-        
-        # Si les prédictions LSTM sont disponibles, ajuster les niveaux
-        if lstm_prediction is not None:
-            # Utiliser la volatilité prédite pour ajuster les niveaux
-            volatility_factor = 1.0
-            
-            # Pour chaque horizon, considérer la volatilité prédite
-            for horizon, prediction in lstm_prediction.items():
-                if "predicted_volatility" in prediction:
-                    # Plus d'importance aux horizons courts
-                    if "horizon_12" in horizon:  # Court terme
-                        weight = 0.6
-                    elif "horizon_24" in horizon:  # Moyen terme
-                        weight = 0.3
-                    else:  # Long terme
-                        weight = 0.1
-                    
-                    # Normaliser la volatilité prédite
-                    predicted_volatility = prediction["predicted_volatility"]
-                    volatility_factor += predicted_volatility * weight
-            
-            # Ajuster les niveaux en fonction de la volatilité prédite
-            volatility_factor = max(0.8, min(1.5, volatility_factor))
-            stop_percent *= volatility_factor
-            tp_percent *= volatility_factor
-            
-            # Utiliser le momentum prédit pour ajuster le ratio risque/récompense
-            momentum_factor = 1.0
-            
-            for horizon, prediction in lstm_prediction.items():
-                if "predicted_momentum" in prediction:
-                    momentum = prediction["predicted_momentum"]
-                    # Momentum positif = augmenter le take profit
-                    if side == "BUY" and momentum > 0:
-                        momentum_factor += momentum * 0.5
-                    # Momentum négatif = augmenter le stop loss
-                    elif side == "BUY" and momentum < 0:
-                        stop_percent /= (1.0 + abs(momentum) * 0.3)
-            
-            tp_percent *= momentum_factor
-        
-        # Calculer les prix de stop-loss et take-profit
-        if side == "BUY":
-            stop_loss_price = entry_price * (1 - stop_percent / 100)
-            take_profit_price = entry_price * (1 + tp_percent / 100)
-            
-            # NOUVEAU: Ajustement avancé des niveaux de stop-loss
-            atr_value = opportunity.get("indicators", {}).get("atr", 0)
-            if atr_value > 0:
-                # Utiliser l'ATR pour définir un stop-loss plus intelligent
-                atr_stop_level = entry_price - (atr_value * 1.5)
-                # Prendre le maximum entre le stop % et le stop ATR
-                stop_loss_price = max(stop_loss_price, atr_stop_level)
-                
-                # Vérifier les niveaux de support/résistance
-                support_level = opportunity.get("indicators", {}).get("support_level", 0)
-                if support_level > 0 and support_level < entry_price:
-                    # Placer le stop légèrement sous le support
-                    support_stop = support_level * 0.995
-                    # Prendre le maximum entre les différents stops
-                    stop_loss_price = max(stop_loss_price, support_stop)
-        else:
-            stop_loss_price = entry_price * (1 + stop_percent / 100)
-            take_profit_price = entry_price * (1 - tp_percent / 100)
-            
-            # NOUVEAU: Ajustement avancé des niveaux de stop-loss
-            atr_value = opportunity.get("indicators", {}).get("atr", 0)
-            if atr_value > 0:
-                # Utiliser l'ATR pour définir un stop-loss plus intelligent
-                atr_stop_level = entry_price + (atr_value * 1.5)
-                # Prendre le minimum entre le stop % et le stop ATR
-                stop_loss_price = min(stop_loss_price, atr_stop_level)
-                
-                # Vérifier les niveaux de support/résistance
-                resistance_level = opportunity.get("indicators", {}).get("resistance_level", 0)
-                if resistance_level > 0 and resistance_level > entry_price:
-                    # Placer le stop légèrement au-dessus de la résistance
-                    resistance_stop = resistance_level * 1.005
-                    # Prendre le minimum entre les différents stops
-                    stop_loss_price = min(stop_loss_price, resistance_stop)
-        
-        return {
-            "stop_loss_price": stop_loss_price,
-            "take_profit_price": take_profit_price,
-            "stop_loss_percent": stop_percent,
-            "take_profit_percent": tp_percent
-        }
-    
-    def update_after_trade_closed(self, trade_result: Dict) -> None:
-        """
-        Met à jour les statistiques après la fermeture d'un trade
-        
-        Args:
-            trade_result: Résultat du trade
-        """
-        pnl = trade_result.get("pnl_absolute", 0)
-        pnl_percent = trade_result.get("pnl_percent", 0)
-        
-        # Mettre à jour les métriques de base
-        if pnl > 0:
-            self.daily_profits += pnl
-            self.consecutive_losses = 0
-            self.win_streak += 1
-            self.loss_streak = 0
-            logger.info(f"Profit ajouté: {pnl} USDT (total journalier: {self.daily_profits} USDT)")
-        else:
-            self.daily_losses += pnl
-            self.consecutive_losses += 1
-            self.win_streak = 0
-            self.loss_streak += 1
-            logger.info(f"Perte ajoutée: {pnl} USDT (total journalier: {self.daily_losses} USDT)")
-        
-        # Mettre à jour les records
-        self.max_win_streak = max(self.max_win_streak, self.win_streak)
-        self.max_loss_streak = max(self.max_loss_streak, self.loss_streak)
-        
-        # Mettre à jour l'équité
-        self.equity += pnl
-        
-        # Mettre à jour le peak equity et le drawdown
-        if self.equity > self.peak_equity:
-            self.peak_equity = self.equity
-            self.current_drawdown = 0
-        else:
-            self.current_drawdown = (self.peak_equity - self.equity) / self.peak_equity * 100
-        
-        # Ajouter le rendement aux données historiques pour le calcul de la VaR
-        if pnl_percent != 0:
-            self.historical_returns.append(pnl_percent / 100)
-            # Garder uniquement les dernières valeurs pour la VaR
-            if len(self.historical_returns) > self.var_window * 2:
-                self.historical_returns = self.historical_returns[-self.var_window * 2:]
-        
-        # Ajuster le profil de risque après chaque trade
-        self._adjust_risk_profile_per_trade(pnl_percent)
-        
-        # Sauvegarder l'état
-        self._save_state()
-        
-        # Si le drawdown dépasse 40%, déclencher une alerte
-        if self.current_drawdown > 40:
-            logger.warning(f"ALERTE: Drawdown élevé détecté ({self.current_drawdown:.2f}%)!")
-    
-    def get_risk_metrics(self) -> Dict:
-        """
-        Récupère les métriques de risque actuelles
-        
-        Returns:
-            Métriques de risque
-        """
-        # Calculer la VaR si possible
-        var = self._calculate_var() if len(self.historical_returns) >= self.var_window else None
-        
-        return {
-            "initial_capital": self.initial_capital,
-            "current_equity": self.equity,
-            "available_balance": self.available_balance,
-            "current_drawdown": self.current_drawdown,
-            "peak_equity": self.peak_equity,
-            "consecutive_losses": self.consecutive_losses,
-            "win_streak": self.win_streak,
-            "max_loss_streak": self.max_loss_streak,
-            "max_win_streak": self.max_win_streak,
-            "risk_profile": self.current_risk_profile,
-            "risk_parameters": self.risk_levels[self.current_risk_profile],
-            "value_at_risk": var,
-            "var_confidence_level": self.var_confidence_level
-        }
-    
-    def _adjust_risk_by_opportunity(self, base_risk: float, opportunity_score: float) -> float:
-        """
-        Ajuste le risque en fonction du score de l'opportunité
-        
-        Args:
-            base_risk: Risque de base (%)
-            opportunity_score: Score de l'opportunité (0-100)
-            
-        Returns:
-            Risque ajusté (%)
-        """
-        # Normaliser le score (50 = neutre)
-        score_factor = (opportunity_score - 50) / 50
-        
-        # Ajuster le risque (±30% max)
-        adjustment = score_factor * 0.3
-        adjusted_risk = base_risk * (1 + adjustment)
-        
-        return max(0.5, adjusted_risk)  # Minimum 0.5% de risque
-    
-    def _adjust_risk_by_lstm_prediction(self, base_risk: float, 
-                                      lstm_prediction: Dict) -> float:
-        """
-        Ajuste le risque en fonction des prédictions du modèle LSTM
-        
-        Args:
-            base_risk: Risque de base (%)
+            symbol: Paire de trading
+            original_stop: Niveau de stop-loss original
+            current_price: Prix actuel
             lstm_prediction: Prédictions du modèle LSTM
             
         Returns:
-            Risque ajusté (%)
+            Nouveau niveau de stop-loss et raisonnement
         """
-        # Facteur d'ajustement initial
-        adjustment_factor = 1.0
-        
-        # 1. Ajuster en fonction de la confiance dans la direction prédite
-        for horizon, prediction in lstm_prediction.items():
-            if "direction_probability" in prediction:
-                direction_prob = prediction["direction_probability"]
-                
-                # Confiance élevée = plus de risque, confiance faible = moins de risque
-                confidence = abs(direction_prob - 0.5) * 2  # 0 à 1
-                
-                # Pondérer selon l'horizon
-                if "horizon_12" in horizon:  # Court terme
-                    weight = 0.5
-                elif "horizon_24" in horizon:  # Moyen terme
-                    weight = 0.3
-                else:  # Long terme
-                    weight = 0.2
-                
-                # Ajuster le facteur (±40% max basé sur la confiance)
-                conf_adjustment = (confidence - 0.5) * 0.8 * weight
-                adjustment_factor += conf_adjustment
-        
-        # 2. Ajuster en fonction de la volatilité prédite
-        volatility_factor = 0
-        
-        for horizon, prediction in lstm_prediction.items():
-            if "predicted_volatility" in prediction:
-                volatility = prediction["predicted_volatility"]
-                
-                # Pondérer selon l'horizon
-                if "horizon_12" in horizon:  # Court terme
-                    weight = 0.6
-                elif "horizon_24" in horizon:  # Moyen terme
-                    weight = 0.3
-                else:  # Long terme
-                    weight = 0.1
-                
-                # Volatilité élevée = moins de risque
-                # Normaliser autour de 1 (volatilité moyenne)
-                if volatility > 1.2:
-                    vol_adjustment = -0.2 * weight
-                elif volatility < 0.8:
-                    vol_adjustment = 0.2 * weight
-                else:
-                    vol_adjustment = 0
-                
-                volatility_factor += vol_adjustment
-        
-        adjustment_factor += volatility_factor
-        
-        # Limiter l'ajustement final
-        adjustment_factor = max(0.6, min(1.4, adjustment_factor))
-        
-        return base_risk * adjustment_factor
-    
-    def _adjust_risk_profile_per_trade(self, pnl_percent: float) -> None:
-        """
-        Ajuste le profil de risque après chaque trade
-        
-        Args:
-            pnl_percent: Pourcentage de profit/perte du trade
-        """
-        current_profile = self.current_risk_profile
-        
-        # Ajuster en fonction du résultat du trade
-        if pnl_percent > 0:
-            # Trade gagnant: devenir progressivement plus agressif
-            if self.win_streak >= 3:
-                if current_profile == 'conservative':
-                    self._change_risk_profile('balanced')
-                elif current_profile == 'balanced' and self.win_streak >= 5:
-                    self._change_risk_profile('aggressive')
-        else:
-            # Trade perdant: devenir progressivement plus conservateur
-            if self.loss_streak >= 2:
-                if current_profile == 'aggressive':
-                    self._change_risk_profile('balanced')
-                elif current_profile == 'balanced' and self.loss_streak >= 3:
-                    self._change_risk_profile('conservative')
-                elif current_profile == 'conservative' and self.loss_streak >= 4:
-                    self._change_risk_profile('defensive')
-    
-    def _adjust_risk_profile_daily(self) -> None:
-        """
-        Ajuste le profil de risque quotidiennement en fonction de la performance
-        """
-        # Calculer le P&L quotidien en pourcentage
-        daily_pnl = self.daily_profits + self.daily_losses
-        daily_pnl_percent = daily_pnl / self.equity * 100
-        
-        current_profile = self.current_risk_profile
-        
-        # Ajuster en fonction du P&L quotidien
-        if daily_pnl_percent > 5:
-            # Très bonne journée: devenir plus agressif
-            if current_profile == 'defensive':
-                self._change_risk_profile('conservative')
-            elif current_profile == 'conservative':
-                self._change_risk_profile('balanced')
-            elif current_profile == 'balanced':
-                self._change_risk_profile('aggressive')
-        elif daily_pnl_percent < -3:
-            # Mauvaise journée: devenir plus conservateur
-            if current_profile == 'aggressive':
-                self._change_risk_profile('balanced')
-            elif current_profile == 'balanced':
-                self._change_risk_profile('conservative')
-            elif current_profile == 'conservative':
-                self._change_risk_profile('defensive')
-        
-        # Ajuster en fonction du drawdown actuel
-        if self.current_drawdown > 30:
-            # Drawdown important: passer en mode défensif
-            self._change_risk_profile('defensive')
-        elif self.current_drawdown > 20:
-            # Drawdown modéré: au plus conservateur
-            if current_profile in ['aggressive', 'balanced']:
-                self._change_risk_profile('conservative')
-        elif self.current_drawdown < 10 and daily_pnl_percent > 0:
-            # Faible drawdown et journée positive: monter d'un cran
-            if current_profile == 'defensive':
-                self._change_risk_profile('conservative')
-            elif current_profile == 'conservative':
-                self._change_risk_profile('balanced')
-    
-    def _change_risk_profile(self, new_profile: str) -> None:
-        """
-        Change le profil de risque actuel
-        
-        Args:
-            new_profile: Nouveau profil de risque
-        """
-        if new_profile not in self.risk_levels:
-            logger.error(f"Profil de risque invalide: {new_profile}")
-            return
-        
-        if new_profile != self.current_risk_profile:
-            old_profile = self.current_risk_profile
-            self.current_risk_profile = new_profile
-            
-            # Enregistrer l'ajustement
-            adjustment = {
-                "timestamp": datetime.now().isoformat(),
-                "old_profile": old_profile,
-                "new_profile": new_profile,
-                "reason": {
-                    "drawdown": self.current_drawdown,
-                    "consecutive_losses": self.consecutive_losses,
-                    "win_streak": self.win_streak,
-                    "equity": self.equity
-                }
+        # Si pas de prédiction LSTM disponible, conserver le stop original
+        if not lstm_prediction:
+            return {
+                "stop_level": original_stop,
+                "updated": False,
+                "reason": "Aucune prédiction LSTM disponible"
             }
-            
-            self.risk_adjustments.append(adjustment)
-            logger.info(f"Profil de risque changé: {old_profile} -> {new_profile}")
+        
+        # Trouver l'horizon pertinent (court terme)
+        short_term = None
+        for horizon_name, prediction in lstm_prediction.items():
+            if horizon_name in ["3h", "4h", "short_term", "horizon_12"]:
+                short_term = prediction
+                break
+        
+        if not short_term:
+            return {
+                "stop_level": original_stop,
+                "updated": False,
+                "reason": "Aucune prédiction court terme disponible"
+            }
+        
+        # Récupérer la volatilité prédite
+        predicted_volatility = short_term.get("predicted_volatility", 0.03)
+        
+        # Calculer la différence en pourcentage entre le prix actuel et le stop original
+        original_stop_percent = abs((current_price - original_stop) / current_price * 100)
+        
+        # Ajuster en fonction de la volatilité prédite
+        # Plus la volatilité est élevée, plus le stop doit être large
+        volatility_percent = predicted_volatility * 100
+        
+        # Facteur d'ajustement: si la volatilité prédite est élevée, augmenter le stop
+        # si elle est faible, réduire le stop
+        adjustment_factor = volatility_percent / 3.0  # 3% est considéré comme une volatilité standard
+        
+        # Calculer le nouveau stop en pourcentage
+        new_stop_percent = original_stop_percent * adjustment_factor
+        
+        # Limites de sécurité
+        min_stop_percent = 1.0  # Minimum 1%
+        max_stop_percent = 10.0  # Maximum 10%
+        
+        new_stop_percent = max(min_stop_percent, min(new_stop_percent, max_stop_percent))
+        
+        # Calculer le nouveau niveau de stop-loss
+        side = "BUY" if current_price > original_stop else "SELL"
+        
+        if side == "BUY":
+            # Pour les positions longues, le stop est en dessous du prix
+            new_stop_level = current_price * (1 - new_stop_percent / 100)
+        else:
+            # Pour les positions courtes, le stop est au-dessus du prix
+            new_stop_level = current_price * (1 + new_stop_percent / 100)
+        
+        # Ne pas déplacer le stop dans la mauvaise direction
+        if side == "BUY" and new_stop_level < original_stop:
+            new_stop_level = original_stop
+        elif side == "SELL" and new_stop_level > original_stop:
+            new_stop_level = original_stop
+        
+        return {
+            "stop_level": new_stop_level,
+            "updated": new_stop_level != original_stop,
+            "reason": f"Ajustement basé sur volatilité prédite de {volatility_percent:.2f}%",
+            "volatility_percent": volatility_percent,
+            "adjustment_factor": adjustment_factor
+        }
     
-    def _calculate_var(self, confidence_level: Optional[float] = None) -> float:
+    def update_take_profit(self, symbol: str, original_tp: float, 
+                         current_price: float, lstm_prediction: Dict) -> Dict:
         """
-        Calcule la Value at Risk (VaR) historique
+        Calcule un niveau de take-profit adaptatif basé sur le momentum et la volatilité prédits
         
         Args:
-            confidence_level: Niveau de confiance (0-1)
+            symbol: Paire de trading
+            original_tp: Niveau de take-profit original
+            current_price: Prix actuel
+            lstm_prediction: Prédictions du modèle LSTM
             
         Returns:
-            VaR en pourcentage du capital
+            Nouveau niveau de take-profit et raisonnement
         """
-        if not self.historical_returns:
-            return 0
+        # Si pas de prédiction LSTM disponible, conserver le TP original
+        if not lstm_prediction:
+            return {
+                "tp_level": original_tp,
+                "updated": False,
+                "reason": "Aucune prédiction LSTM disponible"
+            }
         
-        level = confidence_level or self.var_confidence_level
+        # Récupérer les prédictions à court et moyen terme
+        short_term = None
+        medium_term = None
         
-        # Calculer le quantile correspondant au niveau de confiance
-        var_quantile = np.quantile(self.historical_returns, 1 - level)
+        for horizon_name, prediction in lstm_prediction.items():
+            if horizon_name in ["3h", "4h", "short_term", "horizon_12"]:
+                short_term = prediction
+            elif horizon_name in ["12h", "24h", "medium_term", "horizon_48"]:
+                medium_term = prediction
         
-        # VaR en pourcentage (valeur négative)
-        return abs(var_quantile) * 100
+        if not short_term or not medium_term:
+            return {
+                "tp_level": original_tp,
+                "updated": False,
+                "reason": "Prédictions insuffisantes"
+            }
+        
+        # Récupérer les indicateurs pertinents
+        short_momentum = short_term.get("predicted_momentum", 0.0)
+        medium_momentum = medium_term.get("predicted_momentum", 0.0)
+        
+        # Moyenne pondérée du momentum (plus de poids au court terme)
+        momentum_score = (short_momentum * 0.7 + medium_momentum * 0.3)
+        
+        # Volatilité prédite
+        volatility = short_term.get("predicted_volatility", 0.03) * 100  # en pourcentage
+        
+        # Calculer la différence en pourcentage entre le prix actuel et le TP original
+        original_tp_percent = abs((original_tp - current_price) / current_price * 100)
+        
+        # Ajuster en fonction du momentum et de la volatilité
+        # Plus le momentum est fort, plus le TP peut être agressif
+        momentum_factor = 1.0 + (abs(momentum_score) * 0.5)
+        
+        # Ajuster également en fonction de la volatilité
+        volatility_factor = max(0.8, min(1.5, volatility / 3.0))
+        
+        # Calculer le nouveau TP en pourcentage
+        new_tp_percent = original_tp_percent * momentum_factor * volatility_factor
+        
+        # Limites de sécurité
+        min_tp_percent = 2.0  # Minimum 2%
+        max_tp_percent = 15.0  # Maximum 15%
+        
+        new_tp_percent = max(min_tp_percent, min(new_tp_percent, max_tp_percent))
+        
+        # Calculer le nouveau niveau de take-profit
+        side = "BUY" if original_tp > current_price else "SELL"
+        
+        if side == "BUY":
+            # Pour les positions longues, le TP est au-dessus du prix
+            new_tp_level = current_price * (1 + new_tp_percent / 100)
+        else:
+            # Pour les positions courtes, le TP est en dessous du prix
+            new_tp_level = current_price * (1 - new_tp_percent / 100)
+        
+        # Ne pas déplacer le TP dans la mauvaise direction
+        if side == "BUY" and new_tp_level < original_tp:
+            new_tp_level = original_tp
+        elif side == "SELL" and new_tp_level > original_tp:
+            new_tp_level = original_tp
+        
+        return {
+            "tp_level": new_tp_level,
+            "updated": new_tp_level != original_tp,
+            "reason": f"Ajustement basé sur momentum ({momentum_score:.2f}) et volatilité ({volatility:.2f}%)",
+            "momentum_score": momentum_score,
+            "volatility_percent": volatility,
+            "momentum_factor": momentum_factor,
+            "volatility_factor": volatility_factor
+        }
     
-    def _detect_extreme_market_conditions(self, market_data: Optional[Dict]) -> Dict:
+    def detect_extreme_market_conditions(self, data_fetcher, symbol: str) -> Dict:
         """
-        Détecte les conditions de marché extrêmes en utilisant le détecteur d'anomalies
+        Détecte des conditions de marché extrêmes qui nécessitent une réduction de l'exposition
         
         Args:
-            market_data: Données de marché
+            data_fetcher: Instance du gestionnaire de données de marché
+            symbol: Paire de trading
             
         Returns:
             Résultat de la détection
         """
-        if not market_data:
-            return {"detected": False}
-        
-        # Extraire les données OHLCV
-        ohlcv = market_data.get("primary_timeframe", {}).get("ohlcv")
-        if ohlcv is None or ohlcv.empty:
-            return {"detected": False}
-        
-        # Prix actuel
-        current_price = market_data.get("current_price")
-        
-        # Utiliser le détecteur d'anomalies
-        result = self.anomaly_detector.detect_anomalies(
-            data=ohlcv,
-            current_price=current_price,
-            return_details=True
-        )
-        
-        # Si une anomalie est détectée, en informer le gestionnaire de risque
-        if result["detected"]:
-            logger.warning(f"Anomalie de marché détectée: {result['reason']}")
+        try:
+            # Récupérer les données de marché
+            market_data = data_fetcher.get_market_data(symbol)
             
-            # Si l'anomalie est très grave (score élevé), passer immédiatement en mode défensif
-            if result.get("anomaly_count", 0) >= 3:
-                self._change_risk_profile('defensive')
-                logger.warning("Passage automatique en mode défensif en raison d'anomalies de marché multiples")
+            # Utiliser le détecteur d'anomalies
+            anomaly_result = self.anomaly_detector.detect_anomalies(
+                market_data["primary_timeframe"]["ohlcv"],
+                current_price=market_data["current_price"],
+                return_details=True
+            )
+            
+            if anomaly_result["detected"]:
+                # Condition de marché extrême détectée
+                self.market_state = "extreme"
+                
+                # Ajuster le profil de risque
+                self.set_risk_profile("defensive")
+                
+                # Réduire la capacité de risque
+                self.risk_capacity = 0.2  # Réduction drastique
+                
+                return {
+                    "extreme_condition": True,
+                    "reason": anomaly_result["reason"],
+                    "action_taken": "Passage en mode défensif",
+                    "risk_capacity": self.risk_capacity,
+                    "anomaly_details": anomaly_result["details"]
+                }
+            else:
+                # Vérifier si c'est juste volatile mais pas extrême
+                volatility_detected = False
+                
+                # Vérifier les indicateurs de volatilité
+                atr_percent = market_data["primary_timeframe"]["indicators"]["atr"][-1] / market_data["current_price"] * 100
+                
+                if atr_percent > 5.0:  # 5% est considéré comme très volatile
+                    volatility_detected = True
+                    self.market_state = "volatile"
+                    self.set_risk_profile("conservative")
+                    self.risk_capacity = 0.5
+                else:
+                    # Conditions normales
+                    self.market_state = "normal"
+                    
+                    # Si on était en mode défensif, revenir en mode équilibré
+                    if self.current_risk_profile == "defensive":
+                        self.set_risk_profile("conservative")
+                    
+                    # Restaurer progressivement la capacité de risque
+                    self.risk_capacity = min(1.0, self.risk_capacity + 0.1)
+                
+                return {
+                    "extreme_condition": False,
+                    "volatile_condition": volatility_detected,
+                    "market_state": self.market_state,
+                    "risk_capacity": self.risk_capacity
+                }
         
-        return result
+        except Exception as e:
+            logger.error(f"Erreur lors de la détection des conditions extrêmes: {str(e)}")
+            return {
+                "extreme_condition": False,
+                "error": str(e)
+            }
     
-    def calculate_position_dynamic_stops(self, position_id: str, current_price: float, 
-                                       position_data: Dict, 
-                                       lstm_prediction: Optional[Dict] = None) -> Dict:
+    def should_close_early(self, symbol: str, position: Dict, current_price: float,
+                         lstm_prediction: Optional[Dict] = None) -> Dict:
         """
-        Calcule les niveaux de stop-loss dynamiques basés sur l'évolution du prix
-        et les prédictions du modèle
+        Détermine si une position doit être fermée de manière anticipée
+        en fonction des prédictions du modèle ou des conditions de marché
         
         Args:
-            position_id: Identifiant de la position
+            symbol: Paire de trading
+            position: Données de la position ouverte
             current_price: Prix actuel
-            position_data: Données de la position
             lstm_prediction: Prédictions du modèle LSTM
             
         Returns:
-            Niveaux de stop-loss mis à jour
+            Décision de fermeture anticipée avec raison
         """
-        entry_price = position_data.get("entry_price", current_price)
-        side = position_data.get("side", "BUY")
-        current_stop = position_data.get("stop_loss_price", 0)
-        take_profit = position_data.get("take_profit_price", 0)
+        # Récupérer les détails de la position
+        side = position.get("side", "BUY")
+        entry_price = position.get("entry_price", current_price)
+        position_age = datetime.now() - datetime.fromisoformat(position.get("entry_time", datetime.now().isoformat()))
         
-        # Calculer le profit actuel en pourcentage
+        # Calculer le profit actuel
         if side == "BUY":
-            current_profit_pct = (current_price - entry_price) / entry_price * 100
+            profit_percent = (current_price - entry_price) / entry_price * 100 * position.get("leverage", 1)
         else:
-            current_profit_pct = (entry_price - current_price) / entry_price * 100
+            profit_percent = (entry_price - current_price) / entry_price * 100 * position.get("leverage", 1)
         
-        # Trailing stop de base (basé sur ATR si disponible dans les prédictions)
-        atr_value = None
-        if lstm_prediction and "horizon_12" in lstm_prediction:
-            volatility = lstm_prediction["horizon_12"].get("predicted_volatility", None)
-            if volatility:
-                # Estimer l'ATR à partir de la volatilité prédite
-                atr_value = current_price * volatility / 100
+        # 1. Vérifier les conditions de marché extrêmes
+        if self.market_state == "extreme":
+            # Fermer avec profit ou petite perte
+            if profit_percent > 0 or profit_percent > -1.5:
+                return {
+                    "should_close": True,
+                    "reason": f"Conditions de marché extrêmes ({self.market_state})"
+                }
         
-        # Si pas d'ATR disponible, utiliser un pourcentage fixe
-        if atr_value is None:
-            # Pourcentage basé sur le profil de risque
-            risk_params = self.risk_levels[self.current_risk_profile]
-            trailing_pct = risk_params["stop_loss"] * 0.7  # 70% du stop-loss initial
-            atr_value = current_price * trailing_pct / 100
-        
-        # NOUVEAU: Prendre en compte la prédiction de direction pour le trailing stop
-        direction_confidence = 0.5  # Valeur neutre par défaut
-        if lstm_prediction and "horizon_12" in lstm_prediction:
-            direction_prob = lstm_prediction["horizon_12"].get("direction_probability", 0.5)
+        # 2. Utiliser les prédictions LSTM si disponibles
+        if lstm_prediction:
+            reversal_alert = lstm_prediction.get("reversal_alert", {})
+            reversal_probability = reversal_alert.get("probability", 0.0)
             
-            # Si on est en position longue, on veut une proba > 0.5 pour être confiant
-            # Si on est en position courte, on veut une proba < 0.5 pour être confiant
-            if side == "BUY":
-                direction_confidence = direction_prob
-            else:
-                direction_confidence = 1 - direction_prob
-        
-        # Ajuster le trailing stop en fonction de la confiance
-        trailing_factor = 1.0
-        if direction_confidence > 0.7:  # Forte confiance dans la continuation du mouvement
-            trailing_factor = 1.3  # Plus lâche (plus de room)
-        elif direction_confidence < 0.3:  # Faible confiance, risque de retournement
-            trailing_factor = 0.7  # Plus serré (moins de room)
-        
-        # Calcul du nouveau stop-loss
-        new_stop = current_stop
-        
-        if side == "BUY":
-            # Pour les positions longues
-            # Ne déplacer le stop que si le prix est en profit
-            if current_profit_pct > 0:
-                trailing_level = current_price - (atr_value * 2 * trailing_factor)
-                
-                # Si le trailing stop est au-dessus du stop actuel, mettre à jour
-                if trailing_level > current_stop:
-                    new_stop = trailing_level
-                    
-                    # Si profit > 3%, s'assurer que le stop est au minimum au point d'entrée (break-even)
-                    if current_profit_pct > 3 and new_stop < entry_price:
-                        new_stop = entry_price
-                
-                # NOUVEAU: Niveaux de sécurité progressifs basés sur le profit
-                if current_profit_pct > 5:
-                    # À 5% de profit, garantir au moins 50% du gain
-                    min_stop = entry_price + (current_price - entry_price) * 0.5
-                    new_stop = max(new_stop, min_stop)
-                    
-                if current_profit_pct > 10:
-                    # À 10% de profit, garantir au moins 70% du gain
-                    min_stop = entry_price + (current_price - entry_price) * 0.7
-                    new_stop = max(new_stop, min_stop)
-        else:
-            # Pour les positions courtes
-            if current_profit_pct > 0:
-                trailing_level = current_price + (atr_value * 2 * trailing_factor)
-                
-                # Si le trailing stop est en-dessous du stop actuel, mettre à jour
-                if trailing_level < current_stop:
-                    new_stop = trailing_level
-                    
-                    # Si profit > 3%, s'assurer que le stop est au maximum au point d'entrée
-                    if current_profit_pct > 3 and new_stop > entry_price:
-                        new_stop = entry_price
-                
-                # NOUVEAU: Niveaux de sécurité progressifs basés sur le profit
-                if current_profit_pct > 5:
-                    # À 5% de profit, garantir au moins 50% du gain
-                    min_stop = entry_price - (entry_price - current_price) * 0.5
-                    new_stop = min(new_stop, min_stop)
-                    
-                if current_profit_pct > 10:
-                    # À 10% de profit, garantir au moins 70% du gain
-                    min_stop = entry_price - (entry_price - current_price) * 0.7
-                    new_stop = min(new_stop, min_stop)
-        
-        # Si le LSTM prédit un fort mouvement dans la direction opposée, resserrer le stop
-        if lstm_prediction and "horizon_12" in lstm_prediction:
-            direction_prob = lstm_prediction["horizon_12"].get("direction_probability", 0.5)
-            momentum = lstm_prediction["horizon_12"].get("predicted_momentum", 0)
+            # Fermeture en cas d'alerte de retournement forte
+            if reversal_probability > 0.8 and profit_percent > 0:
+                return {
+                    "should_close": True,
+                    "reason": f"Alerte de retournement imminente (probabilité: {reversal_probability:.2f})"
+                }
             
-            # Pour les longs, si forte probabilité de baisse, resserrer le stop
-            if side == "BUY" and direction_prob < 0.3 and momentum < -0.3:
-                tighter_stop = current_price - atr_value * 0.5  # Beaucoup plus serré
-                if tighter_stop > new_stop:
-                    new_stop = tighter_stop
-                    logger.info(f"Stop-loss resserré en raison de prédiction baissière")
-            
-            # Pour les shorts, si forte probabilité de hausse, resserrer le stop
-            elif side == "SELL" and direction_prob > 0.7 and momentum > 0.3:
-                tighter_stop = current_price + atr_value * 0.5  # Beaucoup plus serré
-                if tighter_stop < new_stop:
-                    new_stop = tighter_stop
-                    logger.info(f"Stop-loss resserré en raison de prédiction haussière")
-        
-        # NOUVEAU: Prendre en compte la détection d'anomalies
-        # Si une anomalie est détectée, resserrer davantage le stop-loss pour protéger les profits
-        if current_profit_pct > 2:  # Seulement si la position est en profit
-            # Importer les données OHLCV récentes
-            ohlcv = position_data.get("market_data", {}).get("ohlcv")
-            
-            if ohlcv is not None and not ohlcv.empty:
-                # Détecter les anomalies
-                anomaly_result = self.anomaly_detector.detect_anomalies(
-                    data=ohlcv,
-                    current_price=current_price,
-                    return_details=False  # Version simplifiée pour être plus rapide
-                )
-                
-                if anomaly_result.get("detected", False):
-                    # Resserrer drastiquement le stop-loss
-                    if side == "BUY":
-                        emergency_stop = current_price - (atr_value * 0.5)  # Très serré
-                        new_stop = max(new_stop, emergency_stop)
-                    else:
-                        emergency_stop = current_price + (atr_value * 0.5)  # Très serré
-                        new_stop = min(new_stop, emergency_stop)
+            # Vérifier si la prédiction est maintenant contre la position
+            for horizon_name, prediction in lstm_prediction.items():
+                if horizon_name in ["3h", "4h", "short_term", "horizon_12"]:
+                    direction_prob = prediction.get("direction_probability", 50) / 100
+                    direction_contradicts = (side == "BUY" and direction_prob < 0.3) or (side == "SELL" and direction_prob > 0.7)
                     
-                    logger.warning(f"Stop-loss d'urgence activé en raison d'anomalie de marché: {position_id}")
+                    if direction_contradicts and profit_percent > 1.0:
+                        return {
+                            "should_close": True,
+                            "reason": f"Prédiction de retournement à court terme (direction: {direction_prob:.2f})"
+                        }
         
+        # 3. Lock in profits pour les positions très profitables
+        if profit_percent > 10.0:
+            return {
+                "should_close": True,
+                "reason": f"Sécurisation du profit exceptionnel ({profit_percent:.2f}%)"
+            }
+        
+        # 4. Fermeture des positions en stagnation prolongée
+        stagnation_hours = 24  # Considérer la fermeture après 24h sans progrès
+        if position_age.total_seconds() / 3600 > stagnation_hours and -1.0 < profit_percent < 2.0:
+            return {
+                "should_close": True,
+                "reason": f"Position en stagnation après {position_age.total_seconds()/3600:.1f}h"
+            }
+        
+        # Aucune raison de fermer maintenant
         return {
-            "updated": new_stop != current_stop,
-            "new_stop_loss": new_stop,
-            "current_profit_pct": current_profit_pct,
-            "atr_value": atr_value,
-            "direction_confidence": direction_confidence,
-            "trailing_factor": trailing_factor
+            "should_close": False,
+            "current_profit": profit_percent,
+            "position_age_hours": position_age.total_seconds() / 3600
         }
     
-    def _save_state(self) -> None:
+    def update_after_trade_closed(self, trade_result: Dict) -> None:
         """
-        Sauvegarde l'état du gestionnaire de risque
+        Met à jour l'état interne après qu'un trade a été fermé
+        
+        Args:
+            trade_result: Résultat du trade fermé
         """
-        state = {
-            "equity": self.equity,
-            "available_balance": self.available_balance,
-            "peak_equity": self.peak_equity,
-            "current_drawdown": self.current_drawdown,
+        # Extraire les résultats du trade
+        pnl_percent = trade_result.get("pnl_percent", 0.0)
+        pnl_absolute = trade_result.get("pnl_absolute", 0.0)
+        
+        # Mettre à jour le capital
+        self.current_capital += pnl_absolute
+        
+        # Mettre à jour l'historique des trades
+        self.trade_history.append({
+            "timestamp": datetime.now().isoformat(),
+            "pnl_percent": pnl_percent,
+            "pnl_absolute": pnl_absolute,
+            "risk_profile": self.current_risk_profile
+        })
+        
+        # Limiter la taille de l'historique
+        if len(self.trade_history) > 100:
+            self.trade_history = self.trade_history[-100:]
+        
+        # Mettre à jour les compteurs de victoires/défaites consécutives
+        if pnl_percent > 0:
+            self.consecutive_wins += 1
+            self.consecutive_losses = 0
+        else:
+            self.consecutive_losses += 1
+            self.consecutive_wins = 0
+        
+        # Ajuster le profil de risque si nécessaire
+        self._adjust_risk_profile_based_on_performance()
+        
+        # Sauvegarder l'historique
+        self._save_history()
+    
+    def set_risk_profile(self, profile_name: str) -> bool:
+        """
+        Change explicitement le profil de risque
+        
+        Args:
+            profile_name: Nom du profil de risque
+            
+        Returns:
+            Succès du changement
+        """
+        if profile_name in self.risk_profiles:
+            self.current_risk_profile = profile_name
+            logger.info(f"Profil de risque mis à jour: {profile_name}")
+            return True
+        else:
+            logger.error(f"Profil de risque inconnu: {profile_name}")
+            return False
+    
+    def _calculate_score_factor(self, score: float) -> float:
+        """
+        Calcule un facteur de taille basé sur le score de l'opportunité
+        
+        Args:
+            score: Score de l'opportunité (0-100)
+            
+        Returns:
+            Facteur de taille (0.5-1.2)
+        """
+        # Convertir le score (0-100) en facteur (0.5-1.2)
+        # 70 = 1.0 (neutre)
+        # < 70 = réduit
+        # > 70 = augmenté
+        
+        if score < 70:
+            # Réduction linéaire pour les scores < 70
+            # 50 -> 0.5, 60 -> 0.75, 70 -> 1.0
+            return 0.5 + (score - 50) / 40
+        else:
+            # Augmentation pour les scores > 70
+            # 70 -> 1.0, 85 -> 1.1, 100 -> 1.2
+            return 1.0 + (score - 70) / 150
+    
+    def _volatility_adjustment(self, volatility: float) -> float:
+        """
+        Calcule un facteur d'ajustement basé sur la volatilité
+        
+        Args:
+            volatility: Volatilité prédite (0-1)
+            
+        Returns:
+            Facteur d'ajustement (0.5-1.5)
+        """
+        # Convertir la volatilité en facteur
+        # Volatilité standard (0.03) = facteur 1.0
+        standard_volatility = 0.03
+        
+        if volatility <= standard_volatility:
+            # Volatilité faible -> positions plus grandes
+            # 0.01 -> 1.5, 0.02 -> 1.25, 0.03 -> 1.0
+            return 1.0 + ((standard_volatility - volatility) / standard_volatility) * 0.5
+        else:
+            # Volatilité élevée -> positions plus petites
+            # 0.03 -> 1.0, 0.06 -> 0.5
+            return max(0.5, 1.0 - ((volatility - standard_volatility) / standard_volatility) * 0.5)
+    
+    def _calculate_kelly_criterion(self) -> float:
+        """
+        Calcule la portion optimale du capital à risquer selon le critère de Kelly
+        
+        Returns:
+            Fraction optimale du capital à risquer (0-1)
+        """
+        # Calculer la win rate sur l'historique récent
+        if len(self.trade_history) < 10:
+            return 0.5  # Valeur par défaut si pas assez de données
+        
+        # Récupérer les 20 derniers trades (ou moins si pas assez)
+        recent_trades = self.trade_history[-20:]
+        
+        # Calculer le win rate
+        winners = [t for t in recent_trades if t["pnl_percent"] > 0]
+        win_rate = len(winners) / len(recent_trades)
+        
+        # Calculer le ratio gain/perte moyen
+        if winners and len(recent_trades) > len(winners):
+            avg_win = sum(t["pnl_percent"] for t in winners) / len(winners)
+            losers = [t for t in recent_trades if t["pnl_percent"] <= 0]
+            avg_loss = abs(sum(t["pnl_percent"] for t in losers) / len(losers))
+            
+            # Formule de Kelly: f* = (p*b - q) / b
+            # où p = probabilité de gagner, q = probabilité de perdre, b = ratio gain/perte
+            win_loss_ratio = avg_win / avg_loss if avg_loss > 0 else 1
+            
+            kelly_fraction = (win_rate * win_loss_ratio - (1 - win_rate)) / win_loss_ratio
+            
+            # Limiter la fraction entre 0.1 et 0.5 pour plus de sécurité
+            kelly_fraction = max(0.1, min(0.5, kelly_fraction))
+            
+            return kelly_fraction
+        
+        return 0.25  # Valeur conservatrice par défaut
+    
+    def _adjust_risk_profile_based_on_performance(self) -> None:
+        """
+        Ajuste automatiquement le profil de risque en fonction des performances récentes
+        """
+        # Calculer la performance sur les derniers trades
+        if len(self.trade_history) < 5:
+            return  # Pas assez de données
+        
+        # Récupérer les 10 derniers trades (ou moins si pas assez)
+        recent_trades = self.trade_history[-10:]
+        
+        # Calculer le PnL cumulé
+        cumulative_pnl = sum(t["pnl_percent"] for t in recent_trades)
+        
+        # Calculer le win rate
+        winners = len([t for t in recent_trades if t["pnl_percent"] > 0])
+        win_rate = winners / len(recent_trades) * 100
+        
+        # Ajuster le profil en fonction de la performance
+        if cumulative_pnl > 15 and win_rate > 60:
+            # Performance très bonne -> profil agressif
+            if self.current_risk_profile != "very_aggressive":
+                self.set_risk_profile("very_aggressive")
+                logger.info("Passage en mode très agressif basé sur la performance exceptionnelle")
+        
+        elif cumulative_pnl > 8 and win_rate > 55:
+            # Bonne performance -> profil légèrement agressif
+            if self.current_risk_profile != "aggressive" and self.current_risk_profile != "very_aggressive":
+                self.set_risk_profile("aggressive")
+                logger.info("Passage en mode agressif basé sur la bonne performance")
+        
+        elif cumulative_pnl < -10 or win_rate < 40:
+            # Mauvaise performance -> profil conservateur
+            if self.current_risk_profile != "conservative" and self.current_risk_profile != "defensive":
+                self.set_risk_profile("conservative")
+                logger.info("Passage en mode conservateur basé sur la performance médiocre")
+        
+        elif cumulative_pnl < -15 or win_rate < 30:
+            # Très mauvaise performance -> profil défensif
+            if self.current_risk_profile != "defensive":
+                self.set_risk_profile("defensive")
+                logger.info("Passage en mode défensif basé sur la performance très faible")
+        
+        else:
+            # Performance moyenne -> profil équilibré
+            if self.current_risk_profile not in ["balanced", "aggressive", "very_aggressive"]:
+                self.set_risk_profile("balanced")
+                logger.info("Retour au mode équilibré basé sur la performance stable")
+    
+    def _log_position_sizing(self, symbol: str, base_risk: float, 
+                           final_size: float, factors: Dict) -> None:
+        """
+        Enregistre les détails de la décision de sizing pour l'analyse future
+        
+        Args:
+            symbol: Paire de trading
+            base_risk: Risque de base calculé
+            final_size: Taille finale de la position
+            factors: Facteurs qui ont influencé la décision
+        """
+        log_entry = {
+            "timestamp": datetime.now().isoformat(),
+            "symbol": symbol,
+            "capital": self.current_capital,
+            "base_risk_amount": base_risk,
+            "final_position_size": final_size,
+            "current_profile": self.current_risk_profile,
+            "risk_capacity": self.risk_capacity,
+            "consecutive_wins": self.consecutive_wins,
             "consecutive_losses": self.consecutive_losses,
-            "win_streak": self.win_streak,
-            "loss_streak": self.loss_streak,
-            "max_loss_streak": self.max_loss_streak,
-            "max_win_streak": self.max_win_streak,
-            "current_risk_profile": self.current_risk_profile,
-            "risk_adjustments": self.risk_adjustments,
-            "historical_returns": self.historical_returns,
-            "last_updated": datetime.now().isoformat()
+            "factors": factors
+        }
+        
+        self.risk_log.append(log_entry)
+        
+        # Limiter la taille du journal
+        if len(self.risk_log) > 100:
+            self.risk_log = self.risk_log[-100:]
+        
+        # Sauvegarder périodiquement
+        if len(self.risk_log) % 10 == 0:
+            self._save_risk_log()
+    
+    def _save_history(self) -> None:
+        """Sauvegarde l'historique des trades et l'état actuel"""
+        history_path = os.path.join(DATA_DIR, "risk_management", "trade_history.json")
+        
+        # Créer le répertoire si nécessaire
+        os.makedirs(os.path.dirname(history_path), exist_ok=True)
+        
+        # Préparer les données à sauvegarder
+        state_data = {
+            "current_capital": self.current_capital,
+            "risk_profile": self.current_risk_profile,
+            "consecutive_wins": self.consecutive_wins,
+            "consecutive_losses": self.consecutive_losses,
+            "market_state": self.market_state,
+            "risk_capacity": self.risk_capacity,
+            "daily_risk_used": self.daily_risk_used,
+            "last_risk_reset": self.last_risk_reset.isoformat(),
+            "trade_history": self.trade_history,
+            "updated_at": datetime.now().isoformat()
         }
         
         try:
-            with open(os.path.join(self.data_dir, "risk_state.json"), 'w') as f:
-                json.dump(state, f, indent=2, default=str)
-            logger.debug("État du gestionnaire de risque sauvegardé")
+            with open(history_path, 'w') as f:
+                json.dump(state_data, f, indent=2, default=str)
         except Exception as e:
-            logger.error(f"Erreur lors de la sauvegarde de l'état: {str(e)}")
+            logger.error(f"Erreur lors de la sauvegarde de l'historique des trades: {str(e)}")
     
-    def _load_state(self) -> None:
-        """
-        Charge l'état du gestionnaire de risque
-        """
-        state_path = os.path.join(self.data_dir, "risk_state.json")
-        if not os.path.exists(state_path):
-            logger.info("Aucun état précédent trouvé")
+    def _load_history(self) -> None:
+        """Charge l'historique des trades et l'état précédent"""
+        history_path = os.path.join(DATA_DIR, "risk_management", "trade_history.json")
+        
+        if not os.path.exists(history_path):
             return
         
         try:
-            with open(state_path, 'r') as f:
-                state = json.load(f)
+            with open(history_path, 'r') as f:
+                state_data = json.load(f)
             
             # Restaurer l'état
-            self.equity = state.get("equity", self.initial_capital)
-            self.available_balance = state.get("available_balance", self.initial_capital)
-            self.peak_equity = state.get("peak_equity", self.initial_capital)
-            self.current_drawdown = state.get("current_drawdown", 0)
-            self.consecutive_losses = state.get("consecutive_losses", 0)
-            self.win_streak = state.get("win_streak", 0)
-            self.loss_streak = state.get("loss_streak", 0)
-            self.max_loss_streak = state.get("max_loss_streak", 0)
-            self.max_win_streak = state.get("max_win_streak", 0)
-            self.current_risk_profile = state.get("current_risk_profile", "balanced")
-            self.risk_adjustments = state.get("risk_adjustments", [])
-            self.historical_returns = state.get("historical_returns", [])
+            self.current_capital = state_data.get("current_capital", self.initial_capital)
+            self.current_risk_profile = state_data.get("risk_profile", "balanced")
+            self.consecutive_wins = state_data.get("consecutive_wins", 0)
+            self.consecutive_losses = state_data.get("consecutive_losses", 0)
+            self.market_state = state_data.get("market_state", "normal")
+            self.risk_capacity = state_data.get("risk_capacity", 1.0)
+            self.daily_risk_used = state_data.get("daily_risk_used", 0.0)
             
-            logger.info(f"État du gestionnaire de risque chargé (capital: {self.equity} USDT)")
+            # Restaurer le timestamp du dernier reset
+            try:
+                self.last_risk_reset = datetime.fromisoformat(state_data.get("last_risk_reset", datetime.now().isoformat()))
+            except ValueError:
+                self.last_risk_reset = datetime.now()
+            
+            # Restaurer l'historique des trades
+            self.trade_history = state_data.get("trade_history", [])
+            
+            logger.info(f"Historique des trades et état chargés: capital={self.current_capital}, profil={self.current_risk_profile}")
         except Exception as e:
-            logger.error(f"Erreur lors du chargement de l'état: {str(e)}")
+            logger.error(f"Erreur lors du chargement de l'historique des trades: {str(e)}")
     
-    def get_adaptive_parameters(self, symbol: str = None, prediction_data: Dict = None) -> Dict:
+    def _save_risk_log(self) -> None:
+        """Sauvegarde le journal des décisions de risque"""
+        log_path = os.path.join(DATA_DIR, "risk_management", "sizing_decisions.json")
+        
+        # Créer le répertoire si nécessaire
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
+        
+        try:
+            with open(log_path, 'w') as f:
+                json.dump(self.risk_log, f, indent=2, default=str)
+        except Exception as e:
+            logger.error(f"Erreur lors de la sauvegarde du journal des décisions: {str(e)}")
+    
+    def get_risk_profile_params(self) -> Dict:
         """
-        Retourne les paramètres adaptatifs actuels pour le trading
+        Récupère les paramètres du profil de risque actuel
+        
+        Returns:
+            Paramètres du profil actuel
+        """
+        return self.risk_profiles.get(self.current_risk_profile, self.risk_profiles["balanced"])
+    
+    def get_risk_parameters(self, symbol: str, lstm_prediction: Optional[Dict] = None) -> Dict:
+        """
+        Récupère tous les paramètres de risque actuels, possiblement ajustés par les prédictions LSTM
         
         Args:
-            symbol: Paire de trading (optionnel)
-            prediction_data: Données de prédiction (optionnel)
+            symbol: Paire de trading
+            lstm_prediction: Prédictions du modèle LSTM (optionnel)
             
         Returns:
-            Paramètres adaptatifs
+            Paramètres de risque complets
         """
-        # Récupérer les paramètres du profil de risque actuel
-        risk_params = self.risk_levels[self.current_risk_profile]
+        # Obtenir les paramètres de base du profil actuel
+        profile = self.get_risk_profile_params()
         
-        # Ajuster en fonction des prédictions si disponibles
-        if prediction_data:
-            # Calculer un facteur d'ajustement basé sur les prédictions
-            volatility_factor = 1.0
-            direction_confidence = 0.5
-            
-            # Extraire les prédictions du modèle LSTM
-            if "lstm_prediction" in prediction_data:
-                lstm_pred = prediction_data["lstm_prediction"]
-                
-                # Calculer la moyenne des volatilités prédites (pondérée par l'horizon)
-                volatility_sum = 0
-                volatility_weights = 0
-                
-                for horizon, pred in lstm_pred.items():
-                    if "predicted_volatility" in pred:
-                        # Pondération selon l'horizon
-                        if "horizon_12" in horizon:  # Court terme
-                            weight = 0.6
-                        elif "horizon_24" in horizon:  # Moyen terme
-                            weight = 0.3
-                        else:  # Long terme
-                            weight = 0.1
-                        
-                        volatility_sum += pred["predicted_volatility"] * weight
-                        volatility_weights += weight
-                
-                if volatility_weights > 0:
-                    avg_volatility = volatility_sum / volatility_weights
-                    # Normaliser autour de 1.0
-                    volatility_factor = avg_volatility
-                
-                # Calculer la confiance dans la direction
-                if "horizon_12" in lstm_pred:  # Utiliser l'horizon court terme
-                    direction_prob = lstm_pred["horizon_12"].get("direction_probability", 0.5)
-                    direction_confidence = abs(direction_prob - 0.5) * 2  # 0 à 1
-            
-            # Ajuster les paramètres
-            # Si volatilité élevée, augmenter le stop-loss et le take-profit
-            stop_loss = risk_params["stop_loss"] * volatility_factor
-            take_profit = risk_params["take_profit"] * volatility_factor
-            
-            # Si confiance élevée, augmenter le risque par trade
-            risk_per_trade = risk_params["risk_per_trade"] * (1 + (direction_confidence - 0.5))
-            
-            return {
-                "risk_per_trade_percent": risk_per_trade,
-                "stop_loss_percent": stop_loss,
-                "take_profit_percent": take_profit,
-                "leverage": risk_params["leverage"],
-                "risk_profile": self.current_risk_profile,
-                "adjustment_factors": {
-                    "volatility": volatility_factor,
-                    "direction_confidence": direction_confidence
-                }
-            }
-        
-        # Sinon, retourner les paramètres standard
-        return {
-            "risk_per_trade_percent": risk_params["risk_per_trade"],
-            "stop_loss_percent": risk_params["stop_loss"],
-            "take_profit_percent": risk_params["take_profit"],
-            "leverage": risk_params["leverage"],
-            "risk_profile": self.current_risk_profile
+        # Paramètres de base
+        params = {
+            "risk_per_trade_percent": profile["risk_per_trade_percent"],
+            "stop_loss_percent": profile["stop_loss_percent"],
+            "take_profit_percent": profile["take_profit_percent"],
+            "leverage": profile["leverage"],
+            "trailing_stop_activation": profile["trailing_stop_activation"],
+            "trailing_stop_step": profile["trailing_stop_step"],
+            "risk_profile": self.current_risk_profile,
+            "risk_capacity": self.risk_capacity,
+            "market_state": self.market_state
         }
-
-    # NOUVEAU: Méthodes pour la gestion avancée des risques
-
-    def calculate_kelly_position_size(self, win_rate: float, reward_risk_ratio: float, 
-                                    equity: float, max_risk_percent: float = 5.0) -> float:
-        """
-        Calcule la taille de position optimale avec le critère de Kelly
         
-        Args:
-            win_rate: Taux de gain (0-1)
-            reward_risk_ratio: Ratio récompense/risque
-            equity: Capital disponible
-            max_risk_percent: Risque maximum autorisé (%)
+        # Ajuster en fonction des prédictions LSTM si disponibles
+        if lstm_prediction:
+            # Chercher les prédictions de volatilité
+            volatility_predicted = False
             
-        Returns:
-            Taille optimale de position en pourcentage du capital
-        """
-        # Formule de Kelly: f* = (p*b - q)/b où p=win_rate, q=1-p, b=reward/risk
-        kelly_fraction = (win_rate * reward_risk_ratio - (1 - win_rate)) / reward_risk_ratio
+            for horizon_name, prediction in lstm_prediction.items():
+                if horizon_name in ["3h", "4h", "short_term", "horizon_12"]:
+                    volatility = prediction.get("predicted_volatility", None)
+                    
+                    if volatility is not None:
+                        volatility_predicted = True
+                        
+                        # Ajuster le stop-loss et take-profit en fonction de la volatilité
+                        volatility_percent = volatility * 100
+                        std_volatility = 3.0  # 3% est considéré comme standard
+                        
+                        # Si volatilité élevée, élargir les stops; si faible, les resserrer
+                        volatility_factor = volatility_percent / std_volatility
+                        
+                        params["stop_loss_percent"] = profile["stop_loss_percent"] * volatility_factor
+                        params["take_profit_percent"] = profile["take_profit_percent"] * volatility_factor
+                        
+                        # S'assurer que les valeurs restent dans des limites raisonnables
+                        params["stop_loss_percent"] = max(2.0, min(10.0, params["stop_loss_percent"]))
+                        params["take_profit_percent"] = max(3.0, min(15.0, params["take_profit_percent"]))
+                        
+                        # Ajouter l'info de l'ajustement
+                        params["volatility_adjustment_applied"] = True
+                        params["predicted_volatility"] = volatility_percent
+                        
+                        break
+            
+            # Si pas de prédiction de volatilité, utiliser les paramètres standard
+            if not volatility_predicted:
+                params["volatility_adjustment_applied"] = False
         
-        # Limiter à la fraction maximale (généralement 1/2 Kelly est plus prudent)
-        half_kelly = kelly_fraction / 2
-        
-        # Limiter au risque maximum autorisé
-        risk_pct = min(max_risk_percent, half_kelly * 100)
-        
-        # Retourner la taille en montant
-        return equity * (risk_pct / 100)
+        return params
 
-    def calculate_optimal_take_profit_levels(self, entry_price: float, side: str, 
-                                         market_data: Dict, 
-                                         prediction_data: Dict) -> List[Dict]:
-        """
-        Calcule plusieurs niveaux de take-profit optimaux en fonction des prédictions
-        
-        Args:
-            entry_price: Prix d'entrée
-            side: Direction (BUY/SELL)
-            market_data: Données de marché
-            prediction_data: Prédictions du modèle
-            
-        Returns:
-            Liste de niveaux de take-profit avec pourcentages de sortie
-        """
-        # Récupérer la volatilité et le momentum prédits
-        volatility = 0.03  # Valeur par défaut
-        momentum = 0.0    # Valeur par défaut
-        
-        if "lstm_prediction" in prediction_data and "horizon_12" in prediction_data["lstm_prediction"]:
-            pred = prediction_data["lstm_prediction"]["horizon_12"]
-            volatility = pred.get("predicted_volatility", volatility)
-            momentum = pred.get("predicted_momentum", momentum)
-        
-        # Calculer les niveaux de take-profit
-        tp_levels = []
-        
-        # Niveau 1: Take-profit conservateur (33% de la position)
-        if side == "BUY":
-            tp1_percent = 2.0 + volatility * 100  # Base + ajustement pour volatilité
-            tp1_price = entry_price * (1 + tp1_percent/100)
-        else:
-            tp1_percent = 2.0 + volatility * 100
-            tp1_price = entry_price * (1 - tp1_percent/100)
-        
-        tp_levels.append({
-            "price": tp1_price,
-            "percent": tp1_percent,
-            "portion": 0.33,  # 33% de la position
-            "description": "Take-profit conservateur"
-        })
-        
-        # Niveau 2: Take-profit modéré (33% de la position)
-        if side == "BUY":
-            tp2_percent = 5.0 + volatility * 200  # Base + ajustement pour volatilité
-            tp2_price = entry_price * (1 + tp2_percent/100)
-        else:
-            tp2_percent = 5.0 + volatility * 200
-            tp2_price = entry_price * (1 - tp2_percent/100)
-        
-        tp_levels.append({
-            "price": tp2_price,
-            "percent": tp2_percent,
-            "portion": 0.33,
-            "description": "Take-profit modéré"
-        })
-        
-        # Niveau 3: Take-profit agressif (34% restant de la position)
-        # Ajuster en fonction du momentum prédit
-        momentum_factor = 1.0 + abs(momentum) * 2  # Plus de momentum = take-profit plus éloigné
-        
-        if side == "BUY":
-            tp3_percent = 10.0 * momentum_factor
-            tp3_price = entry_price * (1 + tp3_percent/100)
-        else:
-            tp3_percent = 10.0 * momentum_factor
-            tp3_price = entry_price * (1 - tp3_percent/100)
-        
-        tp_levels.append({
-            "price": tp3_price,
-            "percent": tp3_percent,
-            "portion": 0.34,
-            "description": "Take-profit agressif"
-        })
-        
-        return tp_levels
+def test_risk_manager():
+    """Fonction de test simple pour vérifier l'initialisation du gestionnaire de risque"""
+    risk_manager = AdaptiveRiskManager(
+        initial_capital=200,
+        risk_control_mode="balanced"
+    )
+    
+    # Afficher les profils de risque
+    print("Profils de risque configurés:")
+    for profile_name, profile in risk_manager.risk_profiles.items():
+        print(f"  {profile_name}:")
+        for param, value in profile.items():
+            print(f"    {param}: {value}")
+    
+    print(f"\nProfil actuel: {risk_manager.current_risk_profile}")
+    print(f"Capacité de risque: {risk_manager.risk_capacity}")
+    
+    return risk_manager
 
-    def adjust_risk_for_correlated_positions(self, symbol: str, 
-                                           correlated_symbols: Dict[str, float],
-                                           position_tracker) -> float:
-        """
-        Ajuste le risque d'une nouvelle position en fonction des corrélations avec positions existantes
-        
-        Args:
-            symbol: Symbole à trader
-            correlated_symbols: Dictionnaire de symboles corrélés avec leurs coefficients
-            position_tracker: Tracker de positions
-            
-        Returns:
-            Facteur d'ajustement du risque (0-1)
-        """
-        # Récupérer les positions ouvertes
-        open_positions = position_tracker.get_open_positions()
-        
-        # Si pas de positions ouvertes, pas d'ajustement
-        if not open_positions:
-            return 1.0
-        
-        # Calculer le risque corrélé
-        correlated_risk = 0.0
-        total_weight = 0.0
-        
-        for position in open_positions:
-            position_symbol = position.get("symbol", "")
-            
-            # Si le symbole est dans la liste des corrélations
-            if position_symbol in correlated_symbols:
-                correlation = correlated_symbols[position_symbol]
-                absolute_correlation = abs(correlation)
-                
-                # Plus la corrélation est forte, plus le poids est élevé
-                weight = absolute_correlation * absolute_correlation  # Carré pour donner plus d'importance aux fortes corrélations
-                
-                # Accumulation des risques corrélés
-                correlated_risk += weight
-                total_weight += 1.0
-        
-        # Calcul du facteur d'ajustement
-        # Plus le risque corrélé est élevé, plus le facteur est bas
-        if total_weight > 0:
-            # Normaliser entre 0.5 (réduction de 50%) et 1.0 (pas de réduction)
-            reduction_factor = 1.0 - (correlated_risk / total_weight) * 0.5
-            return max(0.5, reduction_factor)
-        
-        return 1.0  # Pas d'ajustement si pas de poids total
+if __name__ == "__main__":
+    risk_manager = test_risk_manager()

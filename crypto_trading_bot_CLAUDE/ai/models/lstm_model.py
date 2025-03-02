@@ -1,17 +1,18 @@
 # ai/models/lstm_model.py
 """
-Modèle LSTM avancé avec mécanismes d'attention pour la prédiction des mouvements de marché
-Intègre un mécanisme d'attention multi-tête inspiré des architectures Transformer
+Architecture LSTM avancée pour prédictions multi-horizon et multi-facteur
+Intègre attention, connexions résiduelles et apprentissage par transfert
 """
 import os
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from tensorflow.keras.models import Model, load_model
+from tensorflow.keras.models import Model, load_model, clone_model
 from tensorflow.keras.layers import (
     Input, LSTM, Dense, Dropout, BatchNormalization, 
-    Bidirectional, Concatenate, Add, Attention, TimeDistributed,
-    Conv1D, MaxPooling1D, GlobalAveragePooling1D, Multiply
+    Bidirectional, Concatenate, Add, Multiply, Reshape,
+    Conv1D, MaxPooling1D, GlobalAveragePooling1D, Lambda,
+    Layer, Activation
 )
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from tensorflow.keras.optimizers import Adam
@@ -19,38 +20,120 @@ from tensorflow.keras.regularizers import l1_l2
 import tensorflow.keras.backend as K
 from typing import Dict, List, Tuple, Union, Optional
 from datetime import datetime
+import json
 
 from config.config import DATA_DIR
 from utils.logger import setup_logger
 from ai.models.attention import MultiHeadAttention, TemporalAttentionBlock, TimeSeriesAttention
 
-logger = setup_logger("lstm_model")
+logger = setup_logger("enhanced_lstm_model")
 
-class LSTMModel:
+class SpatialDropout1D(Dropout):
     """
-    Modèle LSTM avancé avec mécanismes d'attention pour prédire les mouvements de marché
+    Dropout spatial qui supprime des canaux de caractéristiques entiers plutôt que des valeurs individuelles
+    """
+    def __init__(self, rate, **kwargs):
+        super(SpatialDropout1D, self).__init__(rate, **kwargs)
+        self.input_spec = None
+    
+    def call(self, inputs, training=None):
+        if training is None:
+            training = K.learning_phase()
+            
+        if 0. < self.rate < 1.:
+            # Créer un masque de bruit pour des canaux entiers
+            noise_shape = (inputs.shape[0], 1, inputs.shape[2])
+            return K.dropout(inputs, self.rate, noise_shape)
+        return inputs
+
+class ResidualBlock(Layer):
+    """
+    Bloc résiduel personnalisé qui combine LSTM et connexions résiduelles
+    """
+    def __init__(self, units, dropout_rate=0.3, use_batch_norm=True, **kwargs):
+        super(ResidualBlock, self).__init__(**kwargs)
+        self.units = units
+        self.dropout_rate = dropout_rate
+        self.use_batch_norm = use_batch_norm
+        
+        # Définir les couches
+        self.lstm = Bidirectional(LSTM(units, return_sequences=True, 
+                                      kernel_regularizer=l1_l2(l1=1e-5, l2=1e-4)))
+        self.dropout = SpatialDropout1D(dropout_rate)
+        
+        if use_batch_norm:
+            self.batch_norm = BatchNormalization()
+        
+        self.projection = None
+        
+    def build(self, input_shape):
+        # Projection pour faire correspondre les dimensions si nécessaire
+        input_dim = input_shape[-1]
+        output_dim = self.units * 2  # Bidirectionnel double la dimension
+        
+        if input_dim != output_dim:
+            self.projection = Dense(output_dim)
+            
+        super(ResidualBlock, self).build(input_shape)
+    
+    def call(self, inputs, training=None):
+        x = self.lstm(inputs)
+        
+        if self.use_batch_norm:
+            x = self.batch_norm(x, training=training)
+            
+        x = self.dropout(x, training=training)
+        
+        # Connexion résiduelle
+        if self.projection is not None:
+            residual = self.projection(inputs)
+        else:
+            residual = inputs
+            
+        return Add()([x, residual])
+    
+    def get_config(self):
+        config = super(ResidualBlock, self).get_config()
+        config.update({
+            'units': self.units,
+            'dropout_rate': self.dropout_rate,
+            'use_batch_norm': self.use_batch_norm
+        })
+        return config
+
+class EnhancedLSTMModel:
+    """
+    Modèle LSTM avancé pour prédictions multi-horizon et multi-facteur
     
     Caractéristiques:
-    - Architecture LSTM bidirectionnelle avec mécanisme d'attention multi-tête
+    - Architecture LSTM bidirectionnelle avec attention multi-tête
     - Prédictions multi-horizon (court, moyen, long terme)
-    - Prédictions multi-facteur (direction, volatilité, momentum, volume)
+    - Prédictions multi-facteur (direction, volatilité, volume, momentum)
     - Connexions résiduelles pour une meilleure propagation du gradient
-    - Mécanismes de régularisation avancés (dropout spatial, batch normalization)
+    - Dropout spatial pour une meilleure régularisation
+    - Mécanismes d'alerte précoce pour les retournements de marché
+    - Intégration avec l'apprentissage par transfert
     """
     def __init__(self, 
                  input_length: int = 60,
                  feature_dim: int = 30,
-                 lstm_units: List[int] = [128, 64, 32],
+                 lstm_units: List[int] = [128, 96, 64],
                  dropout_rate: float = 0.3,
-                 learning_rate: float = 0.001,
+                 learning_rate: float = 0.0005,
                  l1_reg: float = 0.0001,
                  l2_reg: float = 0.0001,
                  use_attention: bool = True,
-                 attention_type: str = 'multi_head',  # 'simple', 'multi_head', 'temporal_block'
+                 attention_heads: int = 8,
                  use_residual: bool = True,
-                 prediction_horizons: List[int] = [12, 24, 96]):  # 3h, 6h, 24h (avec des bougies de 15min)
+                 # Format: (périodes, nom_lisible, est_principal)
+                 prediction_horizons: List[Tuple[int, str, bool]] = [
+                     (12, "3h", True),    # Court terme (3h avec bougies de 15min)
+                     (48, "12h", True),   # Moyen terme (12h)
+                     (192, "48h", True),  # Long terme (48h)
+                     (384, "96h", False)  # Très long terme (96h, optionnel)
+                 ]):
         """
-        Initialise le modèle LSTM
+        Initialise le modèle LSTM avancé
         
         Args:
             input_length: Nombre de pas de temps en entrée
@@ -61,9 +144,9 @@ class LSTMModel:
             l1_reg: Régularisation L1
             l2_reg: Régularisation L2
             use_attention: Utiliser les mécanismes d'attention
-            attention_type: Type d'attention à utiliser ('simple', 'multi_head', 'temporal_block')
+            attention_heads: Nombre de têtes d'attention
             use_residual: Utiliser les connexions résiduelles
-            prediction_horizons: Horizons de prédiction en nombre de périodes
+            prediction_horizons: Horizons de prédiction avec format (périodes, nom, est_principal)
         """
         self.input_length = input_length
         self.feature_dim = feature_dim
@@ -73,32 +156,52 @@ class LSTMModel:
         self.l1_reg = l1_reg
         self.l2_reg = l2_reg
         self.use_attention = use_attention
-        self.attention_type = attention_type
+        self.attention_heads = attention_heads
         self.use_residual = use_residual
         self.prediction_horizons = prediction_horizons
         
-        # Identifier les horizons court/moyen/long terme
-        self.short_term_idx = 0  # Premier horizon (le plus court)
-        self.mid_term_idx = 1 if len(prediction_horizons) > 1 else 0  # Moyen terme ou court terme si un seul horizon
-        self.long_term_idx = -1  # Dernier horizon (le plus long)
+        # Extraire juste les périodes pour la compatibilité
+        self.horizon_periods = [h[0] for h in prediction_horizons]
         
-        # Nombre de sorties pour chaque horizon (direction, volatilité, volume, momentum)
-        self.output_dim = 4
+        # Séparer les horizons principaux et secondaires
+        self.main_horizons = [h for h in prediction_horizons if h[2]]
+        
+        # Identifier les indices pour les différents horizons
+        self.short_term_idx = 0  # Premier horizon (le plus court)
+        self.mid_term_idx = min(1, len(prediction_horizons)-1)  # Second horizon ou le premier si un seul
+        self.long_term_idx = min(2, len(prediction_horizons)-1)  # Troisième horizon ou le dernier disponible
+        
+        # Facteurs de sortie pour chaque horizon (direction, volatilité, volume, momentum)
+        self.factors = ["direction", "volatility", "volume", "momentum"]
+        self.num_factors = len(self.factors)
         
         # Variables pour mémoriser la normalisation
-        self.feature_means = None
-        self.feature_stds = None
+        self.scalers = {}
         
-        # Créer le modèle Keras
+        # Créer les modèles Keras (principal et auxiliaires)
         self.model = self._build_model()
-        self.model_path = os.path.join(DATA_DIR, "models", "production", "lstm_model.h5")
+        self.reversal_detector = self._build_reversal_detector()
         
-        # Métriques de performance du modèle
+        # Chemins des modèles
+        self.models_dir = os.path.join(DATA_DIR, "models", "production")
+        os.makedirs(self.models_dir, exist_ok=True)
+        
+        self.model_path = os.path.join(self.models_dir, "enhanced_lstm_model.h5")
+        self.reversal_detector_path = os.path.join(self.models_dir, "reversal_detector_model.h5")
+        
+        # Historique des performances du modèle
         self.metrics_history = []
+        
+        # Méta-informations pour l'apprentissage par transfert
+        self.transfer_info = {
+            "base_symbol": None,
+            "trained_symbols": [],
+            "transfer_history": []
+        }
         
     def _build_model(self) -> Model:
         """
-        Construit le modèle LSTM avec attention et connexions résiduelles
+        Construit le modèle LSTM multi-horizon et multi-facteur
         
         Returns:
             Modèle Keras compilé
@@ -106,150 +209,154 @@ class LSTMModel:
         # Entrée de forme (batch_size, sequence_length, num_features)
         inputs = Input(shape=(self.input_length, self.feature_dim), name="market_sequence")
         
-        # Couche de convolution 1D pour extraire des motifs locaux (comme un feature extractor)
-        conv_branch = Conv1D(filters=64, kernel_size=3, padding='same', activation='relu', 
-                            kernel_regularizer=l1_l2(l1=self.l1_reg, l2=self.l2_reg))(inputs)
-        conv_branch = BatchNormalization()(conv_branch)
-        conv_branch = MaxPooling1D(pool_size=2, padding='same')(conv_branch)
+        # 1. Branche d'extraction de caractéristiques à court terme (convolutive)
+        short_term_features = Conv1D(filters=64, kernel_size=3, padding='same', activation='relu', 
+                                    kernel_regularizer=l1_l2(l1=self.l1_reg, l2=self.l2_reg),
+                                    name="short_term_conv1")(inputs)
+        short_term_features = BatchNormalization()(short_term_features)
+        short_term_features = Conv1D(filters=32, kernel_size=3, padding='same', activation='relu',
+                                    name="short_term_conv2")(short_term_features)
+        short_term_features = MaxPooling1D(pool_size=2, padding='same')(short_term_features)
         
-        # Branch principale avec LSTM bidirectionnel
-        x = Bidirectional(LSTM(self.lstm_units[0], return_sequences=True, 
-                              kernel_regularizer=l1_l2(l1=self.l1_reg, l2=self.l2_reg)))(inputs)
-        x = BatchNormalization()(x)
-        x = Dropout(self.dropout_rate)(x)
+        # 2. Branche principale LSTM avec blocs résiduels
+        x = inputs
         
-        # Couches LSTM intermédiaires avec connexions résiduelles
-        for i, units in enumerate(self.lstm_units[1:], 1):
-            # Couche LSTM bidirectionnelle
-            lstm_out = Bidirectional(LSTM(units, return_sequences=True, 
-                                         kernel_regularizer=l1_l2(l1=self.l1_reg, l2=self.l2_reg)))(x)
-            lstm_out = BatchNormalization()(lstm_out)
-            
-            # Connexion résiduelle si les dimensions correspondent
-            if self.use_residual and 2*units == 2*self.lstm_units[i-1]:  # Facteur 2 pour bidirectionnel
-                x = Add()([x, lstm_out])
-            else:
-                # Projection pour faire correspondre les dimensions si nécessaire
-                x = Dense(2*units, activation='relu')(x)
-                x = Add()([x, lstm_out])
-                
-            x = Dropout(self.dropout_rate)(x)
+        # Appliquer des blocs résiduels en série
+        for i, units in enumerate(self.lstm_units):
+            x = ResidualBlock(
+                units=units,
+                dropout_rate=self.dropout_rate,
+                use_batch_norm=True,
+                name=f"residual_block_{i+1}"
+            )(x)
         
-        # Fusion de la branche convolutive avec la branche LSTM
-        # (nécessite d'adapter les dimensions pour la fusion)
-        conv_branch = TimeDistributed(Dense(2*self.lstm_units[-1]))(conv_branch)
-        
-        # Adapter les dimensions temporelles si nécessaire (à cause du MaxPooling)
-        if conv_branch.shape[1] != x.shape[1]:
-            # Utilisation de couches de suréchantillonnage (upsampling) pour faire correspondre les dimensions
-            upsampling_factor = x.shape[1] // conv_branch.shape[1]
-            
-            # Utiliser la répétition temporelle pour l'upsampling
-            expanded_conv = tf.keras.layers.Lambda(
-                lambda t: tf.repeat(t, repeats=upsampling_factor, axis=1)
-            )(conv_branch)
-            
-            # Ajuster la forme finale si nécessaire
-            target_shape = x.shape[1:]
-            if expanded_conv.shape[1:] != target_shape:
-                expanded_conv = tf.keras.layers.Reshape(target_shape)(expanded_conv)
-                
-            conv_branch = expanded_conv
-        
-        # Fusionner les branches
-        combined = Add()([x, conv_branch])
-        
-        # Mécanisme d'attention avancé
+        # 3. Appliquer l'attention si activée
         if self.use_attention:
-            if self.attention_type == 'simple':
-                # Attention simple sur la séquence temporelle
-                attention_layer = Attention()([combined, combined])
-                
-                # Porte d'attention pour donner plus d'importance aux parties pertinentes de la séquence
-                attention_weights = Dense(1, activation='sigmoid')(attention_layer)
-                attention_weights = tf.keras.layers.Reshape((self.input_length, 1))(attention_weights)
-                
-                # Appliquer l'attention
-                attended = Multiply()([combined, attention_weights])
-                x = Add()([combined, attended])  # Connexion résiduelle avec l'attention
-                
-            elif self.attention_type == 'multi_head':
-                # Attention multi-tête
-                multi_head_attention = MultiHeadAttention(
-                    num_heads=8,
-                    head_dim=32,
-                    dropout=self.dropout_rate
-                )(combined)
-                
-                # Connexion résiduelle
-                x = Add()([combined, multi_head_attention])
-                x = BatchNormalization()(x)
-                
-            elif self.attention_type == 'temporal_block':
-                # Bloc d'attention temporelle complet (inspiré des Transformers)
-                temporal_attention = TemporalAttentionBlock(
-                    num_heads=8,
-                    head_dim=32,
-                    ff_dim=128,
-                    dropout=self.dropout_rate
-                )(combined)
-                
-                x = temporal_attention
-                
-            else:
-                # Attention spécifique aux séries temporelles financières
-                time_series_attention = TimeSeriesAttention(
-                    filters=64,
-                    kernel_size=3
-                )(combined)
-                
-                x = time_series_attention
-        else:
-            x = combined
+            # Attention multi-tête inspirée des transformers
+            mha = MultiHeadAttention(
+                num_heads=self.attention_heads,
+                head_dim=32,
+                dropout=self.dropout_rate,
+                name="multi_head_attention"
+            )(x)
+            
+            # Connexion résiduelle après l'attention
+            x = Add(name="post_attention_residual")([x, mha])
+            x = BatchNormalization(name="post_attention_norm")(x)
         
-        # Créer une sortie pour chaque horizon de prédiction
+        # 4. Combiner avec les caractéristiques à court terme
+        # Adapter les dimensions si nécessaire
+        if short_term_features.shape[1] != x.shape[1]:
+            # Utiliser un redimensionnement adaptatif
+            scale_factor = x.shape[1] / short_term_features.shape[1]
+            
+            def resize_temporal(tensor, scale):
+                # Redimensionne la dimension temporelle d'un tenseur 3D
+                shape = tf.shape(tensor)
+                target_length = tf.cast(tf.cast(shape[1], tf.float32) * scale, tf.int32)
+                
+                # Redimensionner avec un reshape et des opérations de répétition
+                resized = tf.image.resize(
+                    tf.expand_dims(tensor, 3),
+                    [target_length, shape[2]],
+                    method='nearest'
+                )
+                return tf.squeeze(resized, 3)
+            
+            short_term_features = Lambda(
+                lambda t: resize_temporal(t, scale_factor),
+                name="temporal_resize"
+            )(short_term_features)
+        
+        # Projeter les caractéristiques à court terme pour correspondre à la dimension de x
+        short_term_features = Dense(
+            x.shape[-1], 
+            activation='relu',
+            name="short_term_projection"
+        )(short_term_features)
+        
+        # Combiner par addition (connexion résiduelle)
+        combined = Add(name="feature_combination")([x, short_term_features])
+        
+        # Couche de contexte global pour la sortie
+        global_context = GlobalAveragePooling1D(name="global_pooling")(combined)
+        
+        # 5. Couches denses partagées pour l'extraction de caractéristiques de haut niveau
+        shared_features = Dense(
+            128, 
+            activation='relu',
+            kernel_regularizer=l1_l2(l1=self.l1_reg, l2=self.l2_reg),
+            name="shared_features"
+        )(global_context)
+        shared_features = BatchNormalization(name="shared_features_norm")(shared_features)
+        shared_features = Dropout(0.2, name="shared_features_dropout")(shared_features)
+        
+        # 6. Créer une sortie pour chaque horizon et chaque facteur
         outputs = []
+        output_names = []
         
-        for horizon in self.prediction_horizons:
-            # Pour chaque horizon, prédire:
-            # 1. Direction du prix (probabilité de hausse, baisse)
-            # 2. Volatilité attendue
-            # 3. Volume relatif attendu
-            # 4. Momentum (force de la tendance)
+        for h_idx, (horizon, horizon_name, _) in enumerate(self.prediction_horizons):
+            # Couche spécifique à l'horizon
+            horizon_features = Dense(
+                64,
+                activation='relu',
+                name=f"horizon_{horizon_name}_features"
+            )(shared_features)
             
-            # Récupérer le contexte global à partir de la séquence
-            global_context = GlobalAveragePooling1D()(x)
+            # Direction (probabilité de hausse)
+            direction = Dense(
+                1, 
+                activation='sigmoid',
+                name=f"direction_{horizon_name}"
+            )(horizon_features)
+            outputs.append(direction)
+            output_names.append(f"direction_{horizon_name}")
             
-            # Couche dense finale pour chaque horizon
-            horizon_output = Dense(32, activation='relu')(global_context)
-            horizon_output = BatchNormalization()(horizon_output)
-            horizon_output = Dropout(0.2)(horizon_output)
+            # Volatilité (relative)
+            volatility = Dense(
+                1, 
+                activation='relu',  # La volatilité est toujours positive
+                name=f"volatility_{horizon_name}"
+            )(horizon_features)
+            outputs.append(volatility)
+            output_names.append(f"volatility_{horizon_name}")
             
-            # Sorties multiples pour chaque horizon
-            direction = Dense(1, activation='sigmoid', name=f'direction_h{horizon}')(horizon_output)  # Probabilité de hausse
-            volatility = Dense(1, activation='relu', name=f'volatility_h{horizon}')(horizon_output)  # Volatilité relative
-            volume = Dense(1, activation='relu', name=f'volume_h{horizon}')(horizon_output)  # Volume relatif
-            momentum = Dense(1, activation='tanh', name=f'momentum_h{horizon}')(horizon_output)  # Momentum (-1 à 1)
+            # Volume relatif
+            volume = Dense(
+                1, 
+                activation='relu',  # Le volume relatif est toujours positif
+                name=f"volume_{horizon_name}"
+            )(horizon_features)
+            outputs.append(volume)
+            output_names.append(f"volume_{horizon_name}")
             
-            outputs.extend([direction, volatility, volume, momentum])
+            # Momentum (force de la tendance)
+            momentum = Dense(
+                1, 
+                activation='tanh',  # Tanh pour avoir une valeur entre -1 et 1
+                name=f"momentum_{horizon_name}"
+            )(horizon_features)
+            outputs.append(momentum)
+            output_names.append(f"momentum_{horizon_name}")
         
-        # Créer le modèle final
-        model = Model(inputs=inputs, outputs=outputs)
+        # 7. Créer le modèle final
+        model = Model(inputs=inputs, outputs=outputs, name="multi_horizon_lstm")
         
-        # Compilation avec des métriques adaptées
+        # 8. Compiler avec des pertes et métriques appropriées
         losses = []
         metrics = []
         
-        for i in range(len(self.prediction_horizons)):
-            # Binary crossentropy pour la direction
-            losses.append('binary_crossentropy')
-            metrics.append('accuracy')
-            
-            # MSE pour volatilité, volume et momentum
-            for _ in range(3):
-                losses.append('mse')
-                metrics.append('mae')
+        for output_name in output_names:
+            if output_name.startswith("direction"):
+                # Classification binaire pour la direction
+                losses.append('binary_crossentropy')
+                metrics.append('accuracy')
+            else:
+                # Régression pour les autres facteurs
+                losses.append('mse')  # Erreur quadratique moyenne
+                metrics.append('mae')  # Erreur absolue moyenne
         
+        # Compiler le modèle
         model.compile(
             optimizer=Adam(learning_rate=self.learning_rate),
             loss=losses,
@@ -258,120 +365,182 @@ class LSTMModel:
         
         return model
     
-    def preprocess_data(self, data: pd.DataFrame, is_training: bool = True) -> Tuple[np.ndarray, List[np.ndarray]]:
+    def _build_reversal_detector(self) -> Model:
+        """
+        Construit un modèle spécialisé pour détecter les retournements de marché majeurs
+        
+        Returns:
+            Modèle de détection des retournements
+        """
+        # Ce modèle utilise la même entrée que le modèle principal mais se spécialise
+        # dans la détection des patterns de retournement de marché
+        
+        # Entrée de forme (batch_size, sequence_length, num_features)
+        inputs = Input(shape=(self.input_length, self.feature_dim), name="market_sequence")
+        
+        # Utiliser des convolutions pour détecter des motifs locaux
+        x = Conv1D(filters=64, kernel_size=3, padding='same', activation='relu')(inputs)
+        x = BatchNormalization()(x)
+        x = Conv1D(filters=64, kernel_size=5, padding='same', activation='relu')(x)
+        x = BatchNormalization()(x)
+        x = MaxPooling1D(pool_size=2)(x)
+        
+        # LSTM bidirectionnel pour capturer les dépendances temporelles
+        x = Bidirectional(LSTM(64, return_sequences=True))(x)
+        x = Dropout(0.3)(x)
+        
+        # Attention pour se concentrer sur les parties importantes de la séquence
+        attention_layer = TimeSeriesAttention(filters=64)(x)
+        
+        # Contexte global
+        global_features = GlobalAveragePooling1D()(attention_layer)
+        
+        # Couches denses
+        x = Dense(32, activation='relu')(global_features)
+        x = BatchNormalization()(x)
+        x = Dropout(0.2)(x)
+        
+        # Sorties: probabilité et ampleur du retournement
+        reversal_probability = Dense(1, activation='sigmoid', name="reversal_probability")(x)
+        reversal_magnitude = Dense(1, activation='relu', name="reversal_magnitude")(x)
+        
+        # Créer le modèle
+        model = Model(inputs=inputs, outputs=[reversal_probability, reversal_magnitude], name="reversal_detector")
+        
+        # Compiler
+        model.compile(
+            optimizer=Adam(learning_rate=0.001),
+            loss=['binary_crossentropy', 'mse'],
+            metrics=[['accuracy'], ['mae']]
+        )
+        
+        return model
+    
+    def preprocess_data(self, data: pd.DataFrame, 
+                       feature_engineering, is_training: bool = True) -> Tuple:
         """
         Prétraite les données pour l'entraînement ou la prédiction
         
         Args:
             data: DataFrame avec les données OHLCV et indicateurs
+            feature_engineering: Instance FeatureEngineering pour créer/normaliser les caractéristiques
             is_training: Indique si le prétraitement est pour l'entraînement
             
         Returns:
             X: Données d'entrée normalisées
-            Y: Liste des données cibles pour chaque sortie (vide si is_training=False)
+            y_list: Liste des données cibles pour chaque sortie (vide si is_training=False)
         """
-        # Vérifier que nous avons suffisamment de données
-        if len(data) < self.input_length + max(self.prediction_horizons):
-            raise ValueError(f"Données insuffisantes. Nécessite au moins {self.input_length + max(self.prediction_horizons)} points.")
+        # 1. Créer les caractéristiques avancées
+        featured_data = feature_engineering.create_features(
+            data, 
+            include_time_features=True,
+            include_price_patterns=True
+        )
         
-        # Sélectionner les colonnes de caractéristiques (toutes sauf la date)
-        feature_columns = [col for col in data.columns if col != 'timestamp' and col != 'date']
+        # 2. Normaliser les caractéristiques
+        normalized_data = feature_engineering.scale_features(
+            featured_data,
+            is_training=is_training,
+            method='standard',
+            feature_group='lstm'
+        )
         
-        if self.feature_dim != len(feature_columns):
-            logger.warning(f"Dimension des caractéristiques configurée ({self.feature_dim}) ne correspond pas au nombre réel de colonnes ({len(feature_columns)})")
-            self.feature_dim = len(feature_columns)
+        # 3. Convertir en séquences pour LSTM
+        X, y_list = feature_engineering.create_multi_horizon_data(
+            normalized_data,
+            sequence_length=self.input_length,
+            horizons=self.horizon_periods,
+            is_training=is_training
+        )
         
-        # Normalisation des caractéristiques
-        if is_training or self.feature_means is None:
-            # Calculer les moyennes et écarts-types sur les données d'entraînement
-            self.feature_means = data[feature_columns].mean()
-            self.feature_stds = data[feature_columns].std()
-            self.feature_stds = self.feature_stds.replace(0, 1)  # Éviter la division par zéro
-        
-        # Normaliser les données
-        normalized_data = (data[feature_columns] - self.feature_means) / self.feature_stds
-        
-        # Créer les séquences d'entrée
-        X = []
-        Y_direction = []
-        Y_volatility = []
-        Y_volume = []
-        Y_momentum = []
-        
-        # Pour chaque horizon de prédiction
-        Y_outputs = [[] for _ in range(len(self.prediction_horizons) * 4)]  # 4 sorties par horizon
-        
-        for i in range(len(normalized_data) - self.input_length - max(self.prediction_horizons)):
-            # Séquence d'entrée
-            X.append(normalized_data.iloc[i:i+self.input_length].values)
+        # 4. Créer les labels pour le détecteur de retournement si en mode entraînement
+        if is_training:
+            y_reversal = self._create_reversal_labels(data)
+            return X, y_list, y_reversal
             
-            if is_training:
-                # Pour chaque horizon, préparer les cibles
-                for h_idx, horizon in enumerate(self.prediction_horizons):
-                    current_price = data['close'].iloc[i+self.input_length-1]
-                    future_price = data['close'].iloc[i+self.input_length+horizon-1]
-                    
-                    # Direction (1 si hausse, 0 si baisse)
-                    direction = 1 if future_price > current_price else 0
-                    Y_outputs[h_idx*4].append(direction)
-                    
-                    # Volatilité (écart-type normalisé des prix sur l'horizon)
-                    future_prices = data['close'].iloc[i+self.input_length:i+self.input_length+horizon]
-                    volatility = future_prices.pct_change().std() * np.sqrt(horizon)  # Annualisé
-                    Y_outputs[h_idx*4+1].append(volatility)
-                    
-                    # Volume (volume moyen relatif sur l'horizon)
-                    current_volume = data['volume'].iloc[i+self.input_length-1]
-                    future_volumes = data['volume'].iloc[i+self.input_length:i+self.input_length+horizon]
-                    relative_volume = future_volumes.mean() / current_volume if current_volume > 0 else 1.0
-                    Y_outputs[h_idx*4+2].append(relative_volume)
-                    
-                    # Momentum (importance du mouvement relatif)
-                    price_change_pct = (future_price - current_price) / current_price
-                    # Normaliser entre -1 et 1 avec tanh
-                    momentum = np.tanh(price_change_pct * 5)  # Facteur 5 pour amplifier les petits mouvements
-                    Y_outputs[h_idx*4+3].append(momentum)
-        
-        # Convertir en tableaux numpy
-        X = np.array(X)
-        Y = [np.array(y) for y in Y_outputs] if is_training else []
-        
-        return X, Y
+        return X, y_list
     
-    def train(self, train_data: pd.DataFrame, validation_data: pd.DataFrame = None, 
-             epochs: int = 100, batch_size: int = 32, patience: int = 20,
-             save_best: bool = True) -> Dict:
+    def _create_reversal_labels(self, data: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Entraîne le modèle LSTM
+        Crée les labels pour le détecteur de retournement
+        
+        Args:
+            data: DataFrame avec les données OHLCV
+            
+        Returns:
+            Tuple de (probabilité de retournement, amplitude du retournement)
+        """
+        # Calcul des rendements
+        returns = data['close'].pct_change()
+        
+        # Identifier les retournements majeurs (mouvements brusques après une tendance)
+        reversal_probability = []
+        reversal_magnitude = []
+        
+        # Fenêtre pour la détection de retournements
+        window = 20
+        threshold = 0.03  # 3% de mouvement pour un retournement significatif
+        
+        for i in range(window, len(data) - self.input_length - max(self.horizon_periods)):
+            # Tendance précédente (sur la fenêtre)
+            previous_returns = returns.iloc[i-window:i]
+            previous_trend = previous_returns.mean() * window  # Rendement cumulé
+            
+            # Mouvement futur (sur l'horizon le plus court)
+            future_price_change = (data['close'].iloc[i+self.input_length+self.horizon_periods[0]-1] - 
+                                 data['close'].iloc[i+self.input_length-1]) / data['close'].iloc[i+self.input_length-1]
+            
+            # Un retournement est un mouvement dans la direction opposée à la tendance précédente
+            is_reversal = (previous_trend * future_price_change < 0) and (abs(future_price_change) > threshold)
+            
+            reversal_probability.append(1.0 if is_reversal else 0.0)
+            reversal_magnitude.append(abs(future_price_change))
+        
+        return np.array(reversal_probability), np.array(reversal_magnitude)
+    
+    def train(self, train_data: pd.DataFrame, feature_engineering, 
+             validation_data: pd.DataFrame = None, 
+             epochs: int = 100, batch_size: int = 32, 
+             patience: int = 20, save_best: bool = True,
+             symbol: str = None) -> Dict:
+        """
+        Entraîne le modèle LSTM multi-horizon
         
         Args:
             train_data: DataFrame avec les données d'entraînement
+            feature_engineering: Instance FeatureEngineering
             validation_data: DataFrame avec les données de validation
             epochs: Nombre d'époques d'entraînement
             batch_size: Taille du batch
             patience: Patience pour l'early stopping
             save_best: Sauvegarder le meilleur modèle
+            symbol: Symbole de la paire de trading
             
         Returns:
             Historique d'entraînement
         """
-        # Préparer les données d'entraînement
-        X_train, Y_train = self.preprocess_data(train_data, is_training=True)
+        # Prétraiter les données d'entraînement
+        X_train, y_train, y_reversal_train = self.preprocess_data(
+            train_data, 
+            feature_engineering,
+            is_training=True
+        )
         
-        # Préparer les données de validation si fournies
-        validation_data_keras = None
+        # Prétraiter les données de validation si fournies
+        validation_data_main = None
+        validation_data_reversal = None
+        
         if validation_data is not None:
-            X_val, Y_val = self.preprocess_data(validation_data, is_training=True)
-            validation_data_keras = (X_val, Y_val)
+            X_val, y_val, y_reversal_val = self.preprocess_data(
+                validation_data,
+                feature_engineering,
+                is_training=True
+            )
+            validation_data_main = (X_val, y_val)
+            validation_data_reversal = (X_val, y_reversal_val)
         
-        # Créer les répertoires pour sauvegarder le modèle si nécessaire
-        if save_best:
-            model_dir = os.path.dirname(self.model_path)
-            if not os.path.exists(model_dir):
-                os.makedirs(model_dir, exist_ok=True)
-        
-        # Callbacks pour l'entraînement
-        callbacks = [
+        # Callbacks pour l'entraînement du modèle principal
+        callbacks_main = [
             EarlyStopping(
                 monitor='val_loss' if validation_data is not None else 'loss',
                 patience=patience,
@@ -380,13 +549,13 @@ class LSTMModel:
             ReduceLROnPlateau(
                 monitor='val_loss' if validation_data is not None else 'loss',
                 factor=0.5,
-                patience=int(patience/2),
+                patience=patience // 2,
                 min_lr=1e-6
             )
         ]
         
         if save_best:
-            callbacks.append(
+            callbacks_main.append(
                 ModelCheckpoint(
                     filepath=self.model_path,
                     monitor='val_loss' if validation_data is not None else 'loss',
@@ -395,411 +564,307 @@ class LSTMModel:
                 )
             )
         
-        # Entraîner le modèle
-        history = self.model.fit(
+        # 1. Entraîner le modèle principal
+        logger.info("Entraînement du modèle LSTM multi-horizon...")
+        history_main = self.model.fit(
             x=X_train,
-            y=Y_train,
+            y=y_train,
             epochs=epochs,
             batch_size=batch_size,
-            validation_data=validation_data_keras,
-            callbacks=callbacks,
+            validation_data=validation_data_main,
+            callbacks=callbacks_main,
             verbose=1
         )
         
-        # Sauvegarder les métriques
-        self._save_metrics(history.history)
+        # 2. Entraîner le détecteur de retournement
+        logger.info("Entraînement du détecteur de retournement...")
+        history_reversal = self.reversal_detector.fit(
+            x=X_train,
+            y=y_reversal_train,
+            epochs=max(30, epochs//2),  # Moins d'époques pour ce modèle plus simple
+            batch_size=batch_size,
+            validation_data=validation_data_reversal,
+            callbacks=[
+                EarlyStopping(patience=patience//2, restore_best_weights=True),
+                ReduceLROnPlateau(factor=0.5, patience=patience//4, min_lr=1e-6)
+            ],
+            verbose=1
+        )
         
-        return history.history
+        if save_best:
+            self.reversal_detector.save(self.reversal_detector_path)
+        
+        # Sauvegarder les métriques
+        self._save_metrics(history_main.history, symbol)
+        
+        # Si c'est un nouveau symbole, mettre à jour les métadonnées de transfert
+        if symbol and symbol not in self.transfer_info['trained_symbols']:
+            self.transfer_info['trained_symbols'].append(symbol)
+            
+            # Si c'est le premier symbole, le définir comme symbole de base
+            if self.transfer_info['base_symbol'] is None:
+                self.transfer_info['base_symbol'] = symbol
+                
+            # Enregistrer cette session d'entraînement
+            self.transfer_info['transfer_history'].append({
+                'symbol': symbol,
+                'timestamp': datetime.now().isoformat(),
+                'epochs': len(history_main.history['loss']),
+                'final_loss': float(history_main.history['loss'][-1])
+            })
+            
+            # Sauvegarder les métadonnées de transfert
+            self._save_transfer_info()
+        
+        return {
+            'main_model': history_main.history,
+            'reversal_detector': history_reversal.history
+        }
     
-    def predict(self, data: pd.DataFrame) -> Dict:
+    def predict(self, data: pd.DataFrame, feature_engineering) -> Dict:
         """
         Fait des prédictions avec le modèle entraîné
         
         Args:
             data: DataFrame avec les données récentes
+            feature_engineering: Instance FeatureEngineering
             
         Returns:
-            Dictionnaire avec les prédictions pour chaque horizon
+            Dictionnaire avec les prédictions pour chaque horizon et facteur
+            et l'alerte de retournement
         """
         # Prétraiter les données
-        X, _ = self.preprocess_data(data, is_training=False)
+        X, _ = self.preprocess_data(data, feature_engineering, is_training=False)
         
-        # Faire la prédiction
+        # Faire les prédictions avec le modèle principal
         predictions = self.model.predict(X)
         
-        # Reformater les prédictions
-        results = {}
-        
-        # Dernière séquence pour la prédiction la plus récente
-        latest_prediction_idx = -1
-        
-        # Pour chaque horizon
-        for h_idx, horizon in enumerate(self.prediction_horizons):
-            horizon_name = f"horizon_{horizon}"
-            
-            # Indice de base pour les 4 sorties de cet horizon
-            base_idx = h_idx * 4
-            
-            # Récupérer les prédictions pour cet horizon
-            direction = float(predictions[base_idx][latest_prediction_idx][0])
-            volatility = float(predictions[base_idx+1][latest_prediction_idx][0])
-            volume = float(predictions[base_idx+2][latest_prediction_idx][0])
-            momentum = float(predictions[base_idx+3][latest_prediction_idx][0])
-            
-            results[horizon_name] = {
-                "direction_probability": direction,  # Probabilité de hausse
-                "predicted_volatility": volatility,
-                "predicted_relative_volume": volume,
-                "predicted_momentum": momentum,
-                "prediction_timestamp": datetime.now().isoformat()
-            }
-        
-        return results
-    
-    def evaluate(self, test_data: pd.DataFrame) -> Dict:
-        """
-        Évalue le modèle sur des données de test
-        
-        Args:
-            test_data: DataFrame avec les données de test
-            
-        Returns:
-            Métriques d'évaluation
-        """
-        # Prétraiter les données
-        X_test, Y_test = self.preprocess_data(test_data, is_training=True)
-        
-        # Évaluer le modèle
-        evaluation = self.model.evaluate(X_test, Y_test, verbose=1)
+        # Faire les prédictions avec le détecteur de retournement
+        reversal_prob, reversal_mag = self.reversal_detector.predict(X)
         
         # Organiser les résultats
         results = {}
-        metric_names = []
         
-        # Construire les noms des métriques
-        for h_idx, horizon in enumerate(self.prediction_horizons):
-            for output in ["direction", "volatility", "volume", "momentum"]:
-                metric_base = f"h{horizon}_{output}"
-                metric_names.append(f"{metric_base}_loss")
-                
-                # Ajouter l'accuracy pour la direction, MAE pour les autres
-                if output == "direction":
-                    metric_names.append(f"{metric_base}_accuracy")
-                else:
-                    metric_names.append(f"{metric_base}_mae")
+        # Dernière séquence pour la prédiction la plus récente
+        latest_idx = -1
         
-        # Remplir les résultats
-        results["loss"] = evaluation[0]
-        
-        for i, metric_name in enumerate(metric_names):
-            results[metric_name] = evaluation[i+1]
-        
-        # Calcul des métriques additionnelles
-        # Faire des prédictions
-        predictions = self.model.predict(X_test)
-        
-        # Pour chaque horizon, calculer des métriques spécifiques
-        for h_idx, horizon in enumerate(self.prediction_horizons):
-            base_idx = h_idx * 4
+        # Pour chaque horizon
+        for h_idx, (horizon, horizon_name, _) in enumerate(self.prediction_horizons):
+            # Indice de base pour les 4 facteurs de cet horizon
+            base_idx = h_idx * self.num_factors
             
-            # Direction (classificaion binaire)
-            y_true_direction = Y_test[base_idx]
-            y_pred_direction = (predictions[base_idx] > 0.5).astype(int).flatten()
+            # Prédictions pour cet horizon
+            direction = float(predictions[base_idx][latest_idx][0])
+            volatility = float(predictions[base_idx+1][latest_idx][0])
+            volume = float(predictions[base_idx+2][latest_idx][0])
+            momentum = float(predictions[base_idx+3][latest_idx][0])
             
-            # Calcul de précision, rappel, F1
-            true_positives = np.sum((y_pred_direction == 1) & (y_true_direction == 1))
-            false_positives = np.sum((y_pred_direction == 1) & (y_true_direction == 0))
-            false_negatives = np.sum((y_pred_direction == 0) & (y_true_direction == 1))
+            # Convertir la prédiction de direction en probabilité (0-100%)
+            direction_probability = direction * 100
             
-            precision = true_positives / (true_positives + false_positives) if (true_positives + false_positives) > 0 else 0
-            recall = true_positives / (true_positives + false_negatives) if (true_positives + false_negatives) > 0 else 0
-            f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+            # Déterminer la tendance prédite
+            trend = "HAUSSIER" if direction > 0.5 else "BAISSIER"
+            trend_strength = abs(direction - 0.5) * 2  # Force de 0 à 1
             
-            results[f"h{horizon}_direction_precision"] = precision
-            results[f"h{horizon}_direction_recall"] = recall
-            results[f"h{horizon}_direction_f1"] = f1
+            # Confiance dans la prédiction
+            confidence = trend_strength * (1 - volatility)  # Plus la volatilité est faible, plus la confiance est élevée
+            
+            results[horizon_name] = {
+                "direction": trend,
+                "direction_probability": direction_probability,
+                "trend_strength": float(trend_strength),
+                "predicted_volatility": float(volatility),
+                "predicted_volume": float(volume),
+                "predicted_momentum": float(momentum),
+                "confidence": float(confidence),
+                "prediction_timestamp": datetime.now().isoformat()
+            }
+        
+        # Ajouter les prédictions de retournement
+        results["reversal_alert"] = {
+            "probability": float(reversal_prob[latest_idx][0]),
+            "magnitude": float(reversal_mag[latest_idx][0]),
+            "is_warning": reversal_prob[latest_idx][0] > 0.7,  # Alerte si probabilité > 70%
+            "prediction_timestamp": datetime.now().isoformat()
+        }
         
         return results
     
     def save(self, path: Optional[str] = None) -> None:
         """
-        Sauvegarde le modèle et ses paramètres
+        Sauvegarde le modèle sur disque
         
         Args:
-            path: Chemin pour sauvegarder le modèle (utilise self.model_path par défaut)
+            path: Chemin de sauvegarde (utilise le chemin par défaut si None)
         """
         save_path = path or self.model_path
         
         # Créer le répertoire si nécessaire
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         
-        # Sauvegarder le modèle
+        # Sauvegarder le modèle principal
         self.model.save(save_path)
+        logger.info(f"Modèle principal sauvegardé: {save_path}")
         
-        # Sauvegarder les paramètres de normalisation et configuration
-        params = {
-            "feature_means": self.feature_means.to_dict() if self.feature_means is not None else None,
-            "feature_stds": self.feature_stds.to_dict() if self.feature_stds is not None else None,
-            "input_length": self.input_length,
-            "feature_dim": self.feature_dim,
-            "lstm_units": self.lstm_units,
-            "dropout_rate": self.dropout_rate,
-            "learning_rate": self.learning_rate,
-            "l1_reg": self.l1_reg,
-            "l2_reg": self.l2_reg,
-            "use_attention": self.use_attention,
-            "attention_type": self.attention_type,
-            "use_residual": self.use_residual,
-            "prediction_horizons": self.prediction_horizons,
-            "last_updated": datetime.now().isoformat()
-        }
-        
-        # Sauvegarder en JSON
-        params_path = save_path.replace(".h5", "_params.json")
-        import json
-        with open(params_path, 'w') as f:
-            json.dump(params, f, indent=2, default=str)
-        
-        logger.info(f"Modèle sauvegardé: {save_path}")
-        logger.info(f"Paramètres sauvegardés: {params_path}")
+        # Sauvegarder le détecteur de retournement
+        reversal_path = os.path.splitext(save_path)[0] + "_reversal.h5"
+        self.reversal_detector.save(reversal_path)
+        logger.info(f"Détecteur de retournement sauvegardé: {reversal_path}")
     
     def load(self, path: Optional[str] = None) -> None:
         """
-        Charge le modèle et ses paramètres
+        Charge le modèle depuis le disque
         
         Args:
-            path: Chemin du modèle à charger (utilise self.model_path par défaut)
+            path: Chemin du modèle (utilise le chemin par défaut si None)
         """
         load_path = path or self.model_path
         
-        # Vérifier que le modèle existe
+        # Vérifier si le fichier existe
         if not os.path.exists(load_path):
             raise FileNotFoundError(f"Modèle non trouvé: {load_path}")
         
-        # Charger le modèle
-        self.model = load_model(load_path)
+        # Charger le modèle principal
+        self.model = load_model(
+            load_path,
+            custom_objects={
+                'MultiHeadAttention': MultiHeadAttention,
+                'TemporalAttentionBlock': TemporalAttentionBlock,
+                'TimeSeriesAttention': TimeSeriesAttention,
+                'SpatialDropout1D': SpatialDropout1D,
+                'ResidualBlock': ResidualBlock
+            }
+        )
+        logger.info(f"Modèle principal chargé: {load_path}")
         
-        # Charger les paramètres
-        params_path = load_path.replace(".h5", "_params.json")
-        if os.path.exists(params_path):
-            import json
-            with open(params_path, 'r') as f:
-                params = json.load(f)
-            
-            # Restaurer les paramètres
-            if "feature_means" in params and params["feature_means"]:
-                self.feature_means = pd.Series(params["feature_means"])
-            
-            if "feature_stds" in params and params["feature_stds"]:
-                self.feature_stds = pd.Series(params["feature_stds"])
-            
-            # Restaurer la configuration
-            self.input_length = params.get("input_length", self.input_length)
-            self.feature_dim = params.get("feature_dim", self.feature_dim)
-            self.lstm_units = params.get("lstm_units", self.lstm_units)
-            self.dropout_rate = params.get("dropout_rate", self.dropout_rate)
-            self.learning_rate = params.get("learning_rate", self.learning_rate)
-            self.l1_reg = params.get("l1_reg", self.l1_reg)
-            self.l2_reg = params.get("l2_reg", self.l2_reg)
-            self.use_attention = params.get("use_attention", self.use_attention)
-            self.attention_type = params.get("attention_type", self.attention_type)
-            self.use_residual = params.get("use_residual", self.use_residual)
-            self.prediction_horizons = params.get("prediction_horizons", self.prediction_horizons)
-        
-        logger.info(f"Modèle chargé: {load_path}")
+        # Essayer de charger le détecteur de retournement
+        reversal_path = os.path.splitext(load_path)[0] + "_reversal.h5"
+        if os.path.exists(reversal_path):
+            self.reversal_detector = load_model(
+                reversal_path,
+                custom_objects={
+                    'TimeSeriesAttention': TimeSeriesAttention
+                }
+            )
+            logger.info(f"Détecteur de retournement chargé: {reversal_path}")
+        else:
+            logger.warning(f"Détecteur de retournement non trouvé: {reversal_path}")
     
-    def _save_metrics(self, metrics: Dict) -> None:
+    def _save_metrics(self, history: Dict, symbol: Optional[str] = None) -> None:
         """
-        Sauvegarde les métriques d'entraînement ou d'évaluation
+        Sauvegarde les métriques d'entraînement
         
         Args:
-            metrics: Dictionnaire de métriques
+            history: Historique d'entraînement
+            symbol: Symbole de la paire de trading
         """
-        # Ajouter un timestamp
-        metrics_with_timestamp = {
+        metrics_entry = {
             "timestamp": datetime.now().isoformat(),
-            **metrics
+            "symbol": symbol,
+            "metrics": history,
+            "parameters": {
+                "lstm_units": self.lstm_units,
+                "dropout_rate": self.dropout_rate,
+                "learning_rate": self.learning_rate,
+                "use_attention": self.use_attention,
+                "attention_heads": self.attention_heads,
+                "use_residual": self.use_residual
+            }
         }
         
-        # Ajouter à l'historique
-        self.metrics_history.append(metrics_with_timestamp)
+        self.metrics_history.append(metrics_entry)
         
-        # Limiter la taille de l'historique
-        if len(self.metrics_history) > 100:
-            self.metrics_history = self.metrics_history[-100:]
+        # Sauvegarder dans un fichier
+        metrics_path = os.path.join(self.models_dir, "metrics_history.json")
         
-        # Sauvegarder l'historique
-        metrics_path = self.model_path.replace(".h5", "_metrics.json")
-        import json
-        with open(metrics_path, 'w') as f:
-            json.dump(self.metrics_history, f, indent=2, default=str)
-        
-    def get_prediction_confidence(self, prediction: Dict) -> Dict:
-        """
-        Calcule la confiance dans les prédictions en fonction de leur cohérence
-        
-        Args:
-            prediction: Dictionnaire de prédictions du modèle
-            
-        Returns:
-            Confiance dans les prédictions (0-1)
-        """
-        confidence = {}
-        
-        # Vérifier la cohérence des prédictions entre les différents horizons
-        directions = []
-        momentums = []
-        
-        for horizon_name, horizon_pred in prediction.items():
-            directions.append(horizon_pred["direction_probability"])
-            momentums.append(horizon_pred["predicted_momentum"])
-        
-        # Confiance globale basée sur la cohérence des directions
-        direction_std = np.std(directions)
-        direction_confidence = 1.0 - min(1.0, direction_std * 2)  # Plus le std est bas, plus la confiance est élevée
-        
-        # Confiance basée sur l'alignement direction/momentum
-        # (direction > 0.5 doit correspondre à momentum > 0)
-        direction_momentum_aligned = sum(1 for d, m in zip(directions, momentums) if (d > 0.5 and m > 0) or (d < 0.5 and m < 0)) / len(directions)
-        
-        # Confiance globale (moyenne des deux mesures)
-        overall_confidence = (direction_confidence + direction_momentum_aligned) / 2
-        
-        # Confiances spécifiques pour chaque horizon
-        for i, horizon_name in enumerate(prediction.keys()):
-            horizon_confidence = {
-                "overall": overall_confidence,
-                "direction_confidence": direction_confidence,
-                "momentum_alignment": direction_momentum_aligned,
-                "strength": abs(momentums[i])  # Force du signal basée sur l'amplitude du momentum
-            }
-            confidence[horizon_name] = horizon_confidence
-        
-        return confidence
-    
-    def update_incrementally(self, new_data: pd.DataFrame, epochs: int = 5, 
-                          learning_rate: float = 0.0005) -> Dict:
-        """
-        Met à jour le modèle de manière incrémentale avec de nouvelles données
-        
-        Args:
-            new_data: Nouvelles données pour la mise à jour
-            epochs: Nombre d'époques pour la mise à jour
-            learning_rate: Taux d'apprentissage pour la mise à jour
-            
-        Returns:
-            Historique de la mise à jour
-        """
-        # Sauvegarder les poids actuels pour pouvoir revenir en arrière si nécessaire
-        original_weights = self.model.get_weights()
-        
-        # Réduire le taux d'apprentissage pour la mise à jour incrémentale
-        K.set_value(self.model.optimizer.learning_rate, learning_rate)
-        
-        # Préparer les données
-        X, Y = self.preprocess_data(new_data, is_training=True)
-        
-        # Si les données sont insuffisantes, ne pas mettre à jour
-        if len(X) < 10:
-            logger.warning("Données insuffisantes pour la mise à jour incrémentale")
-            return {"success": False, "message": "Données insuffisantes"}
-        
-        # Mise à jour incrémentale
         try:
-            history = self.model.fit(
-                x=X,
-                y=Y,
-                epochs=epochs,
-                batch_size=16,  # Batch size plus petit pour la mise à jour
-                verbose=1
-            )
+            # Charger l'historique existant si disponible
+            existing_metrics = []
+            if os.path.exists(metrics_path):
+                with open(metrics_path, 'r') as f:
+                    existing_metrics = json.load(f)
             
-            # Vérifier les performances après mise à jour
-            # En cas de dégradation significative, revenir aux poids précédents
-            evaluation_before = self.model.evaluate(X, Y, verbose=0)[0]  # Loss globale
+            # Ajouter la nouvelle entrée
+            existing_metrics.append(metrics_entry)
             
-            # Évaluer le modèle mis à jour sur les mêmes données
-            self.model.set_weights(original_weights)
-            evaluation_after = self.model.evaluate(X, Y, verbose=0)[0]  # Loss globale
-            
-            # Si les performances se dégradent significativement, revenir en arrière
-            if evaluation_after > evaluation_before * 1.1:  # Dégradation de plus de 10%
-                logger.warning("Dégradation des performances après mise à jour incrémentale. Retour aux poids précédents.")
-                return {"success": False, "message": "Dégradation des performances"}
-            
-            # Sinon, appliquer à nouveau la mise à jour (puisqu'on est revenu aux poids d'origine)
-            history = self.model.fit(
-                x=X,
-                y=Y,
-                epochs=epochs,
-                batch_size=16,
-                verbose=1
-            )
-            
-            # Sauvegarder le modèle mis à jour
-            self.save()
-            
-            return {"success": True, "history": history.history}
-            
+            # Sauvegarder
+            with open(metrics_path, 'w') as f:
+                json.dump(existing_metrics, f, indent=2, default=str)
+                
+            logger.info(f"Métriques sauvegardées: {metrics_path}")
         except Exception as e:
-            # En cas d'erreur, revenir aux poids précédents
-            self.model.set_weights(original_weights)
-            logger.error(f"Erreur lors de la mise à jour incrémentale: {str(e)}")
-            return {"success": False, "message": str(e)}
+            logger.error(f"Erreur lors de la sauvegarde des métriques: {str(e)}")
     
-    def get_feature_importance(self, data: pd.DataFrame) -> Dict:
+    def _save_transfer_info(self) -> None:
+        """Sauvegarde les métadonnées d'apprentissage par transfert"""
+        transfer_path = os.path.join(self.models_dir, "transfer_learning_info.json")
+        
+        try:
+            with open(transfer_path, 'w') as f:
+                json.dump(self.transfer_info, f, indent=2, default=str)
+            logger.info(f"Métadonnées de transfert sauvegardées: {transfer_path}")
+        except Exception as e:
+            logger.error(f"Erreur lors de la sauvegarde des métadonnées de transfert: {str(e)}")
+    
+    def transfer_to_new_symbol(self, symbol: str) -> None:
         """
-        Calcule l'importance des caractéristiques à l'aide de méthodes d'explicabilité
+        Prépare le modèle pour l'apprentissage par transfert sur un nouveau symbole
         
         Args:
-            data: DataFrame avec les données de test
+            symbol: Nouveau symbole pour l'apprentissage par transfert
+        """
+        # Sauvegarder les poids du modèle source
+        source_weights = self.model.get_weights()
+        
+        # Réduire le taux d'apprentissage pour le transfert
+        K.set_value(self.model.optimizer.learning_rate, self.learning_rate * 0.5)
+        
+        logger.info(f"Modèle préparé pour l'apprentissage par transfert vers {symbol}")
+        logger.info(f"Taux d'apprentissage réduit à {K.get_value(self.model.optimizer.learning_rate)}")
+    
+    def get_reversal_threshold(self, data: pd.DataFrame, feature_engineering, 
+                              percentile: float = 90) -> float:
+        """
+        Calcule un seuil dynamique pour les alertes de retournement
+        
+        Args:
+            data: Données historiques récentes
+            feature_engineering: Instance FeatureEngineering
+            percentile: Percentile pour le seuil (défaut: 90e percentile)
             
         Returns:
-            Importance des caractéristiques
+            Seuil de probabilité pour les alertes de retournement
         """
-        # Préparer les données
-        X, _ = self.preprocess_data(data, is_training=False)
+        # Prétraiter les données
+        X, _ = self.preprocess_data(data, feature_engineering, is_training=False)
         
-        if len(X) == 0:
-            logger.warning("Données insuffisantes pour calculer l'importance des caractéristiques")
-            return {}
+        # Obtenir les prédictions de retournement
+        reversal_probs, _ = self.reversal_detector.predict(X)
         
-        # Obtenir les noms des caractéristiques
-        feature_columns = [col for col in data.columns if col != 'timestamp' and col != 'date']
+        # Calculer le seuil basé sur le percentile spécifié
+        threshold = np.percentile(reversal_probs, percentile)
         
-        # Méthode d'analyse de sensibilité pour l'importance des caractéristiques
-        # Pour chaque caractéristique, calculer la variation de la sortie quand on la perturbe
-        importances = {}
-        
-        for i, feature in enumerate(feature_columns):
-            # Copier les données d'entrée
-            X_perturbed = X.copy()
-            
-            # Perturber la caractéristique (remplacer par la moyenne)
-            X_perturbed[:, :, i] = 0
-            
-            # Prédictions de base
-            y_base = self.model.predict(X)
-            
-            # Prédictions avec perturbation
-            y_perturbed = self.model.predict(X_perturbed)
-            
-            # Calculer la différence moyenne pour chaque sortie
-            diff_sum = 0
-            for j in range(len(y_base)):
-                diff_sum += np.mean(np.abs(y_base[j] - y_perturbed[j]))
-            
-            # Normaliser la différence
-            importance = diff_sum / len(y_base)
-            
-            importances[feature] = float(importance)
-        
-        # Normaliser les importances pour qu'elles somment à 1
-        total_importance = sum(importances.values())
-        if total_importance > 0:
-            importances = {k: v / total_importance for k, v in importances.items()}
-        
-        # Trier par importance décroissante
-        importances = dict(sorted(importances.items(), key=lambda item: item[1], reverse=True))
-        
-        return importances
+        return float(threshold)
+
+def test_model():
+    """Test simple du modèle pour vérifier qu'il compile correctement"""
+    model = EnhancedLSTMModel(
+        input_length=60,
+        feature_dim=30,
+        lstm_units=[64, 48, 32],
+        prediction_horizons=[
+            (12, "3h", True),
+            (48, "12h", True),
+            (192, "48h", True)
+        ]
+    )
+    
+    # Afficher le résumé du modèle
+    model.model.summary()
+    
+    print("Le modèle a été compilé avec succès !")
+    
+    return model
+
+if __name__ == "__main__":
+    model = t
