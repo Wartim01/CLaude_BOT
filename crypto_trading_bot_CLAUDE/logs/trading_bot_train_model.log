@@ -1,0 +1,23 @@
+2025-03-01 21:56:49,206 - train_model - INFO - Téléchargement des données pour BTCUSDT (15m) du 2023-01-01 au 2024-12-31
+2025-03-01 21:57:46,777 - train_model - INFO - Données téléchargées avec succès: 70076 lignes
+2025-03-01 21:57:46,956 - train_model - INFO - Données chargées: 70076 lignes
+2025-03-01 21:57:46,957 - train_model - INFO - Configuration du modèle: {
+  "input_length": 60,
+  "feature_dim": 30,
+  "lstm_units": [
+    128,
+    64,
+    32
+  ],
+  "dropout_rate": 0.3,
+  "learning_rate": 0.001,
+  "l1_reg": 0.0001,
+  "l2_reg": 0.0001,
+  "use_attention": true,
+  "use_residual": true,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}

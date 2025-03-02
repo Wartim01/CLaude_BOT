@@ -1,0 +1,95 @@
+/crypto_trading_bot/
+│
+├── config/                      # Configuration du bot
+│   ├── __init__.py
+│   ├── config.py                # Paramètres globaux de configuration
+│   ├── trading_params.py        # Paramètres de trading (ajustables)
+│   └── model_params.py          # Nouveaux paramètres pour les modèles LSTM
+│
+├── core/                        # Fonctionalités principales
+│   ├── __init__.py
+│   ├── api_connector.py         # Connexion aux API d'échange (Binance)
+│   ├── data_fetcher.py          # Récupération des données de marché
+│   ├── order_manager.py         # Gestion des ordres (entrée, sortie)
+│   ├── position_tracker.py      # Suivi des positions ouvertes
+│   ├── risk_manager.py          # Gestion des risques et capital
+│   └── adaptive_risk_manager.py # NOUVEAU: Gestion des risques adaptative par IA
+│
+├── strategies/                  # Stratégies de trading
+│   ├── __init__.py
+│   ├── technical_bounce.py      # Stratégie de rebond technique
+│   ├── strategy_base.py         # Classe de base pour stratégies
+│   ├── market_state.py          # Détection de l'état du marché
+│   └── hybrid_strategy.py       # NOUVEAU: Stratégie hybride avec LSTM
+│
+├── indicators/                  # Indicateurs techniques
+│   ├── __init__.py
+│   ├── trend.py                 # Indicateurs de tendance (EMA, ADX)
+│   ├── momentum.py              # Indicateurs de momentum (RSI)
+│   ├── volatility.py            # Indicateurs de volatilité (BB, ATR)
+│   ├── volume.py                # Analyse de volume
+│   └── advanced_features.py     # NOUVEAU: Caractéristiques avancées pour LSTM
+│
+├── ai/                          # Composants d'IA
+│   ├── __init__.py
+│   ├── scoring_engine.py        # Moteur de scoring des opportunités
+│   ├── trade_analyzer.py        # Analyse post-trade
+│   ├── parameter_optimizer.py   # Optimisation des paramètres
+│   ├── reasoning_engine.py      # Génération d'explications textuelles
+│   └── models/                  # NOUVEAU: Sous-dossier pour les modèles avancés
+│       ├── __init__.py
+│       ├── lstm_model.py        # Implémentation du modèle LSTM principal
+│       ├── attention.py         # Mécanismes d'attention
+│       ├── feature_engineering.py # Préparation des caractéristiques
+│       ├── model_trainer.py     # Entraînement des modèles
+│       ├── model_validator.py   # Validation et évaluation
+│       ├── ensemble.py          # Ensemble de modèles pour robustesse
+│       └── continuous_learning.py # Apprentissage continu
+│
+├── utils/                       # Utilitaires
+│   ├── __init__.py
+│   ├── logger.py                # Système de journalisation
+│   ├── visualizer.py            # Visualisation des trades et performances
+│   ├── backtest_engine.py       # Moteur de backtest
+│   ├── model_backtester.py      # NOUVEAU: Backtest spécifique pour modèles
+│   ├── model_monitor.py         # NOUVEAU: Monitoring des performances modèles
+│   └── model_explainer.py       # NOUVEAU: Explicabilité des décisions modèles
+│
+├── data/                        # Stockage des données
+│   ├── market_data/             # Données de marché historiques
+│   ├── trade_logs/              # Journal des trades
+│   ├── performance/             # Données de performance
+│   ├── model_data/              # NOUVEAU: Données prétraitées pour modèles
+│   │   ├── training/            # Données d'entraînement
+│   │   ├── validation/          # Données de validation
+│   │   └── features/            # Caractéristiques précalculées
+│   └── models/                  # NOUVEAU: Stockage des modèles entraînés
+│       ├── checkpoints/         # Points de sauvegarde
+│       ├── production/          # Modèles en production
+│       └── archive/             # Versions précédentes des modèles
+│
+├── dashboard/                   # NOUVEAU: Tableaux de bord interactifs
+│   ├── __init__.py
+│   ├── app.py                   # Application de tableau de bord
+│   ├── model_dashboard.py       # Visualisation des performances modèles
+│   └── trade_dashboard.py       # Visualisation des performances trading
+│
+├── tests/                       # Tests unitaires et d'intégration
+│   ├── __init__.py
+│   ├── test_indicators.py
+│   ├── test_strategies.py
+│   ├── test_risk_manager.py
+│   └── test_models/             # NOUVEAU: Tests des modèles LSTM
+│       ├── __init__.py
+│       ├── test_lstm.py
+│       ├── test_feature_eng.py
+│       └── test_backtesting.py
+│
+├── main.py                      # Point d'entrée principal
+├── backtest.py                  # Script de backtest
+├── train_model.py               # NOUVEAU: Script d'entraînement des modèles
+├── evaluate_model.py            # NOUVEAU: Script d'évaluation des modèles
+├── download_data.py             # Script de téléchargement de données historiques
+├── install.py                   # Script d'installation et configuration
+├── requirements.txt             # Dépendances
+└── README.md                    # Documentation
