@@ -145,3 +145,87 @@ def detect_volatility_squeeze(df: pd.DataFrame, bb_period: int = 20,
             'historical_squeezes': squeeze.iloc[-50:].sum()
         }
     }
+
+def calculate_volatility(df: pd.DataFrame, window: int = 20, method: str = 'std') -> pd.Series:
+    """
+    Calcule la volatilité du marché sur une fenêtre donnée
+    
+    Args:
+        df: DataFrame avec les données OHLCV
+        window: Fenêtre de calcul de la volatilité
+        method: Méthode de calcul ('std', 'atr', 'parkinson')
+        
+    Returns:
+        Série pandas avec les valeurs de volatilité
+    """
+    if len(df) < window:
+        return pd.Series(np.nan, index=df.index)
+    
+    if method == 'std':
+        # Volatilité basée sur l'écart-type des rendements
+        returns = df['close'].pct_change()
+        volatility = returns.rolling(window=window).std() * np.sqrt(window)  # Annualiser
+        
+    elif method == 'atr':
+        # Volatilité basée sur l'ATR
+        atr = calculate_atr(df, period=window)
+        volatility = atr / df['close']  # ATR normalisé par le prix
+        
+    elif method == 'parkinson':
+        # Volatilité de Parkinson (basée sur high-low)
+        log_hl = (df['high'] / df['low']).apply(np.log)
+        volatility = np.sqrt(log_hl.rolling(window=window).mean() / (4 * np.log(2)))
+        
+    else:
+        raise ValueError(f"Méthode de calcul de volatilité non supportée: {method}")
+    
+    # Convertir en pourcentage
+    volatility = volatility * 100
+    
+    return volatility
+
+def get_market_volatility_state(df: pd.DataFrame, window: int = 20, 
+                             long_window: int = 100) -> Dict:
+    """
+    Détermine l'état de volatilité du marché (faible, moyen, élevé)
+    
+    Args:
+        df: DataFrame avec les données OHLCV
+        window: Fenêtre pour la volatilité actuelle
+        long_window: Fenêtre pour la volatilité historique
+        
+    Returns:
+        Dictionnaire avec l'état de volatilité
+    """
+    if len(df) < max(window, long_window):
+        return {
+            'volatility_state': 'unknown',
+            'current_volatility': None,
+            'historical_volatility': None,
+            'relative_volatility': None
+        }
+    
+    # Calculer la volatilité actuelle et historique
+    current_volatility = calculate_volatility(df, window=window).iloc[-1]
+    historical_volatility = calculate_volatility(df, window=long_window).iloc[-1]
+    
+    # Calculer la volatilité relative (par rapport à la moyenne historique)
+    if historical_volatility > 0:
+        relative_volatility = current_volatility / historical_volatility
+    else:
+        relative_volatility = 1.0
+    
+    # Déterminer l'état de volatilité
+    if relative_volatility < 0.7:
+        volatility_state = 'low'
+    elif relative_volatility > 1.5:
+        volatility_state = 'high'
+    else:
+        volatility_state = 'normal'
+    
+    return {
+        'volatility_state': volatility_state,
+        'current_volatility': float(current_volatility),
+        'historical_volatility': float(historical_volatility),
+        'relative_volatility': float(relative_volatility)
+    }

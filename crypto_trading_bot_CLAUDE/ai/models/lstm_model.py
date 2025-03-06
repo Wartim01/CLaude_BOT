@@ -166,10 +166,14 @@ class LSTMModel:
             outputs.append(direction)
         
         self.model = Model(inputs=inputs, outputs=outputs)
+        
+        # FIX: Provide metrics for each output
+        metrics = [['accuracy'] for _ in outputs]
+        
         self.model.compile(
             optimizer=Adam(learning_rate=self.learning_rate),
             loss=['binary_crossentropy' for _ in outputs],
-            metrics=['accuracy']
+            metrics=metrics  # Now we provide a list of metrics for each output
         )
         return self.model
 

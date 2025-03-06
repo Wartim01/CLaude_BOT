@@ -9,9 +9,30 @@ import logging
 load_dotenv()
 
 # Configuration de l'API Binance
-BINANCE_API_KEY = os.getenv("BINANCE_API_KEY", "")
-BINANCE_API_SECRET = os.getenv("BINANCE_API_SECRET", "")
+# Structure correcte des clés API
+API_KEYS = {
+    "BINANCE": {
+        # Production keys
+        "key": "hodtSbBNLSBrDaqAMBEzfdMoGikNynB5wh2cL3xCUVubxMyZYLCP6iRDGffuaCsS",
+        "secret": "pzbN2NalNjWTQOE0aiYTuSWGp44t0fzS7RTH3dsgKTvbmzZNoY6Lam2HAACoTgis"
+    },
+    "BINANCE_TESTNET": {
+        # Testnet keys
+        "key": "u6cP7KVlRmHLTC4RnGD0jkDZzgEkyK4nXVfIwlxQoM1j9HZZPUu8Vkrbk6ymfIlD",
+        "secret": "P5v5e3Zw24ACZVEnM35NuX3q98ZX29b3tfVHkyzhuEjtvITfCnZUFMKExm8gV2c"
+    }
+}
+
+# Utiliser testnet ou production
 USE_TESTNET = os.getenv("USE_TESTNET", "True").lower() in ("true", "1", "t")
+
+# Récupérer les bonnes clés en fonction du mode
+if USE_TESTNET:
+    ACTIVE_API_KEY = API_KEYS["BINANCE_TESTNET"]["key"]
+    ACTIVE_API_SECRET = API_KEYS["BINANCE_TESTNET"]["secret"]
+else:
+    ACTIVE_API_KEY = API_KEYS["BINANCE"]["key"]
+    ACTIVE_API_SECRET = API_KEYS["BINANCE"]["secret"]
 
 # Paramètres généraux
 INITIAL_CAPITAL = 200  # USDT
@@ -46,6 +67,4 @@ API_RETRY_DELAY = 2  # secondes
 ENABLE_NOTIFICATIONS = False
 NOTIFICATION_EMAIL = os.getenv("NOTIFICATION_EMAIL", "")
 
-
-
-MODEL_CHECKPOINTS_DIR = "C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\models\\checkpoints"
+MODEL_CHECKPOINTS_DIR = os.path.join(DATA_DIR, "models", "checkpoints")

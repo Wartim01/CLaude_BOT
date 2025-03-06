@@ -1,7 +1,6 @@
 """
 Moteur de décision qui combine les prédictions de l'IA, l'analyse technique,
-l'analyse de sentiment des nouvelles et les indicateurs de risque du marché
-pour générer des décisions de trading optimales
+et les indicateurs de risque du marché pour générer des décisions de trading optimales
 """
 import os
 import json
@@ -14,7 +13,6 @@ from config.config import DATA_DIR
 from utils.logger import setup_logger
 from ai.trading_agent import TradingAgent
 from ai.strategy_integrator import StrategyIntegrator
-from ai.news_sentiment_analyzer import NewsSentimentAnalyzer
 from utils.market_risk_feed import MarketRiskFeed
 
 logger = setup_logger("decision_engine")
@@ -27,7 +25,6 @@ class DecisionEngine:
     def __init__(self,
                 trading_agent: Optional[TradingAgent] = None,
                 strategy_integrator: Optional[StrategyIntegrator] = None,
-                news_analyzer: Optional[NewsSentimentAnalyzer] = None,
                 market_risk_feed: Optional[MarketRiskFeed] = None):
         """
         Initialise le moteur de décision
@@ -35,12 +32,10 @@ class DecisionEngine:
         Args:
             trading_agent: Agent de trading
             strategy_integrator: Intégrateur de stratégies
-            news_analyzer: Analyseur de sentiment des nouvelles
             market_risk_feed: Flux d'information sur le risque de marché
         """
         self.trading_agent = trading_agent
         self.strategy_integrator = strategy_integrator
-        self.news_analyzer = news_analyzer
         self.market_risk_feed = market_risk_feed
         
         # Historique des décisions
@@ -48,10 +43,9 @@ class DecisionEngine:
         
         # Configuration des poids
         self.decision_weights = {
-            "strategy_signal": 0.40,  # Signal de stratégie intégrée
+            "strategy_signal": 0.50,  # Signal de stratégie intégrée
             "market_risk": 0.30,      # Risque de marché
-            "news_sentiment": 0.15,   # Sentiment des nouvelles
-            "technical_score": 0.15   # Score technique
+            "technical_score": 0.20    # Score technique
         }
         
         # Seuils de décision
@@ -112,33 +106,28 @@ class DecisionEngine:
         # 2. Récupérer les indicateurs de risque du marché
         market_risk = self._get_market_risk(symbol)
         
-        # 3. Obtenir l'analyse de sentiment des nouvelles
-        news_sentiment = self._get_news_sentiment(symbol)
-        
-        # 4. Obtenir le score technique direct
+        # 3. Obtenir le score technique direct
         technical_score = self._get_technical_score(data)
         
-        # 5. Combiner toutes les sources pour une décision finale
+        # 4. Combiner toutes les sources pour une décision finale
         decision = self._make_decision(
             symbol=symbol,
             strategy_signal=strategy_signal,
             market_risk=market_risk,
-            news_sentiment=news_sentiment,
             technical_score=technical_score
         )
         
-        # 6. Enregistrer la décision dans l'historique
+        # 5. Enregistrer la décision dans l'historique
         decision_id = self._record_decision(
             symbol=symbol,
             timeframe=timeframe,
             decision=decision,
             strategy_signal=strategy_signal,
             market_risk=market_risk,
-            news_sentiment=news_sentiment,
             technical_score=technical_score
         )
         
-        # 7. Exécuter le trade si demandé et si la décision est favorable
+        # 6. Exécuter le trade si demandé et si la décision est favorable
         execution_result = None
         if execute and decision["should_trade"] and self.trading_agent:
             execution_result = self._execute_trade(
@@ -241,44 +230,6 @@ class DecisionEngine:
                 "fallback": self.last_known_market_risk
             }
     
-    def _get_news_sentiment(self, symbol: str) -> Dict:
-        """
-        Récupère l'analyse de sentiment des nouvelles
-        
-        Args:
-            symbol: Symbole de trading
-            
-        Returns:
-            Analyse de sentiment
-        """
-        if not self.news_analyzer:
-            return {
-                "available": False,
-                "reason": "News sentiment analyzer not available"
-            }
-        
-        try:
-            # Récupérer le sentiment pour le symbole
-            sentiment = self.news_analyzer.get_sentiment_for_symbol(symbol)
-            
-            return {
-                "available": True,
-                "sentiment": sentiment.get("dominant_sentiment", "neutral"),
-                "score": sentiment.get("sentiment_score", 0.0),
-                "trend": sentiment.get("trend", "stable"),
-                "bullish_count": sentiment.get("bullish_count", 0),
-                "bearish_count": sentiment.get("bearish_count", 0),
-                "raw_data": sentiment
-            }
-        
-        except Exception as e:
-            logger.error(f"Erreur lors de la récupération du sentiment des nouvelles pour {symbol}: {str(e)}")
-            
-            return {
-                "available": False,
-                "reason": f"Error: {str(e)}"
-            }
-    
     def _get_technical_score(self, data: pd.DataFrame) -> Dict:
         """
         Calcule un score technique direct basé sur les données
@@ -348,7 +299,6 @@ class DecisionEngine:
     def _make_decision(self, symbol: str, 
                      strategy_signal: Dict,
                      market_risk: Dict,
-                     news_sentiment: Dict,
                      technical_score: Dict) -> Dict:
         """
         Combine toutes les sources d'information pour prendre une décision
@@ -357,7 +307,6 @@ class DecisionEngine:
             symbol: Symbole de trading
             strategy_signal: Signal de stratégie
             market_risk: Risque du marché
-            news_sentiment: Sentiment des nouvelles
             technical_score: Score technique
             
         Returns:
@@ -366,13 +315,11 @@ class DecisionEngine:
         # 1. Vérifier la disponibilité des données
         strategy_available = strategy_signal.get("available", False)
         risk_available = market_risk.get("available", False)
-        sentiment_available = news_sentiment.get("available", False)
         technical_available = technical_score.get("available", False)
         
         # 2. Extraire et normaliser les signaux (0-100 scale où 50 est neutre)
         strategy_score = 50.0
         risk_score = 50.0
-        sentiment_score = 50.0
         tech_score = 50.0
         
         # 2.1 Score de stratégie
@@ -393,21 +340,14 @@ class DecisionEngine:
         elif "fallback" in market_risk:
             risk_score = 100 - market_risk["fallback"].get("score", 50.0)
         
-        # 2.3 Score de sentiment
-        if sentiment_available:
-            sentiment_value = news_sentiment.get("score", 0.0)
-            # Convertir le score de sentiment (-1 à 1) en échelle 0-100
-            sentiment_score = 50 + (sentiment_value * 50)
-        
-        # 2.4 Score technique
+        # 2.3 Score technique
         if technical_available:
             tech_score = technical_score.get("score", 50.0)
         
         # 3. Appliquer les poids pour obtenir un score combiné
-        strategy_weight = self.decision_weights.get("strategy_signal", 0.4)
+        strategy_weight = self.decision_weights.get("strategy_signal", 0.5)
         risk_weight = self.decision_weights.get("market_risk", 0.3)
-        sentiment_weight = self.decision_weights.get("news_sentiment", 0.15)
-        technical_weight = self.decision_weights.get("technical_score", 0.15)
+        technical_weight = self.decision_weights.get("technical_score", 0.2)
         
         # Recalculer les poids si certaines données ne sont pas disponibles
         total_weight = 0.0
@@ -421,11 +361,6 @@ class DecisionEngine:
             total_weight += risk_weight
         else:
             risk_weight = 0.0
-            
-        if sentiment_available:
-            total_weight += sentiment_weight
-        else:
-            sentiment_weight = 0.0
             
         if technical_available:
             total_weight += technical_weight
@@ -445,14 +380,12 @@ class DecisionEngine:
         # Normaliser les poids restants
         strategy_weight /= total_weight
         risk_weight /= total_weight
-        sentiment_weight /= total_weight
         technical_weight /= total_weight
         
         # Calculer le score pondéré
         weighted_score = (
             (strategy_score * strategy_weight) +
             (risk_score * risk_weight) +
-            (sentiment_score * sentiment_weight) +
             (tech_score * technical_weight)
         )
         
@@ -513,11 +446,6 @@ class DecisionEngine:
                     "score": risk_score,
                     "weight": risk_weight * 100
                 },
-                "sentiment": {
-                    "available": sentiment_available,
-                    "score": sentiment_score,
-                    "weight": sentiment_weight * 100
-                },
                 "technical": {
                     "available": technical_available,
                     "score": tech_score,
@@ -530,8 +458,7 @@ class DecisionEngine:
     
     def _record_decision(self, symbol: str, timeframe: str, 
                        decision: Dict, strategy_signal: Dict,
-                       market_risk: Dict, news_sentiment: Dict,
-                       technical_score: Dict) -> str:
+                       market_risk: Dict, technical_score: Dict) -> str:
         """
         Enregistre une décision de trading pour analyse ultérieure
         
@@ -541,7 +468,6 @@ class DecisionEngine:
             decision: Décision finale
             strategy_signal: Signal de stratégie
             market_risk: Risque du marché
-            news_sentiment: Sentiment des nouvelles
             technical_score: Score technique
             
         Returns:
@@ -560,7 +486,6 @@ class DecisionEngine:
             "inputs": {
                 "strategy": strategy_signal,
                 "risk": market_risk,
-                "sentiment": news_sentiment,
                 "technical": technical_score
             },
             "result": {
@@ -681,7 +606,7 @@ class DecisionEngine:
                     
                     if self.performance_metrics["total_decisions"] > 0:
                         self.performance_metrics["win_rate"] = (
-                            self.performance_metrics["correct_decisions"] /
+                            self.performance_metrics["correct_decisions"] / 
                             self.performance_metrics["total_decisions"] * 100
                         )
                     
@@ -968,7 +893,7 @@ class DecisionEngine:
         """
         if new_weights:
             # Vérifier que les poids sont valides
-            required_keys = ["strategy_signal", "market_risk", "news_sentiment", "technical_score"]
+            required_keys = ["strategy_signal", "market_risk", "technical_score"]
             
             if not all(key in new_weights for key in required_keys):
                 return {

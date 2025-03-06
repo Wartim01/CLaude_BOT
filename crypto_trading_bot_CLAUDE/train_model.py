@@ -1,539 +1,409 @@
 #!/usr/bin/env python
-# train_model.py
 """
 Script d'entraînement du modèle LSTM pour la prédiction des mouvements de marché
 """
 import os
 import argparse
 import pandas as pd
-from sklearn.utils import class_weight
 import numpy as np
-import time
 from datetime import datetime, timedelta
 import json
-import matplotlib.pyplot as plt
 import tensorflow as tf
-from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, LambdaCallback
-import tensorflow.keras.backend as K
 
-from ai.models.lstm_model import LSTMModel, EnhancedLSTMModel
-from ai.models.feature_engineering import FeatureEngineering
-from ai.models.model_trainer import ModelTrainer
-from ai.models.model_validator import ModelValidator
 from config.config import DATA_DIR, MODEL_CHECKPOINTS_DIR
 from utils.logger import setup_logger
-# Remove the problematic import
-# from download_data import load_historical_data
-from sklearn.utils import class_weight
-
-# Import our network utilities
-from utils.network_utils import retry_with_backoff
+from ai.models.lstm_model import LSTMModel
+from ai.models.feature_engineering import FeatureEngineering
 
 logger = setup_logger("train_model")
 
-@retry_with_backoff(max_retries=3, base_delay=2.0)
-def download_binance_data(symbol, timeframe, start_date, end_date, save_path=None):
-    """
-    Downloads historical data from Binance with retry logic
+def parse_args():
+    """Parse les arguments de ligne de commande"""
+    parser = argparse.ArgumentParser(description="Entraînement et évaluation du modèle LSTM")
     
-    Args:
-        symbol: Trading pair symbol (e.g., 'BTCUSDT')
-        timeframe: Timeframe for the candles (e.g., '15m')
-        start_date: Start date in YYYY-MM-DD format
-        end_date: End date in YYYY-MM-DD format
-        save_path: Path to save the data (optional)
-        
-    Returns:
-        DataFrame with the historical data
-    """
-    from binance.client import Client
+    # Arguments pour les données
+    parser.add_argument("--symbol", type=str, default="BTCUSDT", 
+                      help="Paire de trading (ex: BTCUSDT)")
+    parser.add_argument("--timeframe", type=str, default="15m",
+                      help="Intervalle de temps (ex: 15m, 1h)")
+    parser.add_argument("--data_path", type=str, required=True,
+                      help="Répertoire des données de marché")
     
-    # Convert date strings to timestamps
-    start_ts = int(datetime.strptime(start_date, '%Y-%m-%d').timestamp() * 1000)
-    end_ts = int(datetime.strptime(end_date, '%Y-%m-%d').timestamp() * 1000)
+    # Arguments pour le modèle
+    parser.add_argument("--output", type=str, default=None,
+                      help="Chemin où sauvegarder le modèle (défaut: data/models/<symbol>_<timeframe>.keras)")
+    parser.add_argument("--lstm_units", type=str, default="128,64,32",
+                      help="Unités LSTM par couche (séparées par virgules)")
+    parser.add_argument("--dropout", type=float, default=0.3,
+                      help="Taux de dropout")
+    parser.add_argument("--learning_rate", type=float, default=0.001,
+                      help="Taux d'apprentissage")
     
-    try:
-        # Initialize client
-        client = Client("", "")  # Public API access doesn't need keys for historical data
-        
-        logger.info(f"Downloading {symbol} {timeframe} data from {start_date} to {end_date}")
-        
-        # Get data in chunks to avoid timeouts for large date ranges
-        klines_data = []
-        chunk_size = timedelta(days=30).total_seconds() * 1000  # 30 days in milliseconds
-        current_ts = start_ts
-        
-        while current_ts < end_ts:
-            next_ts = min(current_ts + chunk_size, end_ts)
-            
-            # Apply rate limiting
-            time.sleep(1.0)  # Sleep to respect rate limits
-            
-            chunk = client.get_historical_klines(
-                symbol=symbol,
-                interval=timeframe,
-                start_str=current_ts,
-                end_str=next_ts
-            )
-            
-            if chunk:
-                klines_data.extend(chunk)
-                logger.info(f"Downloaded chunk: {len(chunk)} candles")
-            else:
-                logger.warning(f"No data for chunk starting at {datetime.fromtimestamp(current_ts/1000)}")
-            
-            current_ts = next_ts
-            
-        # Convert to DataFrame
-        if klines_data:
-            df = pd.DataFrame(klines_data, columns=[
-                'timestamp', 'open', 'high', 'low', 'close', 'volume',
-                'close_time', 'quote_asset_volume', 'number_of_trades',
-                'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume', 'ignore'
-            ])
-            
-            # Convert numeric columns
-            for col in ['open', 'high', 'low', 'close', 'volume']:
-                df[col] = pd.to_numeric(df[col])
-            
-            # Convert timestamp
-            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-            
-            # Save data if path is provided
-            if save_path:
-                os.makedirs(os.path.dirname(os.path.abspath(save_path)), exist_ok=True)
-                df.to_csv(save_path, index=False)
-                logger.info(f"Data saved to {save_path}")
-                
-            return df
-        else:
-            logger.error("No data returned from Binance API")
-            return pd.DataFrame()
-            
-    except Exception as e:
-        logger.error(f"Error downloading data: {str(e)}")
-        raise  # Re-raise to trigger retry
+    # Arguments pour l'entraînement
+    parser.add_argument("--epochs", type=int, default=100,
+                      help="Nombre d'époques d'entraînement")
+    parser.add_argument("--batch_size", type=int, default=64,
+                      help="Taille des batchs d'entraînement")
+    parser.add_argument("--validation_split", type=float, default=0.2,
+                      help="Proportion des données pour la validation")
+    
+    # Options avancées
+    parser.add_argument("--use_attention", type=bool, default=True,
+                      help="Utiliser le mécanisme d'attention")
+    parser.add_argument("--use_early_stopping", type=bool, default=True,
+                      help="Utiliser l'arrêt précoce")
+    parser.add_argument("--patience", type=int, default=15,
+                      help="Patience pour l'arrêt précoce")
+    parser.add_argument("--verbose", type=int, default=1,
+                      help="Niveau de verbosité (0=silencieux, 1=progrès, 2=détaillé)")
+    parser.add_argument("--evaluate_after", type=bool, default=True,
+                      help="Évaluer le modèle après l'entraînement")
+    
+    return parser.parse_args()
 
-def load_data(symbol: str, timeframe: str, start_date: str, end_date: str) -> pd.DataFrame:
+def load_data(data_path, symbol, timeframe):
     """
-    Loads OHLCV data from disk with improved error handling
+    Charge les données de marché
     
     Args:
-        symbol: Trading pair symbol
-        timeframe: Time interval
-        start_date: Start date (YYYY-MM-DD)
-        end_date: End date (YYYY-MM-DD)
-        
-    Returns:
-        DataFrame with OHLCV data
-    """
-    # Build file path
-    data_path = os.path.join(DATA_DIR, "market_data", f"{symbol}_{timeframe}_{start_date}_{end_date}.csv")
-    
-    # Check if file exists
-    if not os.path.exists(data_path):
-        logger.error(f"File not found: {data_path}")
-        return pd.DataFrame()
-    
-    # Load data with more robust error handling
-    try:
-        # Try to load with pandas
-        data = pd.read_csv(data_path)
-        
-        # Validate required columns
-        required_columns = ['open', 'high', 'low', 'close', 'volume']
-        if not all(col in data.columns for col in required_columns):
-            logger.error(f"Missing required columns in {data_path}. Found: {data.columns.tolist()}")
-            return pd.DataFrame()
-            
-        # Convert timestamp column if present
-        if "timestamp" in data.columns:
-            data["timestamp"] = pd.to_datetime(data["timestamp"])
-            data.set_index("timestamp", inplace=True)
-        
-        # Check data validity
-        if data.empty:
-            logger.error(f"Empty data file: {data_path}")
-            return pd.DataFrame()
-            
-        if data.isnull().values.any():
-            logger.warning(f"File contains NaN values: {data_path}. Filling NaN values.")
-            # Forward fill, then backward fill to handle NaNs
-            data = data.ffill().bfill()
-        
-        logger.info(f"Data loaded: {len(data)} rows")
-        return data
-        
-    except pd.errors.EmptyDataError:
-        logger.error(f"Empty file: {data_path}")
-        return pd.DataFrame()
-    except pd.errors.ParserError:
-        logger.error(f"Parser error loading {data_path}. File may be corrupted.")
-        return pd.DataFrame()
-    except Exception as e:
-        logger.error(f"Error loading data: {str(e)}")
-        return pd.DataFrame()
-
-# Add this function to replace the missing load_historical_data function
-def load_historical_data(symbol: str, timeframe: str) -> pd.DataFrame:
-    """
-    Charge les données historiques disponibles pour un symbole et un timeframe
-    
-    Args:
-        symbol: Paire de trading (ex: 'BTCUSDT')
-        timeframe: Intervalle de temps (ex: '15m')
-        
-    Returns:
-        DataFrame avec les données OHLCV ou DataFrame vide si erreur
-    """
-    # Chercher les fichiers de données correspondants dans le répertoire des données
-    market_data_dir = os.path.join(DATA_DIR, "market_data")
-    if not os.path.exists(market_data_dir):
-        logger.error(f"Répertoire de données non trouvé: {market_data_dir}")
-        return pd.DataFrame()
-    
-    # Recherche les fichiers qui correspondent au pattern du symbole et timeframe
-    matching_files = [f for f in os.listdir(market_data_dir) 
-                     if f.startswith(f"{symbol}_{timeframe}") and f.endswith('.csv')]
-    
-    if not matching_files:
-        logger.error(f"Aucun fichier de données trouvé pour {symbol} ({timeframe})")
-        return pd.DataFrame()
-    
-    # Utiliser le fichier le plus récent
-    latest_file = sorted(matching_files)[-1]
-    file_path = os.path.join(market_data_dir, latest_file)
-    
-    logger.info(f"Chargement du fichier de données: {file_path}")
-    return load_data(symbol, timeframe, "", "")  # Les dates sont ignorées car on utilise le chemin direct
-
-def download_data_if_needed(symbol: str, timeframe: str, start_date: str, end_date: str) -> bool:
-    """
-    Télécharge les données si elles n'existent pas sur le disque
-    
-    Args:
-        symbol: Paire de trading
+        data_path: Chemin vers les données
+        symbol: Symbole de la paire de trading
         timeframe: Intervalle de temps
-        start_date: Date de début (YYYY-MM-DD)
-        end_date: Date de fin (YYYY-MM-DD)
         
     Returns:
-        True si les données sont disponibles, False sinon
+        DataFrame avec les données
     """
-    # Construire le chemin du fichier
-    data_path = os.path.join(DATA_DIR, "market_data", f"{symbol}_{timeframe}_{start_date}_{end_date}.csv")
+    # Déterminer le chemin du fichier
+    file_path = os.path.join(data_path, f"{symbol}_{timeframe}.csv")
     
     # Vérifier si le fichier existe
-    if os.path.exists(data_path):
-        logger.info(f"Données déjà disponibles: {data_path}")
-        return True
-    
-    # Télécharger les données
-    logger.info(f"Téléchargement des données pour {symbol} ({timeframe}) du {start_date} au {end_date}")
-    
-    try:
-        # Télécharger les données
-        df = download_binance_data(symbol, timeframe, start_date, end_date, data_path)
+    if not os.path.exists(file_path):
+        # Chercher un fichier qui contient le symbole et le timeframe
+        possible_files = [f for f in os.listdir(data_path) if f.endswith('.csv') and symbol in f and timeframe in f]
         
-        if df is not None and not df.empty:
-            logger.info(f"Données téléchargées avec succès: {len(df)} lignes")
-            return True
+        if possible_files:
+            file_path = os.path.join(data_path, possible_files[0])
+            logger.info(f"Utilisation du fichier trouvé: {file_path}")
         else:
-            logger.error("Échec du téléchargement des données")
-            return False
-    except Exception as e:
-        logger.error(f"Erreur lors du téléchargement des données: {str(e)}")
-        return False
+            raise FileNotFoundError(f"Aucun fichier de données trouvé pour {symbol}_{timeframe} dans {data_path}")
+    
+    # Charger les données
+    logger.info(f"Chargement des données depuis {file_path}...")
+    df = pd.read_csv(file_path)
+    
+    # Vérifier que les colonnes nécessaires existent
+    required_columns = ['timestamp', 'open', 'high', 'low', 'close', 'volume']
+    
+    # Adapter au format si nécessaire
+    if 'date' in df.columns and 'timestamp' not in df.columns:
+        df['timestamp'] = df['date']
+    
+    # Vérifier les colonnes
+    missing_cols = [col for col in required_columns if col not in df.columns]
+    if missing_cols:
+        raise ValueError(f"Colonnes manquantes dans les données: {missing_cols}")
+    
+    # Convertir timestamp en datetime et définir comme index
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    df.set_index('timestamp', inplace=True)
+    
+    # Trier par index pour assurer l'ordre chronologique
+    df = df.sort_index()
+    
+    logger.info(f"Données chargées: {len(df)} lignes de {df.index.min()} à {df.index.max()}")
+    
+    return df
 
-def train_lstm_model(args):
+def train_model(args):
     """
     Entraîne le modèle LSTM avec les paramètres spécifiés
     
     Args:
         args: Arguments de ligne de commande
+        
+    Returns:
+        Le modèle entraîné et les métriques
     """
-    # Télécharger les données si nécessaire
-    if not download_data_if_needed(args.symbol, args.timeframe, args.start_date, args.end_date):
-        logger.error("Impossible de continuer sans données")
-        return
+    # 1. Charger les données
+    df = load_data(args.data_path, args.symbol, args.timeframe)
     
-    # Charger les données
-    data = load_data(args.symbol, args.timeframe, args.start_date, args.end_date)
+    # 2. Préparer les données
+    feature_engineering = FeatureEngineering(save_scalers=True)
     
-    if data.empty:
-        logger.error("Données vides, impossible de continuer")
-        return
-    
-    # Configurer les paramètres du modèle
-    model_params = {
-        "input_length": args.sequence_length,
-        "feature_dim": args.feature_dim,
-        "lstm_units": [args.lstm_units, args.lstm_units // 2, args.lstm_units // 4],
-        "dropout_rate": args.dropout,
-        "learning_rate": args.learning_rate,
-        "l1_reg": args.l1_reg,
-        "l2_reg": args.l2_reg,
-        "use_attention": not args.no_attention,
-        "use_residual": not args.no_residual,
-        "prediction_horizons": [args.short_horizon, args.mid_horizon, args.long_horizon]
-    }
-    
-    logger.info(f"Configuration du modèle: {json.dumps(model_params, indent=2)}")
-    
-    # Créer le ModelTrainer
-    trainer = ModelTrainer(model_params)
-    
-    # Préparer les données
-    logger.info("Préparation des données...")
-    featured_data, normalized_data = trainer.prepare_data(data)
-    
-    # Calculer les poids des classes
-    y_direction = ...  # Assurez-vous que y_direction est défini dans votre préparation de données
-    class_weights = class_weight.compute_class_weight(
-        class_weight='balanced',
-        classes=np.unique(y_direction),
-        y=y_direction
+    # Créer les caractéristiques avancées
+    logger.info("Création des caractéristiques...")
+    featured_data = feature_engineering.create_features(
+        df, 
+        include_time_features=True,
+        include_price_patterns=True
     )
-    class_weight_dict = {i: weight for i, weight in enumerate(class_weights)}
     
-    # Ajouter des callbacks pour une meilleure régularisation
-    callbacks = [
-        EarlyStopping(
+    # Normaliser les données
+    logger.info("Normalisation des données...")
+    normalized_data = feature_engineering.scale_features(
+        featured_data,
+        is_training=True,
+        method='standard',
+        feature_group='lstm'
+    )
+    
+    # Diviser en ensembles d'entraînement et de validation (chronologiquement)
+    train_size = int(len(normalized_data) * (1 - args.validation_split))
+    train_data = normalized_data.iloc[:train_size]
+    val_data = normalized_data.iloc[train_size:]
+    
+    logger.info(f"Division des données: {len(train_data)} échantillons d'entraînement, {len(val_data)} échantillons de validation")
+    
+    # 3. Créer les séquences et les cibles
+    # Extraire les horizons de prédiction typiques (3h, 6h, 24h pour des bougies de 15min)
+    horizons = [12, 24, 96]
+    if args.timeframe == '1h':
+        horizons = [3, 6, 24]
+    elif args.timeframe == '4h':
+        horizons = [1, 3, 6]
+    
+    # Créer les séquences d'entrée et les cibles
+    logger.info("Création des séquences pour l'entraînement...")
+    X_train, y_train = feature_engineering.create_multi_horizon_data(
+        train_data, 
+        sequence_length=60,  # 60 périodes d'historique
+        horizons=horizons,
+        is_training=True
+    )
+    
+    logger.info("Création des séquences pour la validation...")
+    X_val, y_val = feature_engineering.create_multi_horizon_data(
+        val_data, 
+        sequence_length=60,  # 60 périodes d'historique
+        horizons=horizons,
+        is_training=True
+    )
+    
+    # 4. Convertir les string d'unités LSTM en liste d'entiers
+    lstm_units = [int(u) for u in args.lstm_units.split(',')]
+    
+    # 5. Créer et compiler le modèle
+    logger.info(f"Création du modèle LSTM avec unités: {lstm_units}")
+    model = LSTMModel(
+        input_length=60,
+        feature_dim=X_train.shape[2],
+        lstm_units=lstm_units,
+        dropout_rate=args.dropout,
+        learning_rate=args.learning_rate,
+        use_attention=args.use_attention,
+        prediction_horizons=horizons
+    )
+    
+    # 6. Préparer les callbacks
+    callbacks = []
+    
+    # Créer le répertoire pour les checkpoints si nécessaire
+    os.makedirs(MODEL_CHECKPOINTS_DIR, exist_ok=True)
+    
+    # Chemin pour sauvegarder le modèle
+    if args.output:
+        model_path = args.output
+    else:
+        model_path = os.path.join(DATA_DIR, "models", f"lstm_{args.symbol}_{args.timeframe}.keras")
+    
+    # Créer le répertoire parent si nécessaire
+    os.makedirs(os.path.dirname(model_path), exist_ok=True)
+    
+    # Model checkpoint - UPDATED to use .keras extension
+    checkpoint_path = os.path.join(MODEL_CHECKPOINTS_DIR, f"lstm_{args.symbol}_{args.timeframe}_checkpoint.keras")
+    from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
+    
+    callbacks.append(
+        ModelCheckpoint(
+            filepath=checkpoint_path,
             monitor='val_loss',
-            patience=15,
-            restore_best_weights=True
-        ),
+            save_best_only=True,
+            save_weights_only=False,
+            verbose=1
+        )
+    )
+    
+    # Early stopping
+    if args.use_early_stopping:
+        callbacks.append(
+            EarlyStopping(
+                monitor='val_loss',
+                patience=args.patience,
+                restore_best_weights=True,
+                verbose=1
+            )
+        )
+    
+    # Learning rate reduction
+    callbacks.append(
         ReduceLROnPlateau(
             monitor='val_loss',
             factor=0.5,
-            patience=8,
-            min_lr=1e-6
-        ),
-        # Augmenter le dropout progressivement si nécessaire
-        LambdaCallback(
-            on_epoch_end=lambda epoch, logs: K.set_value(
-                trainer.model.get_layer('dropout_layer').rate, 
-                min(0.5, 0.3 + epoch * 0.01)
-            ) if epoch > 10 else None
+            patience=args.patience // 2,
+            min_lr=1e-6,
+            verbose=1
         )
-    ]
+    )
     
-    # Diviser les données en ensembles d'entraînement, validation et test
-    if args.cv:
-        # Entraînement avec validation croisée
-        logger.info("Entraînement avec validation croisée temporelle...")
-        cv_results = trainer.train_with_cv(
-            normalized_data,
-            n_splits=args.cv_splits,
-            epochs=args.epochs,
-            batch_size=args.batch_size,
-            initial_train_ratio=args.train_ratio,
-            patience=args.patience,
-            callbacks=callbacks
-        )
-        
-        logger.info(f"Entraînement terminé, perte moyenne de validation: {cv_results['avg_val_loss']:.4f}")
-    else:
-        # Entraînement simple avec division train/val/test
-        logger.info("Entraînement standard avec division temporelle...")
-        train_data, val_data, test_data = trainer.temporal_train_test_split(
-            normalized_data,
-            train_ratio=args.train_ratio,
-            val_ratio=args.val_ratio
-        )
-        
-        # Créer et entraîner le modèle
-        train_results = trainer.train_final_model(
-            normalized_data,
-            epochs=args.epochs,
-            batch_size=args.batch_size,
-            test_ratio=1.0 - args.train_ratio - args.val_ratio,
-            class_weight=class_weight_dict,
-            callbacks=callbacks
-        )
-        
-        logger.info(f"Entraînement terminé, perte sur le test: {train_results['test_loss']:.4f}")
-        
-        # Afficher les précisions de direction par horizon
-        for i, horizon in enumerate(model_params["prediction_horizons"]):
-            accuracy = train_results["direction_accuracies"][i]
-            logger.info(f"Précision de direction pour horizon {horizon}: {accuracy:.2f}")
+    # 7. Entraîner le modèle
+    logger.info(f"Début de l'entraînement pour {args.epochs} époques avec batch_size={args.batch_size}...")
+    history = model.model.fit(
+        x=X_train,
+        y=y_train,
+        epochs=args.epochs,
+        batch_size=args.batch_size,
+        validation_data=(X_val, y_val),
+        callbacks=callbacks,
+        verbose=args.verbose
+    )
     
-    # Valider le modèle final sur des données récentes
-    if args.validate:
-        logger.info("Validation du modèle sur des données récentes...")
-        
-        # Charger des données récentes pour la validation
-        end_date = datetime.now().strftime("%Y-%m-%d")
-        start_date = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
-        
-        if download_data_if_needed(args.symbol, args.timeframe, start_date, end_date):
-            validation_data = load_data(args.symbol, args.timeframe, start_date, end_date)
-            
-            if not validation_data.empty:
-                # Créer le validateur
-                validator = ModelValidator(trainer.model, trainer.feature_engineering)
-                
-                # Évaluer sur les données récentes
-                validation_results = validator.evaluate_on_test_set(validation_data)
-                
-                logger.info(f"Validation terminée, perte: {validation_results['loss']:.4f}")
-                
-                # Afficher les métriques par horizon
-                for horizon_key, metrics in validation_results["horizons"].items():
-                    direction_acc = metrics["direction"]["accuracy"]
-                    direction_f1 = metrics["direction"]["f1_score"]
-                    
-                    logger.info(f"{horizon_key}: Accuracy={direction_acc:.2f}, F1={direction_f1:.2f}")
+    # 8. Sauvegarder le modèle
+    logger.info(f"Sauvegarde du modèle dans {model_path}...")
+    model.save(model_path)
     
-    logger.info("Processus d'entraînement terminé")
-    logger.info(f"Modèle final sauvegardé: {os.path.join(DATA_DIR, 'models', 'production', 'lstm_final.h5')}")
+    # 9. Sauvegarder l'historique d'entraînement
+    history_path = os.path.join(os.path.dirname(model_path), f"history_{args.symbol}_{args.timeframe}.json")
+    with open(history_path, 'w') as f:
+        # Convertir les valeurs numpy en float pour JSON
+        history_dict = {}
+        for key, values in history.history.items():
+            history_dict[key] = [float(v) for v in values]
+        
+        json.dump(history_dict, f, indent=2)
+    
+    # 10. Évaluation du modèle
+    if args.evaluate_after:
+        logger.info("Évaluation du modèle sur les données de validation...")
+        evaluate_model(model, X_val, y_val, args.symbol, args.timeframe, model_path)
+    
+    return model, history
 
-def evaluate_model(args):
+def evaluate_model(model, X_val, y_val, symbol, timeframe, model_path):
     """
-    Évalue un modèle LSTM existant sur de nouvelles données
+    Évalue le modèle sur les données de validation
     
     Args:
-        args: Arguments de ligne de commande
+        model: Modèle LSTM entraîné
+        X_val: Données de validation (features)
+        y_val: Données de validation (cibles)
+        symbol: Symbole de la paire de trading
+        timeframe: Intervalle de temps
+        model_path: Chemin du modèle sauvegardé
     """
-    # Télécharger les données de test si nécessaire
-    if not download_data_if_needed(args.symbol, args.timeframe, args.start_date, args.end_date):
-        logger.error("Impossible de continuer sans données")
-        return
-    
-    # Charger les données
-    data = load_data(args.symbol, args.timeframe, args.start_date, args.end_date)
-    
-    if data.empty:
-        logger.error("Données vides, impossible de continuer")
-        return
-    
-    # Charger le modèle existant
-    model_path = args.model_path or os.path.join(DATA_DIR, "models", "production", "lstm_final.h5")
-    
-    if not os.path.exists(model_path):
-        logger.error(f"Modèle non trouvé: {model_path}")
-        return
-    
-    # Créer le validateur
-    validator = ModelValidator()
-    validator.load_model(model_path)
-    
     # Évaluer le modèle
-    evaluation = validator.evaluate_on_test_set(data)
+    evaluation = model.model.evaluate(X_val, y_val, verbose=1)
     
-    logger.info(f"Évaluation terminée, perte globale: {evaluation['loss']:.4f}")
+    # Générer des prédictions
+    predictions = model.model.predict(X_val)
     
-    # Afficher les métriques par horizon
-    for horizon_key, metrics in evaluation["horizons"].items():
-        direction_metrics = metrics["direction"]
-        volatility_metrics = metrics["volatility"]
-        
-        logger.info(f"\nHorizon: {horizon_key}")
-        logger.info(f"Direction: Accuracy={direction_metrics['accuracy']:.2f}, "
-                   f"Precision={direction_metrics['precision']:.2f}, "
-                   f"Recall={direction_metrics['recall']:.2f}, "
-                   f"F1={direction_metrics['f1_score']:.2f}")
-        logger.info(f"Volatilité: MAE={volatility_metrics['mae']:.4f}, "
-                   f"RMSE={volatility_metrics['rmse']:.4f}")
+    # Calculer les métriques de direction (précision de la prédiction de direction)
+    direction_accuracy = {}
     
-    # Comparaison avec la stratégie de base
-    if args.compare:
-        logger.info("\nComparaison avec la stratégie de base...")
+    for i, horizon_idx in enumerate(range(0, len(predictions))):
+        # Obtenir les prédictions de direction
+        y_true = y_val[horizon_idx].flatten()
+        y_pred = (predictions[horizon_idx].flatten() > 0.5).astype(int)
         
-        comparison = validator.compare_with_baseline(
-            data,
-            initial_capital=args.capital
-        )
+        # Calculer la précision
+        accuracy = np.mean(y_true == y_pred)
+        direction_accuracy[f"horizon_{i+1}"] = accuracy
+    
+    # Sauvegarder les métriques d'évaluation
+    metrics_path = os.path.join(os.path.dirname(model_path), f"metrics_{symbol}_{timeframe}.json")
+    
+    metrics = {
+        "evaluation": [float(e) for e in evaluation],
+        "direction_accuracy": direction_accuracy,
+        "timestamp": datetime.now().isoformat()
+    }
+    
+    with open(metrics_path, 'w') as f:
+        json.dump(metrics, f, indent=2)
+    
+    logger.info(f"Précision de direction: {direction_accuracy}")
+    logger.info(f"Métriques sauvegardées dans {metrics_path}")
+    
+    # Créer des visualisations
+    create_evaluation_plots(model, X_val, y_val, predictions, symbol, timeframe, model_path)
+
+def create_evaluation_plots(model, X_val, y_val, predictions, symbol, timeframe, model_path):
+    """
+    Crée des visualisations des performances du modèle
+    
+    Args:
+        model: Modèle LSTM entraîné
+        X_val: Données de validation (features)
+        y_val: Données de validation (cibles)
+        predictions: Prédictions du modèle
+        symbol: Symbole de la paire de trading
+        timeframe: Intervalle de temps
+        model_path: Chemin du modèle sauvegardé
+    """
+    # Créer le répertoire pour les visualisations
+    viz_dir = os.path.join(os.path.dirname(model_path), "visualizations")
+    os.makedirs(viz_dir, exist_ok=True)
+    
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    from sklearn.metrics import confusion_matrix
+    
+    # 1. Direction prediction accuracy per horizon
+    plt.figure(figsize=(10, 6))
+    horizons = []
+    accuracies = []
+    
+    for i, horizon_idx in enumerate(range(len(predictions))):
+        y_true = y_val[horizon_idx].flatten()
+        y_pred = (predictions[horizon_idx].flatten() > 0.5).astype(int)
+        accuracy = np.mean(y_true == y_pred) * 100
         
-        # Afficher les résultats
-        baseline = comparison["baseline"]
-        lstm = comparison["lstm"]
-        diff = comparison["comparison"]
-        
-        logger.info("\n=== Résultats de la comparaison ===")
-        logger.info(f"Stratégie de base: {baseline['return_pct']:.2f}% (Drawdown: {baseline['max_drawdown_pct']:.2f}%, Sharpe: {baseline['sharpe_ratio']:.2f})")
-        logger.info(f"Modèle LSTM: {lstm['return_pct']:.2f}% (Drawdown: {lstm['max_drawdown_pct']:.2f}%, Sharpe: {lstm['sharpe_ratio']:.2f})")
-        logger.info(f"Différence: {diff['return_difference']:.2f}%, Amélioration drawdown: {diff['drawdown_improvement']:.2f}%, Amélioration Sharpe: {diff['sharpe_improvement']:.2f}")
-        
-        # Sauvegarder les résultats
-        comparison_file = os.path.join(DATA_DIR, "models", "evaluation", f"comparison_{args.symbol}_{datetime.now().strftime('%Y%m%d')}.json")
-        os.makedirs(os.path.dirname(comparison_file), exist_ok=True)
-        
-        with open(comparison_file, 'w') as f:
-            json.dump(comparison, f, indent=2, default=str)
-        
-        logger.info(f"Résultats de comparaison sauvegardés: {comparison_file}")
+        horizons.append(f"H{i+1}")
+        accuracies.append(accuracy)
+    
+    plt.bar(horizons, accuracies, color='skyblue')
+    plt.axhline(y=50, color='r', linestyle='--', alpha=0.5)  # 50% line (random)
+    plt.ylim([0, 100])
+    plt.title(f'Précision de Prédiction de Direction par Horizon - {symbol} {timeframe}')
+    plt.ylabel('Précision (%)')
+    plt.xlabel('Horizon')
+    
+    for i, v in enumerate(accuracies):
+        plt.text(i, v + 1, f"{v:.1f}%", ha='center')
+    
+    plt.savefig(os.path.join(viz_dir, f"{symbol}_{timeframe}_direction_accuracy.png"))
+    plt.close()
+    
+    # 2. Confusion matrix for the first horizon
+    y_true = y_val[0].flatten()
+    y_pred = (predictions[0].flatten() > 0.5).astype(int)
+    cm = confusion_matrix(y_true, y_pred)
+    
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False)
+    plt.title(f'Matrice de Confusion - {symbol} {timeframe}')
+    plt.ylabel('Vrai')
+    plt.xlabel('Prédit')
+    plt.savefig(os.path.join(viz_dir, f"{symbol}_{timeframe}_confusion_matrix.png"))
+    plt.close()
+    
+    logger.info(f"Visualisations sauvegardées dans {viz_dir}")
 
 def main():
-    """Point d'entrée principal du script"""
-    parser = argparse.ArgumentParser(description="Entraînement et évaluation du modèle LSTM")
+    """Point d'entrée principal"""
+    args = parse_args()
     
-    subparsers = parser.add_subparsers(dest="command", help="Commande à exécuter")
-    
-    # Parser pour l'entraînement
-    train_parser = subparsers.add_parser("train", help="Entraîner un nouveau modèle LSTM")
-    
-    # Arguments pour les données
-    train_parser.add_argument("--symbol", type=str, default="BTCUSDT", help="Paire de trading")
-    train_parser.add_argument("--timeframe", type=str, default="15m", help="Intervalle de temps")
-    train_parser.add_argument("--start-date", type=str, required=True, help="Date de début (YYYY-MM-DD)")
-    train_parser.add_argument("--end-date", type=str, required=True, help="Date de fin (YYYY-MM-DD)")
-    
-    # Arguments pour le modèle
-    train_parser.add_argument("--sequence-length", type=int, default=60, help="Longueur des séquences d'entrée")
-    train_parser.add_argument("--feature-dim", type=int, default=30, help="Dimension des caractéristiques")
-    train_parser.add_argument("--lstm-units", type=int, default=128, help="Nombre d'unités LSTM")
-    train_parser.add_argument("--dropout", type=float, default=0.3, help="Taux de dropout")
-    train_parser.add_argument("--learning-rate", type=float, default=0.001, help="Taux d'apprentissage")
-    train_parser.add_argument("--l1-reg", type=float, default=0.0001, help="Régularisation L1")
-    train_parser.add_argument("--l2-reg", type=float, default=0.0001, help="Régularisation L2")
-    train_parser.add_argument("--no-attention", action="store_true", help="Désactiver le mécanisme d'attention")
-    train_parser.add_argument("--no-residual", action="store_true", help="Désactiver les connexions résiduelles")
-    
-    # Horizons de prédiction
-    train_parser.add_argument("--short-horizon", type=int, default=12, help="Horizon court terme (nb de périodes)")
-    train_parser.add_argument("--mid-horizon", type=int, default=24, help="Horizon moyen terme (nb de périodes)")
-    train_parser.add_argument("--long-horizon", type=int, default=96, help="Horizon long terme (nb de périodes)")
-    
-    # Arguments pour l'entraînement
-    train_parser.add_argument("--epochs", type=int, default=100, help="Nombre d'époques")
-    train_parser.add_argument("--batch-size", type=int, default=32, help="Taille du batch")
-    train_parser.add_argument("--patience", type=int, default=20, help="Patience pour l'early stopping")
-    train_parser.add_argument("--train-ratio", type=float, default=0.7, help="Ratio des données d'entraînement")
-    train_parser.add_argument("--val-ratio", type=float, default=0.15, help="Ratio des données de validation")
-    
-    # Validation croisée
-    train_parser.add_argument("--cv", action="store_true", help="Utiliser la validation croisée temporelle")
-    train_parser.add_argument("--cv-splits", type=int, default=5, help="Nombre de plis pour la validation croisée")
-    
-    # Validation finale
-    train_parser.add_argument("--validate", action="store_true", help="Valider sur des données récentes après l'entraînement")
-    
-    # Parser pour l'évaluation
-    eval_parser = subparsers.add_parser("evaluate", help="Évaluer un modèle LSTM existant")
-    
-    # Arguments pour les données
-    eval_parser.add_argument("--symbol", type=str, default="BTCUSDT", help="Paire de trading")
-    eval_parser.add_argument("--timeframe", type=str, default="15m", help="Intervalle de temps")
-    eval_parser.add_argument("--start-date", type=str, required=True, help="Date de début (YYYY-MM-DD)")
-    eval_parser.add_argument("--end-date", type=str, required=True, help="Date de fin (YYYY-MM-DD)")
-    
-    # Arguments pour le modèle
-    eval_parser.add_argument("--model-path", type=str, help="Chemin vers le modèle à évaluer")
-    
-    # Comparaison avec stratégie de base
-    eval_parser.add_argument("--compare", action="store_true", help="Comparer avec la stratégie de base")
-    eval_parser.add_argument("--capital", type=float, default=200, help="Capital initial pour la comparaison")
-    
-    args = parser.parse_args()
-    
-    if args.command == "train":
-        train_lstm_model(args)
-    elif args.command == "evaluate":
-        evaluate_model(args)
-    else:
-        parser.print_help()
+    try:
+        # Entraîner le modèle
+        model, history = train_model(args)
+        
+        logger.info("Entraînement terminé avec succès!")
+        
+    except Exception as e:
+        logger.error(f"Erreur lors de l'entraînement: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        import sys
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

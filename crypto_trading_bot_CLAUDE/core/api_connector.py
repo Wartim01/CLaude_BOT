@@ -1,43 +1,74 @@
-# core/api_connector.py
 """
-Connecteur pour l'API Binance
-Gère les connexions et les appels à l'API de l'échange
+API connector module for interacting with cryptocurrency exchanges
+Currently supports Binance
 """
+import os
 import time
-import logging
+import json
 import hmac
 import hashlib
 import requests
-import urllib.parse
-from typing import Dict, List, Any, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union, Any
+from urllib.parse import urlencode
+from binance.client import Client
+from binance.exceptions import BinanceAPIException
 
 from config.config import (
-    BINANCE_API_KEY, 
-    BINANCE_API_SECRET, 
+    ACTIVE_API_KEY,           # Changed from BINANCE_API_KEY
+    ACTIVE_API_SECRET,        # Changed from BINANCE_API_SECRET
     USE_TESTNET,
-    MAX_API_RETRIES, 
+    MAX_API_RETRIES,
     API_RETRY_DELAY
 )
 from utils.logger import setup_logger
+from utils.exceptions import ExchangeAPIException
 
 logger = setup_logger("api_connector")
 
 class BinanceConnector:
     """
-    Gère les connexions et les appels à l'API Binance
+    Connector for Binance API
+    Handles all communications with Binance
     """
-    def __init__(self):
-        self.api_key = BINANCE_API_KEY
-        self.api_secret = BINANCE_API_SECRET
+    def __init__(self, use_testnet: bool = None):
+        """
+        Initializes the Binance connector
         
-        # Configuration des URLs en fonction du mode (testnet ou production)
-        if USE_TESTNET:
-            self.base_url = "https://testnet.binance.vision/api"
-            logger.info("Mode TestNet activé")
-        else:
-            self.base_url = "https://api.binance.com/api"
-            logger.info("Mode Production activé")
-    
+        Args:
+            use_testnet: Override config to use testnet or not
+        """
+        self.api_key = ACTIVE_API_KEY
+        self.api_secret = ACTIVE_API_SECRET
+        self.use_testnet = USE_TESTNET if use_testnet is None else use_testnet
+        
+        self.base_url = "https://testnet.binance.vision/api" if self.use_testnet else "https://api.binance.com/api"
+        self.wss_url = "wss://testnet.binance.vision/ws" if self.use_testnet else "wss://stream.binance.com:9443/ws"
+        
+        self.client = self._initialize_client()
+        
+    def _initialize_client(self) -> Client:
+        """
+        Initializes the Binance client
+        
+        Returns:
+            Binance client object
+        """
+        try:
+            client = Client(self.api_key, self.api_secret, testnet=self.use_testnet)
+            logger.info(f"Binance client initialized (testnet: {self.use_testnet})")
+            
+            # Test connectivity to the API
+            client.ping()
+            server_time = client.get_server_time()
+            time_diff = int(time.time() * 1000) - server_time["serverTime"]
+            
+            logger.info(f"Connected to Binance API. Time difference: {time_diff} ms")
+            
+            return client
+        except BinanceAPIException as e:
+            logger.error(f"Failed to initialize Binance client: {str(e)}")
+            raise ExchangeAPIException(f"Failed to initialize Binance client: {str(e)}")
+
     def _get_signature(self, params: Dict) -> str:
         """
         Génère la signature HMAC SHA256 requise pour les requêtes authentifiées
@@ -342,4 +373,3 @@ class BinanceConnector:
         
         # Pour l'API spot avec margin, utiliser l'endpoint correct
         return self._make_request("POST", "/sapi/v1/margin/leverage", params=params, signed=True)
-        

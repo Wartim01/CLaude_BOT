@@ -1,0 +1,38 @@
+2025-03-06 11:58:00,589 - data_downloader - INFO - Client Binance initialisé avec succès
+2025-03-06 11:58:00,590 - data_downloader - INFO - Téléchargement des données BTCUSDT 15m du 2023-01-01 au 2023-12-31
+2025-03-06 11:58:01,604 - data_downloader - INFO - Téléchargé 1000 bougies jusqu'à 2023-01-11 10:00:00
+2025-03-06 11:58:02,611 - data_downloader - INFO - Téléchargé 2000 bougies jusqu'à 2023-01-21 20:00:00
+2025-03-06 11:58:03,614 - data_downloader - INFO - Téléchargé 3000 bougies jusqu'à 2023-02-01 06:00:00
+2025-03-06 11:58:04,623 - data_downloader - INFO - Téléchargé 4000 bougies jusqu'à 2023-02-11 16:00:00
+2025-03-06 11:58:05,626 - data_downloader - INFO - Téléchargé 5000 bougies jusqu'à 2023-02-22 02:00:00
+2025-03-06 11:58:06,630 - data_downloader - INFO - Téléchargé 6000 bougies jusqu'à 2023-03-04 12:00:00
+2025-03-06 11:58:07,640 - data_downloader - INFO - Téléchargé 7000 bougies jusqu'à 2023-03-14 22:00:00
+2025-03-06 11:58:08,648 - data_downloader - INFO - Téléchargé 7996 bougies jusqu'à 2023-03-25 08:00:00
+2025-03-06 11:58:09,655 - data_downloader - INFO - Téléchargé 8996 bougies jusqu'à 2023-04-04 19:00:00
+2025-03-06 11:58:10,662 - data_downloader - INFO - Téléchargé 9996 bougies jusqu'à 2023-04-15 05:00:00
+2025-03-06 11:58:11,676 - data_downloader - INFO - Téléchargé 10996 bougies jusqu'à 2023-04-25 15:00:00
+2025-03-06 11:58:12,691 - data_downloader - INFO - Téléchargé 11996 bougies jusqu'à 2023-05-06 01:00:00
+2025-03-06 11:58:13,725 - data_downloader - INFO - Téléchargé 12996 bougies jusqu'à 2023-05-16 11:00:00
+2025-03-06 11:58:14,727 - data_downloader - INFO - Téléchargé 13996 bougies jusqu'à 2023-05-26 21:00:00
+2025-03-06 11:58:15,736 - data_downloader - INFO - Téléchargé 14996 bougies jusqu'à 2023-06-06 07:00:00
+2025-03-06 11:58:16,752 - data_downloader - INFO - Téléchargé 15996 bougies jusqu'à 2023-06-16 17:00:00
+2025-03-06 11:58:17,765 - data_downloader - INFO - Téléchargé 16996 bougies jusqu'à 2023-06-27 03:00:00
+2025-03-06 11:58:18,770 - data_downloader - INFO - Téléchargé 17996 bougies jusqu'à 2023-07-07 13:00:00
+2025-03-06 11:58:19,780 - data_downloader - INFO - Téléchargé 18996 bougies jusqu'à 2023-07-17 23:00:00
+2025-03-06 11:58:20,785 - data_downloader - INFO - Téléchargé 19996 bougies jusqu'à 2023-07-28 09:00:00
+2025-03-06 11:58:21,784 - data_downloader - INFO - Téléchargé 20996 bougies jusqu'à 2023-08-07 19:00:00
+2025-03-06 11:58:22,789 - data_downloader - INFO - Téléchargé 21996 bougies jusqu'à 2023-08-18 05:00:00
+2025-03-06 11:58:23,802 - data_downloader - INFO - Téléchargé 22996 bougies jusqu'à 2023-08-28 15:00:00
+2025-03-06 11:58:24,804 - data_downloader - INFO - Téléchargé 23996 bougies jusqu'à 2023-09-08 01:00:00
+2025-03-06 11:58:25,812 - data_downloader - INFO - Téléchargé 24996 bougies jusqu'à 2023-09-18 11:00:00
+2025-03-06 11:58:26,814 - data_downloader - INFO - Téléchargé 25996 bougies jusqu'à 2023-09-28 21:00:00
+2025-03-06 11:58:27,829 - data_downloader - INFO - Téléchargé 26996 bougies jusqu'à 2023-10-09 07:00:00
+2025-03-06 11:58:28,837 - data_downloader - INFO - Téléchargé 27996 bougies jusqu'à 2023-10-19 17:00:00
+2025-03-06 11:58:29,854 - data_downloader - INFO - Téléchargé 28996 bougies jusqu'à 2023-10-30 02:00:00
+2025-03-06 11:58:30,871 - data_downloader - INFO - Téléchargé 29996 bougies jusqu'à 2023-11-09 12:00:00
+2025-03-06 11:58:31,876 - data_downloader - INFO - Téléchargé 30996 bougies jusqu'à 2023-11-19 22:00:00
+2025-03-06 11:58:32,881 - data_downloader - INFO - Téléchargé 31996 bougies jusqu'à 2023-11-30 08:00:00
+2025-03-06 11:58:33,891 - data_downloader - INFO - Téléchargé 32996 bougies jusqu'à 2023-12-10 18:00:00
+2025-03-06 11:58:35,124 - data_downloader - INFO - Téléchargé 33996 bougies jusqu'à 2023-12-21 04:00:00
+2025-03-06 11:58:36,124 - data_downloader - INFO - Téléchargé 34941 bougies jusqu'à 2023-12-31 00:00:00
+2025-03-06 11:58:36,473 - data_downloader - INFO - Données sauvegardées: data/market_data/BTCUSDT_15m.csv (34941 lignes)
