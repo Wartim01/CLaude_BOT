@@ -1,0 +1,17 @@
+{
+  "best_params": {
+    "lstm_units_first": 136,
+    "lstm_layers": 3,
+    "dropout_rate": 0.39279757672456206,
+    "learning_rate": 0.0006251373574521745,
+    "l1_reg": 2.9380279387035354e-06,
+    "l2_reg": 2.9375384576328313e-06,
+    "sequence_length": 60,
+    "batch_size": 64,
+    "use_attention": false,
+    "use_residual": false
+  },
+  "best_value": 0.0,
+  "n_trials": 30,
+  "timestamp": "2025-03-05T12:42:34.916064"
+}

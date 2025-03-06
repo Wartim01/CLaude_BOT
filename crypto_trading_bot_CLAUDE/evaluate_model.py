@@ -17,7 +17,7 @@ from sklearn.metrics import confusion_matrix, classification_report, precision_r
 from ai.models.lstm_model import LSTMModel
 from ai.models.feature_engineering import FeatureEngineering
 from ai.models.model_validator import ModelValidator
-from ai.models.continuous_learning import ContinuousLearning
+from ai.models.continuous_learning import AdvancedContinuousLearning as ContinuousLearning
 from strategies.hybrid_strategy import HybridStrategy
 from strategies.technical_bounce import TechnicalBounceStrategy
 from core.adaptive_risk_manager import AdaptiveRiskManager

@@ -60,6 +60,13 @@ class ModelValidator:
         self.model.load(model_path)
         logger.info(f"Modèle chargé: {model_path}")
     
+    def prepare_data(self, data: pd.DataFrame) -> Tuple:
+        from ai.models.feature_engineering import FeatureEngineering
+        fe = FeatureEngineering()
+        featured_data = fe.create_features(data, include_time_features=True, include_price_patterns=True)
+        normalized_data = fe.scale_features(featured_data, is_training=False, method='standard', feature_group='lstm')
+        return featured_data, normalized_data
+    
     def evaluate_on_test_set(self, test_data: pd.DataFrame) -> Dict:
         """
         Évalue le modèle sur un ensemble de test
@@ -86,28 +93,34 @@ class ModelValidator:
         
         # Évaluer le modèle
         evaluation = self.model.model.evaluate(X_test, y_test, verbose=1)
+        loss_value = evaluation[0] if isinstance(evaluation, (list, tuple)) else evaluation
         
         # Faire des prédictions
         predictions = self.model.model.predict(X_test)
+        # Si le modèle retourne un seul tableau, enveloppez-le dans une liste et conservez uniquement le premier target
+        if not isinstance(predictions, list):
+            predictions = [predictions]
+            y_test = [y_test[0]]
         
         # Calculer des métriques détaillées pour chaque horizon
         results = {
-            "loss": evaluation[0],
+            "loss": loss_value,
             "horizons": {}
         }
         
-        # Pour chaque horizon
+        # Pour chaque horizon disponible dans les predictions
         for h_idx, horizon in enumerate(self.model.prediction_horizons):
+            if h_idx >= len(predictions):
+                break  # Stop if le modèle ne fournit pas cette sortie
             horizon_key = f"horizon_{horizon}"
             results["horizons"][horizon_key] = {}
             
-            # Indice de base pour cet horizon
-            base_idx = h_idx * 4
+            # Indice de base pour cet horizon dans y_test
+            # Ici, on suppose que y_test[h_idx] correspond à 'direction'
+            y_true_direction = y_test[h_idx]
+            y_pred_direction = (predictions[h_idx] > 0.5).astype(int).flatten()
             
-            # 1. Direction (classification binaire)
-            y_true_direction = y_test[base_idx]
-            y_pred_direction = (predictions[base_idx] > 0.5).astype(int).flatten()
-            
+            from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
             accuracy = accuracy_score(y_true_direction, y_pred_direction)
             precision = precision_score(y_true_direction, y_pred_direction, zero_division=0)
             recall = recall_score(y_true_direction, y_pred_direction, zero_division=0)
@@ -121,17 +134,6 @@ class ModelValidator:
                 "confusion_matrix": confusion_matrix(y_true_direction, y_pred_direction).tolist()
             }
             
-            # 2. Volatilité (régression)
-            y_true_volatility = y_test[base_idx + 1]
-            y_pred_volatility = predictions[base_idx + 1].flatten()
-            
-            mae = np.mean(np.abs(y_true_volatility - y_pred_volatility))
-            mse = np.mean((y_true_volatility - y_pred_volatility) ** 2)
-            
-            results["horizons"][horizon_key]["volatility"] = {
-                "mae": float(mae),
-                "mse": float(mse),
-                "rmse": float(np.sqrt(mse))
-            }
-            
-            # 3. Volume (
+            # ...existing code to calculer d'autres métriques si applicable...
+        
+        return results

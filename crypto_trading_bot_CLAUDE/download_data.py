@@ -120,3 +120,32 @@ if __name__ == "__main__":
         args.end, 
         save_path
     )
+
+    def load_historical_data(symbol, interval, start_date, end_date,):
+        """
+        Charge les données historiques depuis le stockage local ou les télécharge si nécessaires
+        
+        Args:
+            symbol: Paire de trading (ex: BTCUSDT)
+            interval: Intervalle de temps (1m, 5m, 15m, 1h, 4h, 1d, etc.)
+            start_date: Date de début au format 'YYYY-MM-DD'
+            end_date: Date de fin au format 'YYYY-MM-DD'
+            force_download: Si True, force le téléchargement même si les données existent
+            
+        Returns:
+            DataFrame pandas avec les données OHLCV
+        """
+        # Construire le chemin du fichier
+        market_data_dir = os.path.join(DATA_DIR, "market_data")
+        file_path = os.path.join(market_data_dir, f"{symbol}_{interval}_{start_date}_{end_date}.csv")
+        
+        # Vérifier si le fichier existe déjà
+        if os.path.exists(file_path):
+            print(f"Chargement des données locales pour {symbol} ({interval}) du {start_date} au {end_date}")
+            df = pd.read_csv(file_path)
+            
+            # Convertir la colonne timestamp en datetime si nécessaire
+            if 'timestamp' in df.columns and not pd.api.types.is_datetime64_dtype(df['timestamp']):
+                df['timestamp'] = pd.to_datetime(df['timestamp'])
+            
+            return df

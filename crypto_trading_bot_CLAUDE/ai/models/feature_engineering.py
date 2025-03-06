@@ -412,61 +412,60 @@ class FeatureEngineering:
         cols_to_exclude = ['timestamp', 'date']
         feature_cols = [col for col in feature_cols if col not in cols_to_exclude]
         
-        # Créer les séquences d'entrée
+        if is_training:
+            # Use the maximum horizon to ensure alignment across toutes les sorties
+            max_horizon = max(horizons)
+            num_samples = len(data) - sequence_length - max_horizon
+        else:
+            num_samples = len(data) - sequence_length
+        
+        # Créer les séquences d'entrée avec num_samples
         X = []
-        
-        for i in range(len(data) - sequence_length - (max(horizons) if is_training else 0)):
+        for i in range(num_samples):
             X.append(data[feature_cols].iloc[i:i+sequence_length].values)
-        
         X = np.array(X)
         
-        # Si c'est pour la prédiction, retourner seulement X
         if not is_training:
             return X
         
-        # Sinon, créer également les labels pour chaque horizon
+        # Créer les labels pour chaque horizon avec the same num_samples
         y_list = []
-        
         for horizon in horizons:
             y_direction = []
             y_volatility = []
             y_volume = []
             y_momentum = []
-            
-            for i in range(len(data) - sequence_length - horizon):
-                # Prix actuel (à la fin de la séquence d'entrée)
+            for i in range(num_samples):
                 current_price = data['close'].iloc[i+sequence_length-1]
-                
-                # Prix futur (après l'horizon de prédiction)
                 future_price = data['close'].iloc[i+sequence_length+horizon-1]
-                
-                # Direction (1 si hausse, 0 si baisse)
                 direction = 1 if future_price > current_price else 0
                 y_direction.append(direction)
-                
-                # Volatilité (écart-type des rendements futurs)
                 future_returns = data['close'].iloc[i+sequence_length:i+sequence_length+horizon].pct_change().dropna()
-                volatility = future_returns.std() * np.sqrt(horizon)  # Annualisé
+                volatility = future_returns.std() * np.sqrt(horizon)
                 y_volatility.append(volatility)
-                
-                # Volume relatif futur
                 current_volume = data['volume'].iloc[i+sequence_length-1]
                 future_volume = data['volume'].iloc[i+sequence_length:i+sequence_length+horizon].mean()
                 relative_volume = future_volume / current_volume if current_volume > 0 else 1.0
                 y_volume.append(relative_volume)
-                
-                # Momentum (changement de prix normalisé)
                 price_change_pct = (future_price - current_price) / current_price
                 momentum = np.tanh(price_change_pct * 5)
                 y_momentum.append(momentum)
             
-            # Convertir en tableaux numpy
-            y_direction = np.array(y_direction)
-            y_volatility = np.array(y_volatility)
-            y_volume = np.array(y_volume)
-            y_momentum = np.array(y_momentum)
-            
-            # Ajouter à la liste des sorties
-            y_list.extend([y_direction, y_volatility, y_volume, y_momentum])
+            y_list.extend([np.array(y_direction), np.array(y_volatility), np.array(y_volume), np.array(y_momentum)])
         
         return X, y_list
+
+def add_market_sentiment_features(df: pd.DataFrame) -> pd.DataFrame:
+    import talib
+    # Calculer l'indice de force relative (RSI) sur plusieurs périodes et calculer la pente sur 5 périodes
+    for period in [7, 14, 21]:
+        df[f'rsi_{period}_slope'] = talib.RSI(df['close'], timeperiod=period).pct_change(5)
+    
+    # Calculer la divergence entre les variations de prix et de volume
+    df['price_volume_divergence'] = df['close'].pct_change() * df['volume'].pct_change()
+    
+    # Si les indicateurs MACD sont présents, créer une caractéristique de crossover
+    if 'macd' in df.columns and 'macd_signal' in df.columns:
+        df['macd_crossover'] = (df['macd'] - df['macd_signal']).apply(lambda x: 1 if x > 0 else -1)
+    
+    return df

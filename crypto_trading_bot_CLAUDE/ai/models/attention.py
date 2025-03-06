@@ -7,6 +7,8 @@ from tensorflow.keras.layers import Layer, Dense, Reshape, Permute, Concatenate,
 from tensorflow.keras import backend as K
 import numpy as np
 
+
+
 class SelfAttention(Layer):
     """
     Mécanisme d'attention qui permet au modèle de se concentrer sur certaines parties d'une séquence
@@ -202,6 +204,9 @@ class MultiHeadAttention(Layer):
                 trainable=True
             )
         
+        # Create dropout layer once instead of in call
+        self.attn_dropout = tf.keras.layers.Dropout(self.dropout)
+        
         super(MultiHeadAttention, self).build(input_shape)
     
     def _split_heads(self, x, batch_size):
@@ -232,7 +237,7 @@ class MultiHeadAttention(Layer):
         x = tf.transpose(x, perm=[0, 2, 1, 3])  # (batch_size, seq_len, num_heads, head_dim)
         return tf.reshape(x, (batch_size, -1, self.num_heads * self.head_dim))
     
-    def scaled_dot_product_attention(self, q, k, v, mask=None):
+    def scaled_dot_product_attention(self, q, k, v, mask=None, training=None):
         """
         Calcule l'attention avec produit scalaire mis à l'échelle
         
@@ -259,8 +264,8 @@ class MultiHeadAttention(Layer):
         # Softmax sur la dernière dimension (seq_len_k)
         attention_weights = tf.nn.softmax(scaled_attention_logits, axis=-1)
         
-        # Application du dropout
-        attention_weights = tf.keras.layers.Dropout(self.dropout)(attention_weights)
+        # Use the pre-created dropout layer
+        attention_weights = self.attn_dropout(attention_weights, training=training)
         
         # Produit avec les valeurs
         output = tf.matmul(attention_weights, v)  # (batch_size, num_heads, seq_len_q, head_dim)
@@ -304,7 +309,7 @@ class MultiHeadAttention(Layer):
         
         # Attention avec produit scalaire mis à l'échelle
         attention_output, attention_weights = self.scaled_dot_product_attention(
-            query_heads, key_heads, value_heads, mask)
+            query_heads, key_heads, value_heads, mask, training=training)
         
         # Combinaison des têtes
         attention_output = self._combine_heads(attention_output, batch_size)  # (batch_size, seq_len_q, output_dim)

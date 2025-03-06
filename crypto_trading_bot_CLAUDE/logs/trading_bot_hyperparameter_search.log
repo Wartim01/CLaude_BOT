@@ -1,0 +1,1606 @@
+2025-03-05 11:11:03,813 - hyperparameter_search - INFO - Données divisées: 24458 lignes pour l'entraînement, 5241 lignes pour la validation
+2025-03-05 11:11:03,814 - hyperparameter_search - INFO - Préparation des données pour l'optimisation...
+2025-03-05 11:11:07,373 - hyperparameter_search - INFO - Démarrage de l'optimisation avec 30 essais...
+2025-03-05 11:11:07,376 - hyperparameter_search - INFO - Essai 0: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    136,
+    68,
+    34
+  ],
+  "dropout_rate": 0.39279757672456206,
+  "learning_rate": 0.0006251373574521745,
+  "l1_reg": 2.9380279387035354e-06,
+  "l2_reg": 2.9375384576328313e-06,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:08,515 - hyperparameter_search - ERROR - Erreur lors de l'essai 0: Inputs have incompatible shapes. Received shapes (272,) and (136,)
+2025-03-05 11:11:08,518 - hyperparameter_search - INFO - Essai 1: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    147
+  ],
+  "dropout_rate": 0.34474115788895177,
+  "learning_rate": 2.621087878265438e-05,
+  "l1_reg": 7.523742884534855e-06,
+  "l2_reg": 1.2562773503807034e-05,
+  "use_attention": false,
+  "use_residual": true,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:08,583 - hyperparameter_search - ERROR - Erreur lors de l'essai 1: list index out of range
+2025-03-05 11:11:08,586 - hyperparameter_search - INFO - Essai 2: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    122
+  ],
+  "dropout_rate": 0.3736932106048628,
+  "learning_rate": 0.00020914981329035596,
+  "l1_reg": 2.3233503515390116e-06,
+  "l2_reg": 3.058656666978529e-05,
+  "use_attention": true,
+  "use_residual": true,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:08,647 - hyperparameter_search - ERROR - Erreur lors de l'essai 2: list index out of range
+2025-03-05 11:11:08,650 - hyperparameter_search - INFO - Essai 3: {
+  "input_length": 90,
+  "feature_dim": 78,
+  "lstm_units": [
+    179,
+    89,
+    44
+  ],
+  "dropout_rate": 0.1353970008207678,
+  "learning_rate": 3.872118032174584e-05,
+  "l1_reg": 1.3667272915456224e-06,
+  "l2_reg": 9.462175356461487e-06,
+  "use_attention": false,
+  "use_residual": true,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:08,828 - hyperparameter_search - ERROR - Erreur lors de l'essai 3: Inputs have incompatible shapes. Received shapes (358,) and (178,)
+2025-03-05 11:11:08,830 - hyperparameter_search - INFO - Essai 4: {
+  "input_length": 90,
+  "feature_dim": 78,
+  "lstm_units": [
+    65,
+    32,
+    16
+  ],
+  "dropout_rate": 0.38274293753904687,
+  "learning_rate": 0.0015382308040279,
+  "l1_reg": 0.00020597335357437193,
+  "l2_reg": 1.6677615430197902e-06,
+  "use_attention": true,
+  "use_residual": true,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:08,918 - hyperparameter_search - ERROR - Erreur lors de l'essai 4: Inputs have incompatible shapes. Received shapes (130,) and (64,)
+2025-03-05 11:11:08,924 - hyperparameter_search - INFO - Essai 5: {
+  "input_length": 30,
+  "feature_dim": 78,
+  "lstm_units": [
+    87,
+    43,
+    21
+  ],
+  "dropout_rate": 0.40431401944675904,
+  "learning_rate": 0.00048287152161792117,
+  "l1_reg": 0.00020554245520150764,
+  "l2_reg": 3.0296104428212496e-05,
+  "use_attention": true,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:09,022 - hyperparameter_search - ERROR - Erreur lors de l'essai 5: Inputs have incompatible shapes. Received shapes (174,) and (86,)
+2025-03-05 11:11:09,024 - hyperparameter_search - INFO - Essai 6: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    108
+  ],
+  "dropout_rate": 0.21590058116550723,
+  "learning_rate": 3.0455368715396772e-05,
+  "l1_reg": 0.0006153085601625311,
+  "l2_reg": 0.00026568139241144923,
+  "use_attention": true,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:09,084 - hyperparameter_search - ERROR - Erreur lors de l'essai 6: list index out of range
+2025-03-05 11:11:09,086 - hyperparameter_search - INFO - Essai 7: {
+  "input_length": 90,
+  "feature_dim": 78,
+  "lstm_units": [
+    221,
+    110,
+    55
+  ],
+  "dropout_rate": 0.10278085221247629,
+  "learning_rate": 0.0003405978543532997,
+  "l1_reg": 1.7874463256238412e-05,
+  "l2_reg": 4.637921903458029e-06,
+  "use_attention": true,
+  "use_residual": true,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:09,192 - hyperparameter_search - ERROR - Erreur lors de l'essai 7: Inputs have incompatible shapes. Received shapes (442,) and (220,)
+2025-03-05 11:11:09,195 - hyperparameter_search - INFO - Essai 8: {
+  "input_length": 30,
+  "feature_dim": 78,
+  "lstm_units": [
+    118
+  ],
+  "dropout_rate": 0.3438257335919588,
+  "learning_rate": 0.0003221343740912344,
+  "l1_reg": 1.4270403521460851e-06,
+  "l2_reg": 6.85392570885306e-06,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:09,296 - hyperparameter_search - ERROR - Erreur lors de l'essai 8: list index out of range
+2025-03-05 11:11:09,300 - hyperparameter_search - INFO - Essai 9: {
+  "input_length": 90,
+  "feature_dim": 78,
+  "lstm_units": [
+    186,
+    93
+  ],
+  "dropout_rate": 0.13611590802176332,
+  "learning_rate": 0.0032055863990707507,
+  "l1_reg": 9.169384722192327e-06,
+  "l2_reg": 3.627066608804412e-06,
+  "use_attention": true,
+  "use_residual": true,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:09,406 - hyperparameter_search - ERROR - Erreur lors de l'essai 9: Inputs have incompatible shapes. Received shapes (372,) and (186,)
+2025-03-05 11:11:09,428 - hyperparameter_search - INFO - Essai 10: {
+  "input_length": 120,
+  "feature_dim": 78,
+  "lstm_units": [
+    246,
+    123
+  ],
+  "dropout_rate": 0.48781484431514643,
+  "learning_rate": 0.006264278041381347,
+  "l1_reg": 5.573075460509315e-05,
+  "l2_reg": 0.00025503489379798095,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:09,547 - hyperparameter_search - ERROR - Erreur lors de l'essai 10: Inputs have incompatible shapes. Received shapes (492,) and (246,)
+2025-03-05 11:11:09,569 - hyperparameter_search - INFO - Essai 11: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    153,
+    76
+  ],
+  "dropout_rate": 0.28206115698588463,
+  "learning_rate": 1.4422803758618933e-05,
+  "l1_reg": 5.901837201434061e-06,
+  "l2_reg": 1.4056436080778185e-06,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:09,659 - hyperparameter_search - ERROR - Erreur lors de l'essai 11: Inputs have incompatible shapes. Received shapes (306,) and (152,)
+2025-03-05 11:11:09,681 - hyperparameter_search - INFO - Essai 12: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    148
+  ],
+  "dropout_rate": 0.46298303178939004,
+  "learning_rate": 7.696877027300617e-05,
+  "l1_reg": 8.106458291175529e-06,
+  "l2_reg": 1.732176721741716e-05,
+  "use_attention": false,
+  "use_residual": true,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:09,746 - hyperparameter_search - ERROR - Erreur lors de l'essai 12: list index out of range
+2025-03-05 11:11:09,789 - hyperparameter_search - INFO - Essai 13: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    182,
+    91
+  ],
+  "dropout_rate": 0.28147070226254295,
+  "learning_rate": 0.0011026447649516592,
+  "l1_reg": 3.5778591731453713e-06,
+  "l2_reg": 8.59055169879444e-05,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:09,886 - hyperparameter_search - ERROR - Erreur lors de l'essai 13: Inputs have incompatible shapes. Received shapes (364,) and (182,)
+2025-03-05 11:11:09,907 - hyperparameter_search - INFO - Essai 14: {
+  "input_length": 120,
+  "feature_dim": 78,
+  "lstm_units": [
+    140,
+    70
+  ],
+  "dropout_rate": 0.42905769365869506,
+  "learning_rate": 9.694318436508387e-05,
+  "l1_reg": 3.0432270753529087e-05,
+  "l2_reg": 9.197226878199222e-05,
+  "use_attention": false,
+  "use_residual": true,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:09,998 - hyperparameter_search - ERROR - Erreur lors de l'essai 14: Inputs have incompatible shapes. Received shapes (280,) and (140,)
+2025-03-05 11:11:10,037 - hyperparameter_search - INFO - Essai 15: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    204,
+    102,
+    51
+  ],
+  "dropout_rate": 0.3437039824842051,
+  "learning_rate": 0.0010069776271333926,
+  "l1_reg": 1.6943065082762584e-05,
+  "l2_reg": 2.7002269410867936e-06,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:10,140 - hyperparameter_search - ERROR - Erreur lors de l'essai 15: Inputs have incompatible shapes. Received shapes (408,) and (204,)
+2025-03-05 11:11:10,162 - hyperparameter_search - INFO - Essai 16: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    131
+  ],
+  "dropout_rate": 0.22538327298994812,
+  "learning_rate": 0.00013119202305493866,
+  "l1_reg": 2.9807076441896734e-06,
+  "l2_reg": 1.206948621821977e-05,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:10,222 - hyperparameter_search - ERROR - Erreur lors de l'essai 16: list index out of range
+2025-03-05 11:11:10,244 - hyperparameter_search - INFO - Essai 17: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    169,
+    84
+  ],
+  "dropout_rate": 0.3278994383879005,
+  "learning_rate": 1.588177969554399e-05,
+  "l1_reg": 5.476398358524453e-05,
+  "l2_reg": 1.0025218764347967e-06,
+  "use_attention": false,
+  "use_residual": true,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:10,337 - hyperparameter_search - ERROR - Erreur lors de l'essai 17: Inputs have incompatible shapes. Received shapes (338,) and (168,)
+2025-03-05 11:11:10,359 - hyperparameter_search - INFO - Essai 18: {
+  "input_length": 30,
+  "feature_dim": 78,
+  "lstm_units": [
+    95
+  ],
+  "dropout_rate": 0.4298528902087925,
+  "learning_rate": 4.959258353536636e-05,
+  "l1_reg": 4.516459445009431e-06,
+  "l2_reg": 6.180692910748717e-05,
+  "use_attention": false,
+  "use_residual": true,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:10,417 - hyperparameter_search - ERROR - Erreur lors de l'essai 18: list index out of range
+2025-03-05 11:11:10,440 - hyperparameter_search - INFO - Essai 19: {
+  "input_length": 120,
+  "feature_dim": 78,
+  "lstm_units": [
+    159,
+    79,
+    39
+  ],
+  "dropout_rate": 0.2516246723197509,
+  "learning_rate": 0.0006571340646858934,
+  "l1_reg": 1.109337348698174e-06,
+  "l2_reg": 0.0005134837517177732,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:10,528 - hyperparameter_search - ERROR - Erreur lors de l'essai 19: Inputs have incompatible shapes. Received shapes (318,) and (158,)
+2025-03-05 11:11:10,550 - hyperparameter_search - INFO - Essai 20: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    205,
+    102
+  ],
+  "dropout_rate": 0.30723386987512113,
+  "learning_rate": 1.0040823252174256e-05,
+  "l1_reg": 1.4220831705950319e-05,
+  "l2_reg": 1.7932357393365953e-05,
+  "use_attention": false,
+  "use_residual": true,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:10,651 - hyperparameter_search - ERROR - Erreur lors de l'essai 20: Inputs have incompatible shapes. Received shapes (410,) and (204,)
+2025-03-05 11:11:10,673 - hyperparameter_search - INFO - Essai 21: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    126
+  ],
+  "dropout_rate": 0.3732635601925311,
+  "learning_rate": 0.0001532123592976556,
+  "l1_reg": 2.374078911965418e-06,
+  "l2_reg": 3.057747677866489e-05,
+  "use_attention": true,
+  "use_residual": true,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:10,734 - hyperparameter_search - ERROR - Erreur lors de l'essai 21: list index out of range
+2025-03-05 11:11:10,757 - hyperparameter_search - INFO - Essai 22: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    107
+  ],
+  "dropout_rate": 0.3761067221779995,
+  "learning_rate": 0.00017529731728332273,
+  "l1_reg": 2.3814597357018487e-06,
+  "l2_reg": 4.699137083822508e-05,
+  "use_attention": true,
+  "use_residual": true,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:10,817 - hyperparameter_search - ERROR - Erreur lors de l'essai 22: list index out of range
+2025-03-05 11:11:10,840 - hyperparameter_search - INFO - Essai 23: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    138
+  ],
+  "dropout_rate": 0.4289955049732451,
+  "learning_rate": 0.0027569280714178275,
+  "l1_reg": 6.6886476262334046e-06,
+  "l2_reg": 5.0189786254367204e-06,
+  "use_attention": true,
+  "use_residual": true,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:10,900 - hyperparameter_search - ERROR - Erreur lors de l'essai 23: list index out of range
+2025-03-05 11:11:10,923 - hyperparameter_search - INFO - Essai 24: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    81
+  ],
+  "dropout_rate": 0.3502975212988595,
+  "learning_rate": 0.0002234954301914943,
+  "l1_reg": 1.8701516559986992e-06,
+  "l2_reg": 2.2889757330518375e-06,
+  "use_attention": true,
+  "use_residual": true,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:10,979 - hyperparameter_search - ERROR - Erreur lors de l'essai 24: list index out of range
+2025-03-05 11:11:11,002 - hyperparameter_search - INFO - Essai 25: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    119,
+    59
+  ],
+  "dropout_rate": 0.40729474498693735,
+  "learning_rate": 2.5748983529345194e-05,
+  "l1_reg": 4.114155700438943e-06,
+  "l2_reg": 1.7651323945485956e-05,
+  "use_attention": false,
+  "use_residual": true,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:11,085 - hyperparameter_search - ERROR - Erreur lors de l'essai 25: Inputs have incompatible shapes. Received shapes (238,) and (118,)
+2025-03-05 11:11:11,109 - hyperparameter_search - INFO - Essai 26: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    146
+  ],
+  "dropout_rate": 0.4580504595257118,
+  "learning_rate": 0.0005940044929345292,
+  "l1_reg": 1.0086377909374417e-06,
+  "l2_reg": 9.529775879399121e-06,
+  "use_attention": true,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:11,173 - hyperparameter_search - ERROR - Erreur lors de l'essai 26: list index out of range
+2025-03-05 11:11:11,197 - hyperparameter_search - INFO - Essai 27: {
+  "input_length": 30,
+  "feature_dim": 78,
+  "lstm_units": [
+    165
+  ],
+  "dropout_rate": 0.30899968355188834,
+  "learning_rate": 5.45145223161154e-05,
+  "l1_reg": 1.123933432444999e-05,
+  "l2_reg": 0.000165025529909406,
+  "use_attention": false,
+  "use_residual": true,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:11,262 - hyperparameter_search - ERROR - Erreur lors de l'essai 27: list index out of range
+2025-03-05 11:11:11,286 - hyperparameter_search - INFO - Essai 28: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    104,
+    52,
+    26
+  ],
+  "dropout_rate": 0.3940340135434091,
+  "learning_rate": 0.008387244204796529,
+  "l1_reg": 5.703531026222253e-06,
+  "l2_reg": 6.383967389180596e-06,
+  "use_attention": true,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:11,367 - hyperparameter_search - ERROR - Erreur lors de l'essai 28: Inputs have incompatible shapes. Received shapes (208,) and (104,)
+2025-03-05 11:11:11,391 - hyperparameter_search - INFO - Essai 29: {
+  "input_length": 120,
+  "feature_dim": 78,
+  "lstm_units": [
+    172,
+    86
+  ],
+  "dropout_rate": 0.18293013926934437,
+  "learning_rate": 0.001921519963134615,
+  "l1_reg": 3.298751797482404e-05,
+  "l2_reg": 0.00098966921839684,
+  "use_attention": false,
+  "use_residual": true,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:11:11,502 - hyperparameter_search - ERROR - Erreur lors de l'essai 29: Inputs have incompatible shapes. Received shapes (344,) and (172,)
+2025-03-05 11:11:11,504 - hyperparameter_search - INFO - Optimisation terminée!
+2025-03-05 11:11:11,504 - hyperparameter_search - INFO - Meilleur F1 score: 0.0000
+2025-03-05 11:11:11,505 - hyperparameter_search - INFO - Meilleurs hyperparamètres: {
+  "lstm_units_first": 136,
+  "lstm_layers": 3,
+  "dropout_rate": 0.39279757672456206,
+  "learning_rate": 0.0006251373574521745,
+  "l1_reg": 2.9380279387035354e-06,
+  "l2_reg": 2.9375384576328313e-06,
+  "sequence_length": 60,
+  "batch_size": 32,
+  "use_attention": false,
+  "use_residual": false
+}
+2025-03-05 11:11:11,507 - hyperparameter_search - INFO - Meilleurs hyperparamètres sauvegardés: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\optimization\best_params_20250305.json
+2025-03-05 11:11:13,346 - hyperparameter_search - ERROR - Erreur lors de la visualisation de l'importance des hyperparamètres: Encountered zero total variance in all trees.
+2025-03-05 11:11:13,347 - hyperparameter_search - INFO - 
+=== Résumé de l'optimisation ===
+2025-03-05 11:11:13,348 - hyperparameter_search - INFO - Meilleurs hyperparamètres: {
+  "lstm_units_first": 136,
+  "lstm_layers": 3,
+  "dropout_rate": 0.39279757672456206,
+  "learning_rate": 0.0006251373574521745,
+  "l1_reg": 2.9380279387035354e-06,
+  "l2_reg": 2.9375384576328313e-06,
+  "sequence_length": 60,
+  "batch_size": 32,
+  "use_attention": false,
+  "use_residual": false
+}
+2025-03-05 11:11:13,350 - hyperparameter_search - INFO - Utilisez ces paramètres pour entraîner votre modèle final:
+2025-03-05 11:11:13,350 - hyperparameter_search - INFO - Commande suggérée: python train_model.py train --symbol BTCUSDT --timeframe 15m --start-date 2023-01-01 --end-date 2023-12-31 --sequence-length 60 --lstm-units 136 --dropout 0.39279757672456206 --learning-rate 0.0006251373574521745 --l1-reg 2.9380279387035354e-06 --l2-reg 2.9375384576328313e-06 --batch-size 32 --no-attention --no-residual 
+2025-03-05 11:18:00,881 - hyperparameter_search - INFO - Données divisées: 24458 lignes pour l'entraînement, 5241 lignes pour la validation
+2025-03-05 11:18:00,882 - hyperparameter_search - INFO - Préparation des données pour l'optimisation...
+2025-03-05 11:18:04,383 - hyperparameter_search - INFO - Démarrage de l'optimisation avec 30 essais...
+2025-03-05 11:18:04,386 - hyperparameter_search - INFO - Essai 0: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    136,
+    68,
+    34
+  ],
+  "dropout_rate": 0.39279757672456206,
+  "learning_rate": 0.0006251373574521745,
+  "l1_reg": 2.9380279387035354e-06,
+  "l2_reg": 2.9375384576328313e-06,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:20:53,634 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 11:20:53,662 - hyperparameter_search - INFO - Essai 1: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    104
+  ],
+  "dropout_rate": 0.17336180394137352,
+  "learning_rate": 8.17949947521167e-05,
+  "l1_reg": 3.752055855124284e-05,
+  "l2_reg": 1.9762189340280066e-05,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:23:50,594 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 11:23:50,626 - hyperparameter_search - INFO - Essai 2: {
+  "input_length": 90,
+  "feature_dim": 78,
+  "lstm_units": [
+    102,
+    51
+  ],
+  "dropout_rate": 0.33696582754481696,
+  "learning_rate": 1.3783237455007187e-05,
+  "l1_reg": 6.647135865318028e-05,
+  "l2_reg": 3.247673570627449e-06,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:26:44,994 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 11:26:45,076 - hyperparameter_search - INFO - Essai 3: {
+  "input_length": 30,
+  "feature_dim": 78,
+  "lstm_units": [
+    148
+  ],
+  "dropout_rate": 0.29807076404450805,
+  "learning_rate": 1.2681352169084594e-05,
+  "l1_reg": 0.0005345166110646819,
+  "l2_reg": 5.975027999960295e-06,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:29:33,420 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 11:29:33,451 - hyperparameter_search - INFO - Essai 4: {
+  "input_length": 90,
+  "feature_dim": 78,
+  "lstm_units": [
+    245,
+    122,
+    61
+  ],
+  "dropout_rate": 0.3391599915244341,
+  "learning_rate": 0.00582938454299474,
+  "l1_reg": 1.8427970406864558e-06,
+  "l2_reg": 3.87211803217458e-06,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:32:22,813 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 11:32:22,886 - hyperparameter_search - INFO - Essai 5: {
+  "input_length": 90,
+  "feature_dim": 78,
+  "lstm_units": [
+    168
+  ],
+  "dropout_rate": 0.42087879230161584,
+  "learning_rate": 1.6736010167825783e-05,
+  "l1_reg": 0.0009133995846860973,
+  "l2_reg": 0.00020736445177905034,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:35:12,211 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 11:35:12,301 - hyperparameter_search - INFO - Essai 6: {
+  "input_length": 90,
+  "feature_dim": 78,
+  "lstm_units": [
+    133
+  ],
+  "dropout_rate": 0.4452413703502375,
+  "learning_rate": 0.0007411299781083245,
+  "l1_reg": 9.833181933644894e-06,
+  "l2_reg": 1.5512259126484753e-06,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:38:02,314 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 11:38:02,388 - hyperparameter_search - INFO - Essai 7: {
+  "input_length": 30,
+  "feature_dim": 78,
+  "lstm_units": [
+    201,
+    100,
+    50
+  ],
+  "dropout_rate": 0.3245108790277985,
+  "learning_rate": 0.002055424552015075,
+  "l1_reg": 3.0296104428212496e-05,
+  "l2_reg": 3.69997243146381e-05,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:40:50,728 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 11:40:50,759 - hyperparameter_search - INFO - Essai 8: {
+  "input_length": 90,
+  "feature_dim": 78,
+  "lstm_units": [
+    239
+  ],
+  "dropout_rate": 0.2641531692142519,
+  "learning_rate": 0.0018477934173519257,
+  "l1_reg": 4.857295179217169e-06,
+  "l2_reg": 1.7019223026554036e-06,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:43:39,139 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 11:43:39,218 - hyperparameter_search - INFO - Essai 9: {
+  "input_length": 90,
+  "feature_dim": 78,
+  "lstm_units": [
+    100,
+    50,
+    25
+  ],
+  "dropout_rate": 0.31573689676626027,
+  "learning_rate": 0.0026443593078398627,
+  "l1_reg": 0.00048783606034521424,
+  "l2_reg": 8.995191735587168e-06,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:46:27,788 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 11:46:27,882 - hyperparameter_search - INFO - Essai 10: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    72,
+    36
+  ],
+  "dropout_rate": 0.48781484431514643,
+  "learning_rate": 0.0001374864842023011,
+  "l1_reg": 1.1119959665896407e-06,
+  "l2_reg": 0.0005284384205738857,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:49:16,586 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 11:49:16,664 - hyperparameter_search - INFO - Essai 11: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    119,
+    59
+  ],
+  "dropout_rate": 0.11181160082586772,
+  "learning_rate": 0.00011702365815216542,
+  "l1_reg": 6.952525043917817e-05,
+  "l2_reg": 2.9714526611814784e-05,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:52:04,806 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 11:52:04,881 - hyperparameter_search - INFO - Essai 12: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    174,
+    87,
+    43
+  ],
+  "dropout_rate": 0.15897743552581672,
+  "learning_rate": 0.00021160046974143945,
+  "l1_reg": 1.3529773156937788e-05,
+  "l2_reg": 3.8312163647116855e-05,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:54:53,317 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 11:54:53,393 - hyperparameter_search - INFO - Essai 13: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    69,
+    34
+  ],
+  "dropout_rate": 0.21785292238061618,
+  "learning_rate": 4.8019433799281865e-05,
+  "l1_reg": 0.00012384489265965156,
+  "l2_reg": 1.3515160192076072e-05,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 11:57:41,933 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 11:57:42,011 - hyperparameter_search - INFO - Essai 14: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    106,
+    53
+  ],
+  "dropout_rate": 0.1953310141216871,
+  "learning_rate": 0.0005880869179339571,
+  "l1_reg": 3.635540488257295e-06,
+  "l2_reg": 7.741944713439129e-05,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 12:00:34,791 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 12:00:34,866 - hyperparameter_search - INFO - Essai 15: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    185,
+    92,
+    46
+  ],
+  "dropout_rate": 0.38980246702969923,
+  "learning_rate": 4.343834939131867e-05,
+  "l1_reg": 2.0114665290736073e-05,
+  "l2_reg": 1.6045061456135736e-05,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 12:03:27,307 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 12:03:27,381 - hyperparameter_search - INFO - Essai 16: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    138
+  ],
+  "dropout_rate": 0.24403705231233772,
+  "learning_rate": 0.0005925291019756942,
+  "l1_reg": 0.0001685159723202473,
+  "l2_reg": 8.454465736728872e-05,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 12:06:18,585 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 12:06:18,660 - hyperparameter_search - INFO - Essai 17: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    213,
+    106
+  ],
+  "dropout_rate": 0.10240915462917465,
+  "learning_rate": 5.885783489166019e-05,
+  "l1_reg": 5.6119420823983846e-06,
+  "l2_reg": 1.2068605164306055e-06,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 12:09:08,882 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 12:09:08,955 - hyperparameter_search - INFO - Essai 18: {
+  "input_length": 30,
+  "feature_dim": 78,
+  "lstm_units": [
+    86,
+    43,
+    21
+  ],
+  "dropout_rate": 0.37636845974782196,
+  "learning_rate": 0.00033302381560872357,
+  "l1_reg": 4.680483103375119e-05,
+  "l2_reg": 3.1057508155119937e-06,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 12:12:00,943 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 12:12:00,994 - hyperparameter_search - INFO - Essai 19: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    120
+  ],
+  "dropout_rate": 0.17332214232563045,
+  "learning_rate": 0.0010086572140708774,
+  "l1_reg": 2.2610606378634913e-06,
+  "l2_reg": 0.0006207753616215775,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 12:14:51,314 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 12:14:51,389 - hyperparameter_search - INFO - Essai 20: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    155,
+    77
+  ],
+  "dropout_rate": 0.271611160540024,
+  "learning_rate": 0.0003157807525262912,
+  "l1_reg": 8.000027501826279e-06,
+  "l2_reg": 1.7008314108141126e-05,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 12:17:41,587 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 12:17:41,664 - hyperparameter_search - INFO - Essai 21: {
+  "input_length": 90,
+  "feature_dim": 78,
+  "lstm_units": [
+    95,
+    47
+  ],
+  "dropout_rate": 0.3677055888619015,
+  "learning_rate": 2.5260364510129134e-05,
+  "l1_reg": 8.591963297749128e-05,
+  "l2_reg": 2.847536746848181e-06,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 12:20:34,008 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 12:20:34,104 - hyperparameter_search - INFO - Essai 22: {
+  "input_length": 90,
+  "feature_dim": 78,
+  "lstm_units": [
+    125,
+    62
+  ],
+  "dropout_rate": 0.4418507007593643,
+  "learning_rate": 1.00155108956163e-05,
+  "l1_reg": 2.5639723720131797e-05,
+  "l2_reg": 5.568783322854676e-06,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 12:23:21,915 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 12:23:22,005 - hyperparameter_search - INFO - Essai 23: {
+  "input_length": 30,
+  "feature_dim": 78,
+  "lstm_units": [
+    113
+  ],
+  "dropout_rate": 0.35494692726581695,
+  "learning_rate": 8.560606439716737e-05,
+  "l1_reg": 0.00016007889875793902,
+  "l2_reg": 8.840568705850158e-06,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 12:26:06,762 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 12:26:06,810 - hyperparameter_search - INFO - Essai 24: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    81,
+    40,
+    20
+  ],
+  "dropout_rate": 0.40718954004602625,
+  "learning_rate": 1.9665177797736426e-05,
+  "l1_reg": 5.215473764042902e-05,
+  "l2_reg": 2.167124356389006e-06,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 12:28:51,134 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 12:28:51,213 - hyperparameter_search - INFO - Essai 25: {
+  "input_length": 90,
+  "feature_dim": 78,
+  "lstm_units": [
+    138,
+    69
+  ],
+  "dropout_rate": 0.4937133001884739,
+  "learning_rate": 2.8976713527133088e-05,
+  "l1_reg": 0.0002782798249640329,
+  "l2_reg": 5.376876170705386e-06,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 12:31:35,963 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 12:31:36,058 - hyperparameter_search - INFO - Essai 26: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    94
+  ],
+  "dropout_rate": 0.2739182262229128,
+  "learning_rate": 0.00026934439680460786,
+  "l1_reg": 1.423234955501686e-05,
+  "l2_reg": 6.968037809374568e-05,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 12:34:21,179 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 12:34:21,255 - hyperparameter_search - INFO - Essai 27: {
+  "input_length": 90,
+  "feature_dim": 78,
+  "lstm_units": [
+    64,
+    32
+  ],
+  "dropout_rate": 0.13788528778067913,
+  "learning_rate": 8.034395881512896e-05,
+  "l1_reg": 3.614538696752704e-05,
+  "l2_reg": 1.1007600886647197e-06,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 12:37:06,068 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 12:37:06,164 - hyperparameter_search - INFO - Essai 28: {
+  "input_length": 30,
+  "feature_dim": 78,
+  "lstm_units": [
+    108,
+    54,
+    27
+  ],
+  "dropout_rate": 0.21501837047899702,
+  "learning_rate": 0.00015405673598162316,
+  "l1_reg": 9.897463031618636e-05,
+  "l2_reg": 0.0001939534227782533,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 12:39:50,033 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 12:39:50,084 - hyperparameter_search - INFO - Essai 29: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    150
+  ],
+  "dropout_rate": 0.2906631221837087,
+  "learning_rate": 1.3177916205422632e-05,
+  "l1_reg": 0.0003151031895233309,
+  "l2_reg": 7.876166174270798e-06,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 12:42:34,855 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: `class_weight` is only supported for Models with a single output.
+2025-03-05 12:42:34,914 - hyperparameter_search - INFO - Optimisation terminée!
+2025-03-05 12:42:34,914 - hyperparameter_search - INFO - Meilleur F1 score: 0.0000
+2025-03-05 12:42:34,915 - hyperparameter_search - INFO - Meilleurs hyperparamètres: {
+  "lstm_units_first": 136,
+  "lstm_layers": 3,
+  "dropout_rate": 0.39279757672456206,
+  "learning_rate": 0.0006251373574521745,
+  "l1_reg": 2.9380279387035354e-06,
+  "l2_reg": 2.9375384576328313e-06,
+  "sequence_length": 60,
+  "batch_size": 64,
+  "use_attention": false,
+  "use_residual": false
+}
+2025-03-05 12:42:34,916 - hyperparameter_search - INFO - Meilleurs hyperparamètres sauvegardés: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\optimization\best_params_20250305.json
+2025-03-05 12:42:36,281 - hyperparameter_search - ERROR - Erreur lors de la visualisation de l'importance des hyperparamètres: Encountered zero total variance in all trees.
+2025-03-05 12:42:36,282 - hyperparameter_search - INFO - 
+=== Résumé de l'optimisation ===
+2025-03-05 12:42:36,282 - hyperparameter_search - INFO - Meilleurs hyperparamètres: {
+  "lstm_units_first": 136,
+  "lstm_layers": 3,
+  "dropout_rate": 0.39279757672456206,
+  "learning_rate": 0.0006251373574521745,
+  "l1_reg": 2.9380279387035354e-06,
+  "l2_reg": 2.9375384576328313e-06,
+  "sequence_length": 60,
+  "batch_size": 64,
+  "use_attention": false,
+  "use_residual": false
+}
+2025-03-05 12:42:36,284 - hyperparameter_search - INFO - Utilisez ces paramètres pour entraîner votre modèle final:
+2025-03-05 12:42:36,284 - hyperparameter_search - INFO - Commande suggérée: python train_model.py train --symbol BTCUSDT --timeframe 15m --start-date 2023-01-01 --end-date 2023-12-31 --sequence-length 60 --lstm-units 136 --dropout 0.39279757672456206 --learning-rate 0.0006251373574521745 --l1-reg 2.9380279387035354e-06 --l2-reg 2.9375384576328313e-06 --batch-size 64 --no-attention --no-residual 
+2025-03-05 13:53:29,815 - hyperparameter_search - INFO - Données divisées: 24458 lignes pour l'entraînement, 5241 lignes pour la validation
+2025-03-05 13:53:29,816 - hyperparameter_search - INFO - Préparation des données pour l'optimisation...
+2025-03-05 13:53:33,313 - hyperparameter_search - INFO - Démarrage de l'optimisation avec 20 essais...
+2025-03-05 13:53:33,316 - hyperparameter_search - INFO - Essai 0: {
+  "input_length": 30,
+  "feature_dim": 78,
+  "lstm_units": [
+    136,
+    68,
+    34
+  ],
+  "dropout_rate": 0.39279757672456206,
+  "learning_rate": 0.0006251373574521745,
+  "l1_reg": 0.0003967605077052988,
+  "l2_reg": 6.358358856676247e-05,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 13:56:23,332 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: name 'tf' is not defined
+2025-03-05 13:56:23,363 - hyperparameter_search - INFO - Essai 1: {
+  "input_length": 30,
+  "feature_dim": 78,
+  "lstm_units": [
+    200
+  ],
+  "dropout_rate": 0.4879639408647978,
+  "learning_rate": 0.00314288089084011,
+  "l1_reg": 8.179499475211674e-06,
+  "l2_reg": 3.752055855124284e-05,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 13:56:23,473 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: Input 0 of layer "bidirectional_8" is incompatible with the layer: expected ndim=3, found ndim=2. Full shape received: (None, 400)
+2025-03-05 13:56:23,475 - hyperparameter_search - INFO - Essai 2: {
+  "input_length": 90,
+  "feature_dim": 78,
+  "lstm_units": [
+    147
+  ],
+  "dropout_rate": 0.34474115788895177,
+  "learning_rate": 2.621087878265438e-05,
+  "l1_reg": 0.0002267398652378039,
+  "l2_reg": 3.972110727381911e-06,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 13:56:23,567 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: Input 0 of layer "bidirectional_11" is incompatible with the layer: expected ndim=3, found ndim=2. Full shape received: (None, 294)
+2025-03-05 13:56:23,570 - hyperparameter_search - INFO - Essai 3: {
+  "input_length": 90,
+  "feature_dim": 78,
+  "lstm_units": [
+    163,
+    81
+  ],
+  "dropout_rate": 0.1185801650879991,
+  "learning_rate": 0.0006647135865318024,
+  "l1_reg": 0.0007886714129990489,
+  "l2_reg": 0.0002661901888489054,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 13:59:16,544 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: name 'tf' is not defined
+2025-03-05 13:59:16,609 - hyperparameter_search - INFO - Essai 4: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    122
+  ],
+  "dropout_rate": 0.3736932106048628,
+  "learning_rate": 0.00020914981329035596,
+  "l1_reg": 0.0005345166110646819,
+  "l2_reg": 5.975027999960295e-06,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 13:59:16,698 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: Input 0 of layer "bidirectional_18" is incompatible with the layer: expected ndim=3, found ndim=2. Full shape received: (None, 244)
+2025-03-05 13:59:16,700 - hyperparameter_search - INFO - Essai 5: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    191
+  ],
+  "dropout_rate": 0.3080272084711243,
+  "learning_rate": 0.00043664735929796326,
+  "l1_reg": 0.0006584106160121611,
+  "l2_reg": 0.00048359527764659497,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 13:59:16,806 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: Input 0 of layer "bidirectional_21" is incompatible with the layer: expected ndim=3, found ndim=2. Full shape received: (None, 382)
+2025-03-05 13:59:16,808 - hyperparameter_search - INFO - Essai 6: {
+  "input_length": 90,
+  "feature_dim": 78,
+  "lstm_units": [
+    179,
+    89,
+    44
+  ],
+  "dropout_rate": 0.1353970008207678,
+  "learning_rate": 3.872118032174584e-05,
+  "l1_reg": 6.516990611177181e-06,
+  "l2_reg": 0.0003063462210622083,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 14:02:13,294 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: name 'tf' is not defined
+2025-03-05 14:02:13,358 - hyperparameter_search - INFO - Essai 7: {
+  "input_length": 90,
+  "feature_dim": 78,
+  "lstm_units": [
+    132
+  ],
+  "dropout_rate": 0.31707843326329943,
+  "learning_rate": 2.6471141828218167e-05,
+  "l1_reg": 0.00020736445177905034,
+  "l2_reg": 3.9459088110999995e-06,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 14:02:13,442 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: Input 0 of layer "bidirectional_30" is incompatible with the layer: expected ndim=3, found ndim=2. Full shape received: (None, 264)
+2025-03-05 14:02:13,444 - hyperparameter_search - INFO - Essai 8: {
+  "input_length": 30,
+  "feature_dim": 78,
+  "lstm_units": [
+    65,
+    32,
+    16
+  ],
+  "dropout_rate": 0.38274293753904687,
+  "learning_rate": 0.0015382308040279,
+  "l1_reg": 2.2264204303769692e-06,
+  "l2_reg": 0.00038842777547031416,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 14:05:09,165 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: name 'tf' is not defined
+2025-03-05 14:05:09,197 - hyperparameter_search - INFO - Essai 9: {
+  "input_length": 60,
+  "feature_dim": 78,
+  "lstm_units": [
+    184
+  ],
+  "dropout_rate": 0.12542334011440948,
+  "learning_rate": 8.569331925053983e-05,
+  "l1_reg": 0.0004588156549160974,
+  "l2_reg": 2.6100256506134754e-05,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 14:05:09,311 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: Input 0 of layer "bidirectional_39" is incompatible with the layer: expected ndim=3, found ndim=2. Full shape received: (None, 368)
+2025-03-05 14:05:09,332 - hyperparameter_search - INFO - Essai 10: {
+  "input_length": 30,
+  "feature_dim": 78,
+  "lstm_units": [
+    246,
+    123
+  ],
+  "dropout_rate": 0.22307768458010507,
+  "learning_rate": 0.006264278041381347,
+  "l1_reg": 5.316480195825898e-05,
+  "l2_reg": 6.642394805177955e-05,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 14:08:15,221 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: name 'tf' is not defined
+2025-03-05 14:08:15,256 - hyperparameter_search - INFO - Essai 11: {
+  "input_length": 30,
+  "feature_dim": 78,
+  "lstm_units": [
+    232,
+    116,
+    58
+  ],
+  "dropout_rate": 0.49902741891461877,
+  "learning_rate": 0.0037738070480810037,
+  "l1_reg": 1.9310149268765486e-05,
+  "l2_reg": 4.044574059404959e-05,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 14:11:16,102 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: name 'tf' is not defined
+2025-03-05 14:11:16,136 - hyperparameter_search - INFO - Essai 12: {
+  "input_length": 30,
+  "feature_dim": 78,
+  "lstm_units": [
+    92,
+    46
+  ],
+  "dropout_rate": 0.4778303065241472,
+  "learning_rate": 0.001822571471588506,
+  "l1_reg": 4.0180218105149045e-05,
+  "l2_reg": 1.3529773156937788e-05,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 14:14:16,790 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: name 'tf' is not defined
+2025-03-05 14:14:16,833 - hyperparameter_search - INFO - Essai 13: {
+  "input_length": 30,
+  "feature_dim": 78,
+  "lstm_units": [
+    216,
+    108,
+    54
+  ],
+  "dropout_rate": 0.4270807123688758,
+  "learning_rate": 0.008999902234702702,
+  "l1_reg": 1.0794668146752573e-06,
+  "l2_reg": 0.00010509751486396289,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 14:17:17,626 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: name 'tf' is not defined
+2025-03-05 14:17:17,669 - hyperparameter_search - INFO - Essai 14: {
+  "input_length": 30,
+  "feature_dim": 78,
+  "lstm_units": [
+    111,
+    55
+  ],
+  "dropout_rate": 0.4372786550365789,
+  "learning_rate": 0.0010542278367408795,
+  "l1_reg": 1.040021777795823e-05,
+  "l2_reg": 0.00011606159532098588,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 14:20:18,518 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: name 'tf' is not defined
+2025-03-05 14:20:18,563 - hyperparameter_search - INFO - Essai 15: {
+  "input_length": 30,
+  "feature_dim": 78,
+  "lstm_units": [
+    208,
+    104
+  ],
+  "dropout_rate": 0.24675092273713736,
+  "learning_rate": 0.0002242248239902421,
+  "l1_reg": 9.360153925852569e-05,
+  "l2_reg": 1.2844377595711361e-06,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}
+2025-03-05 14:23:19,079 - hyperparameter_search - ERROR - Erreur lors de l'entraînement: name 'tf' is not defined
+2025-03-05 14:23:19,123 - hyperparameter_search - INFO - Essai 16: {
+  "input_length": 30,
+  "feature_dim": 78,
+  "lstm_units": [
+    157,
+    78,
+    39
+  ],
+  "dropout_rate": 0.4344641325282323,
+  "learning_rate": 0.002998498301754752,
+  "l1_reg": 4.3422293421102935e-06,
+  "l2_reg": 1.4615444351755447e-05,
+  "use_attention": false,
+  "use_residual": false,
+  "prediction_horizons": [
+    12,
+    24,
+    96
+  ]
+}

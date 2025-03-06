@@ -409,7 +409,7 @@ class ModelTrainer:
         test_data = data.iloc[train_size:]
         
         # Diviser train_val en train et validation
-        train_data, val_data = self.temporal_train_test_split(
+        train_data, val_data, _ = self.temporal_train_test_split(
             train_val_data, 
             train_ratio=0.8,
             val_ratio=0.2
@@ -437,6 +437,9 @@ class ModelTrainer:
             is_training=True
         )
         
+        # Update feature_dim based on normalized data shape
+        self.model_params['feature_dim'] = X_train.shape[2]
+        
         # Réinitialiser le modèle
         self.model = LSTMModel(**self.model_params)
         
@@ -454,7 +457,7 @@ class ModelTrainer:
                 min_lr=1e-6
             ),
             ModelCheckpoint(
-                filepath=os.path.join(self.output_dir, "production", "lstm_best.h5"),
+                filepath=os.path.join(self.output_dir, "production", "lstm_best.keras"),  # changed extension to .keras
                 monitor='val_loss',
                 save_best_only=True
             ),
@@ -499,7 +502,7 @@ class ModelTrainer:
             "val_samples": len(X_val),
             "test_samples": len(X_test),
             "history": history.history,
-            "test_loss": test_evaluation[0],
+            "test_loss": test_evaluation,
             "direction_accuracies": direction_accuracies,
             "timestamp": datetime.now().isoformat()
         }

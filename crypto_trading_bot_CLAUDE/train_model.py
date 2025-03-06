@@ -6,17 +6,24 @@ Script d'entraînement du modèle LSTM pour la prédiction des mouvements de mar
 import os
 import argparse
 import pandas as pd
+from sklearn.utils import class_weight
 import numpy as np
 from datetime import datetime, timedelta
 import json
 import matplotlib.pyplot as plt
+import tensorflow as tf
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, LambdaCallback
+import tensorflow.keras.backend as K
 
-from ai.models.lstm_model import LSTMModel
+from ai.models.lstm_model import LSTMModel, EnhancedLSTMModel
 from ai.models.feature_engineering import FeatureEngineering
 from ai.models.model_trainer import ModelTrainer
 from ai.models.model_validator import ModelValidator
-from config.config import DATA_DIR
+from config.config import DATA_DIR, MODEL_CHECKPOINTS_DIR
 from utils.logger import setup_logger
+# Remove the problematic import
+# from download_data import load_historical_data
+from sklearn.utils import class_weight
 
 logger = setup_logger("train_model")
 
@@ -55,6 +62,39 @@ def load_data(symbol: str, timeframe: str, start_date: str, end_date: str) -> pd
     except Exception as e:
         logger.error(f"Erreur lors du chargement des données: {str(e)}")
         return pd.DataFrame()
+
+# Add this function to replace the missing load_historical_data function
+def load_historical_data(symbol: str, timeframe: str) -> pd.DataFrame:
+    """
+    Charge les données historiques disponibles pour un symbole et un timeframe
+    
+    Args:
+        symbol: Paire de trading (ex: 'BTCUSDT')
+        timeframe: Intervalle de temps (ex: '15m')
+        
+    Returns:
+        DataFrame avec les données OHLCV ou DataFrame vide si erreur
+    """
+    # Chercher les fichiers de données correspondants dans le répertoire des données
+    market_data_dir = os.path.join(DATA_DIR, "market_data")
+    if not os.path.exists(market_data_dir):
+        logger.error(f"Répertoire de données non trouvé: {market_data_dir}")
+        return pd.DataFrame()
+    
+    # Recherche les fichiers qui correspondent au pattern du symbole et timeframe
+    matching_files = [f for f in os.listdir(market_data_dir) 
+                     if f.startswith(f"{symbol}_{timeframe}") and f.endswith('.csv')]
+    
+    if not matching_files:
+        logger.error(f"Aucun fichier de données trouvé pour {symbol} ({timeframe})")
+        return pd.DataFrame()
+    
+    # Utiliser le fichier le plus récent
+    latest_file = sorted(matching_files)[-1]
+    file_path = os.path.join(market_data_dir, latest_file)
+    
+    logger.info(f"Chargement du fichier de données: {file_path}")
+    return load_data(symbol, timeframe, "", "")  # Les dates sont ignorées car on utilise le chemin direct
 
 def download_data_if_needed(symbol: str, timeframe: str, start_date: str, end_date: str) -> bool:
     """
@@ -138,6 +178,37 @@ def train_lstm_model(args):
     logger.info("Préparation des données...")
     featured_data, normalized_data = trainer.prepare_data(data)
     
+    # Calculer les poids des classes
+    y_direction = ...  # Assurez-vous que y_direction est défini dans votre préparation de données
+    class_weights = class_weight.compute_class_weight(
+        class_weight='balanced',
+        classes=np.unique(y_direction),
+        y=y_direction
+    )
+    class_weight_dict = {i: weight for i, weight in enumerate(class_weights)}
+    
+    # Ajouter des callbacks pour une meilleure régularisation
+    callbacks = [
+        EarlyStopping(
+            monitor='val_loss',
+            patience=15,
+            restore_best_weights=True
+        ),
+        ReduceLROnPlateau(
+            monitor='val_loss',
+            factor=0.5,
+            patience=8,
+            min_lr=1e-6
+        ),
+        # Augmenter le dropout progressivement si nécessaire
+        LambdaCallback(
+            on_epoch_end=lambda epoch, logs: K.set_value(
+                trainer.model.get_layer('dropout_layer').rate, 
+                min(0.5, 0.3 + epoch * 0.01)
+            ) if epoch > 10 else None
+        )
+    ]
+    
     # Diviser les données en ensembles d'entraînement, validation et test
     if args.cv:
         # Entraînement avec validation croisée
@@ -148,7 +219,8 @@ def train_lstm_model(args):
             epochs=args.epochs,
             batch_size=args.batch_size,
             initial_train_ratio=args.train_ratio,
-            patience=args.patience
+            patience=args.patience,
+            callbacks=callbacks
         )
         
         logger.info(f"Entraînement terminé, perte moyenne de validation: {cv_results['avg_val_loss']:.4f}")
@@ -166,7 +238,9 @@ def train_lstm_model(args):
             normalized_data,
             epochs=args.epochs,
             batch_size=args.batch_size,
-            test_ratio=1.0 - args.train_ratio - args.val_ratio
+            test_ratio=1.0 - args.train_ratio - args.val_ratio,
+            class_weight=class_weight_dict,
+            callbacks=callbacks
         )
         
         logger.info(f"Entraînement terminé, perte sur le test: {train_results['test_loss']:.4f}")

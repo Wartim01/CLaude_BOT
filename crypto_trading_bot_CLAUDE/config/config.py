@@ -45,3 +45,7 @@ API_RETRY_DELAY = 2  # secondes
 # Paramètres de notification (à implémenter ultérieurement)
 ENABLE_NOTIFICATIONS = False
 NOTIFICATION_EMAIL = os.getenv("NOTIFICATION_EMAIL", "")
+
+
+
+MODEL_CHECKPOINTS_DIR = "C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\models\\checkpoints"

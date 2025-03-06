@@ -1,0 +1,17 @@
+2025-03-04 13:12:31,291 - evaluate_model - INFO - Données chargées: 34940 lignes
+2025-03-04 13:12:32,397 - evaluate_model - ERROR - Erreur lors du chargement du modèle: 'LSTMModel' object has no attribute 'load'
+2025-03-04 13:21:14,530 - evaluate_model - INFO - Données chargées: 34940 lignes
+2025-03-04 13:21:15,795 - evaluate_model - INFO - Évaluation du modèle...
+2025-03-04 13:22:14,128 - evaluate_model - INFO - Données chargées: 34940 lignes
+2025-03-04 13:22:15,401 - evaluate_model - INFO - Évaluation du modèle...
+2025-03-04 13:29:38,043 - evaluate_model - INFO - Données chargées: 34940 lignes
+2025-03-04 13:29:39,321 - evaluate_model - INFO - Évaluation du modèle...
+2025-03-04 13:43:50,540 - evaluate_model - INFO - Données chargées: 34940 lignes
+2025-03-04 13:43:51,841 - evaluate_model - INFO - Évaluation du modèle...
+2025-03-04 13:49:22,911 - evaluate_model - INFO - 
+Horizon: h12
+2025-03-04 13:49:22,912 - evaluate_model - INFO - Accuracy: 0.5115
+2025-03-04 13:49:22,912 - evaluate_model - INFO - Precision: 0.5115
+2025-03-04 13:49:22,913 - evaluate_model - INFO - Recall: 1.0000
+2025-03-04 13:49:22,913 - evaluate_model - INFO - F1 Score: 0.6768
+2025-03-04 13:49:23,204 - evaluate_model - INFO - Résultats d'évaluation sauvegardés: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\evaluation\BTCUSDT_evaluation_20250304.json

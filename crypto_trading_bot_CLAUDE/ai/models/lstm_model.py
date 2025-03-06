@@ -39,11 +39,12 @@ class SpatialDropout1D(Dropout):
     def call(self, inputs, training=None):
         if training is None:
             training = K.learning_phase()
-            
         if 0. < self.rate < 1.:
-            # Créer un masque de bruit pour des canaux entiers
-            noise_shape = (inputs.shape[0], 1, inputs.shape[2])
-            return K.dropout(inputs, self.rate, noise_shape)
+            input_shape = tf.shape(inputs)
+            noise_shape = tf.stack([input_shape[0], tf.constant(1), input_shape[2]])
+            def dropped():
+                return tf.nn.dropout(inputs, rate=self.rate, noise_shape=noise_shape)
+            return tf.cond(tf.cast(training, tf.bool), lambda: dropped(), lambda: inputs)
         return inputs
 
 class ResidualBlock(Layer):
@@ -100,6 +101,159 @@ class ResidualBlock(Layer):
             'use_batch_norm': self.use_batch_norm
         })
         return config
+# Dans le fichier ai/models/lstm_model.py, après les définitions des couches personnalisées (ex. SpatialDropout1D, etc.)
+class LSTMModel:
+    """
+    Modèle LSTM avancé pour prédictions multi-horizon et multi-facteur.
+    Intègre éventuellement attention et connexions résiduelles.
+    """
+    def __init__(self, input_length=60, feature_dim=30, lstm_units=[128, 64, 32],
+                 dropout_rate=0.3, learning_rate=0.001, use_attention=True, use_residual=True,
+                 prediction_horizons=[12, 24, 96], l1_reg=0.0001, l2_reg=0.0001):
+        self.input_length = input_length
+        self.feature_dim = feature_dim
+        self.lstm_units = lstm_units
+        self.dropout_rate = dropout_rate
+        self.learning_rate = learning_rate
+        self.use_attention = use_attention
+        self.use_residual = use_residual
+        self.prediction_horizons = prediction_horizons
+        self.l1_reg = l1_reg
+        self.l2_reg = l2_reg
+        self.model = None
+        self.build_model()
+
+    def build_model(self):
+        """
+        Construit le modèle LSTM multi-sorties complet
+        """
+        from tensorflow.keras.layers import Input, LSTM, Dense, Dropout, Bidirectional
+        from tensorflow.keras.models import Model
+        from tensorflow.keras.optimizers import Adam
+        from tensorflow.keras.regularizers import l1_l2
+        
+        inputs = Input(shape=(self.input_length, self.feature_dim))
+        x = inputs
+
+        # Première couche LSTM bidirectionnelle
+        if len(self.lstm_units) > 0:
+            x = Bidirectional(LSTM(self.lstm_units[0], return_sequences=len(self.lstm_units) > 1))(x)
+            x = SpatialDropout1D(self.dropout_rate)(x)
+            
+            # Couches LSTM intermédiaires
+            for i in range(1, len(self.lstm_units)-1):
+                x = Bidirectional(LSTM(self.lstm_units[i], return_sequences=True))(x)
+                x = SpatialDropout1D(self.dropout_rate)(x)
+            
+            # Dernière couche LSTM
+            if len(self.lstm_units) > 1:
+                lstm_out = Bidirectional(LSTM(self.lstm_units[-1], return_sequences=False))(x)
+            else:
+                lstm_out = x
+        else:
+            lstm_out = Bidirectional(LSTM(64, return_sequences=False))(x)
+        
+        # Application de dropout
+        x = Dropout(self.dropout_rate)(lstm_out)
+        
+        # Couche dense avec régularisation
+        x = Dense(64, activation='relu', kernel_regularizer=l1_l2(l1=self.l1_reg, l2=self.l2_reg))(x)
+        
+        # Sorties pour chaque horizon
+        outputs = []
+        for horizon in self.prediction_horizons:
+            direction = Dense(1, activation='sigmoid', name=f'direction_{horizon}')(x)
+            outputs.append(direction)
+        
+        self.model = Model(inputs=inputs, outputs=outputs)
+        self.model.compile(
+            optimizer=Adam(learning_rate=self.learning_rate),
+            loss=['binary_crossentropy' for _ in outputs],
+            metrics=['accuracy']
+        )
+        return self.model
+
+    def build_single_output_model(self, horizon_idx=0):
+        """
+        Construit un modèle LSTM avec une seule sortie pour l'optimisation
+        
+        Args:
+            horizon_idx: Indice de l'horizon à utiliser (0 = court terme)
+            
+        Returns:
+            Modèle Keras avec une seule sortie
+        """
+        from tensorflow.keras.layers import Input, LSTM, Dense, Dropout, Bidirectional
+        from tensorflow.keras.models import Model
+        from tensorflow.keras.optimizers import Adam
+        from tensorflow.keras.regularizers import l1_l2
+        
+        inputs = Input(shape=(self.input_length, self.feature_dim))
+        x = inputs
+
+        # Première couche LSTM bidirectionnelle
+        if len(self.lstm_units) > 0:
+            x = Bidirectional(LSTM(self.lstm_units[0], return_sequences=len(self.lstm_units) > 1))(x)
+            x = Dropout(self.dropout_rate)(x)
+            
+            # Couches LSTM intermédiaires
+            for i in range(1, len(self.lstm_units)-1):
+                x = Bidirectional(LSTM(self.lstm_units[i], return_sequences=True))(x)
+                x = Dropout(self.dropout_rate)(x)
+            
+            # Dernière couche LSTM
+            if len(self.lstm_units) > 1:
+                x = Bidirectional(LSTM(self.lstm_units[-1], return_sequences=False))(x)
+            else:
+                x = Bidirectional(LSTM(self.lstm_units[0], return_sequences=False))(x)
+        else:
+            x = Bidirectional(LSTM(64, return_sequences=False))(x)
+        
+        # Application de dropout
+        x = Dropout(self.dropout_rate)(x)
+        
+        # Couche dense avec régularisation
+        x = Dense(64, activation='relu', kernel_regularizer=l1_l2(l1=self.l1_reg, l2=self.l2_reg))(x)
+        
+        # Sortie unique (direction pour l'horizon spécifié)
+        horizon = self.prediction_horizons[horizon_idx] if horizon_idx < len(self.prediction_horizons) else self.prediction_horizons[0]
+        output = Dense(1, activation='sigmoid', name=f'direction_{horizon}')(x)
+        
+        # Créer et compiler le modèle
+        single_model = Model(inputs=inputs, outputs=output)
+        single_model.compile(
+            optimizer=Adam(learning_rate=self.learning_rate),
+            loss='binary_crossentropy',
+            metrics=['accuracy']
+        )
+        
+        return single_model
+
+    def save(self, path: str) -> None:
+        self.model.save(path)
+        
+    def load(self, path: Optional[str] = None) -> None:
+        """
+        Charge le modèle depuis le disque.
+        Args:
+            path: Chemin du modèle (utilise le chemin par défaut si None)
+        """
+        import os
+        from tensorflow.keras.models import load_model
+        load_path = path or self.model_path
+        if not os.path.exists(load_path):
+            raise FileNotFoundError(f"Modèle non trouvé: {load_path}")
+        self.model = load_model(
+            load_path,
+            custom_objects={
+                'MultiHeadAttention': MultiHeadAttention,
+                'TemporalAttentionBlock': TemporalAttentionBlock,
+                'TimeSeriesAttention': TimeSeriesAttention,
+                'SpatialDropout1D': SpatialDropout1D,
+                'ResidualBlock': ResidualBlock
+            }
+        )
+        logger.info(f"Modèle principal chargé: {load_path}")
 
 class EnhancedLSTMModel:
     """
@@ -867,4 +1021,5 @@ def test_model():
     return model
 
 if __name__ == "__main__":
-    model = t
+    test_model()
+
