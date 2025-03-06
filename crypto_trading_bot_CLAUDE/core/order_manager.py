@@ -18,6 +18,7 @@ from config.trading_params import (
     LEVERAGE
 )
 from utils.logger import setup_logger
+from utils.network_utils import retry_with_backoff
 
 logger = setup_logger("order_manager")
 
@@ -196,128 +197,139 @@ class OrderManager:
             logger.error(f"Erreur lors du placement de l'ordre pour {symbol}: {str(e)}")
             return {"success": False, "message": str(e)}
     
-    def update_trailing_stop(self, symbol: str, position: Dict, current_price: float) -> Dict:
+    @retry_with_backoff(max_retries=2, base_delay=1.0)
+    def update_trailing_stop(self, position_id, current_price):
         """
-        Met à jour le trailing stop d'une position si nécessaire
+        Update trailing stop for a position with retry logic
         
         Args:
-            symbol: Paire de trading
-            position: Position à mettre à jour
-            current_price: Prix actuel
+            position_id: ID of the position
+            current_price: Current market price
+        
+        Returns:
+            Boolean indicating success
+        """
+        try:
+            # Get position details
+            position = self.position_tracker.get_position(position_id)
+            if not position:
+                logger.warning(f"Position {position_id} not found for trailing stop update")
+                return False
+            
+            # Validate that trailing stop is active
+            if not position.get("trailing_stop_active", False):
+                return True  # Not an error - position doesn't use trailing stop
+                
+            # Get current stop parameters
+            current_stop_price = position.get("stop_loss_price")
+            if not current_stop_price:
+                logger.warning(f"Position {position_id} has no stop loss price set")
+                return False
+                
+            trailing_callback = position.get("trailing_callback", 0.01)  # 1% default callback
+            
+            # Calculate new stop price based on current price
+            if position["side"] == "BUY":  # Long position
+                # Only move stop up for long positions
+                price_diff = current_price * (1 - trailing_callback)
+                if price_diff > current_stop_price:
+                    new_stop_price = price_diff
+                    logger.info(f"Updating trailing stop for position {position_id} from {current_stop_price} to {new_stop_price}")
+                    
+                    # Update stop loss order
+                    success = self._update_stop_loss_order(position_id, new_stop_price)
+                    if success:
+                        # Update position data
+                        self.position_tracker.update_position(position_id, {"stop_loss_price": new_stop_price})
+                    return success
+                    
+            else:  # Short position
+                # Only move stop down for short positions
+                price_diff = current_price * (1 + trailing_callback)
+                if price_diff < current_stop_price:
+                    new_stop_price = price_diff
+                    logger.info(f"Updating trailing stop for position {position_id} from {current_stop_price} to {new_stop_price}")
+                    
+                    # Update stop loss order
+                    success = self._update_stop_loss_order(position_id, new_stop_price)
+                    if success:
+                        # Update position data
+                        self.position_tracker.update_position(position_id, {"stop_loss_price": new_stop_price})
+                    return success
+                    
+            # No update needed
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error updating trailing stop: {str(e)}")
+            # Re-raise to trigger retry logic
+            raise
+
+    def _update_stop_loss_order(self, position_id, new_price):
+        """
+        Updates a stop loss order with the exchange
+        
+        Args:
+            position_id: Position ID
+            new_price: New stop price
             
         Returns:
-            Résultat de l'opération
+            Boolean indicating success
         """
-        side = position["side"]
-        entry_price = position["entry_price"]
-        stop_loss_price = position["stop_loss_price"]
-        position_id = position["id"]
-        
-        # Vérifier si le trailing stop doit être activé ou mis à jour
-        if side == "BUY":
-            # Pour les positions longues
-            profit_percent = (current_price - entry_price) / entry_price * 100
-            
-            # Mettre à jour le prix le plus haut observé
-            if current_price > position["highest_price"]:
-                position["highest_price"] = current_price
-                self.position_tracker.update_position(position_id, position)
-            
-            # Activation du trailing stop
-            if (not position["trailing_stop_activated"] and 
-                profit_percent >= TRAILING_STOP_ACTIVATION):
+        try:
+            # Get position details
+            position = self.position_tracker.get_position(position_id)
+            if not position:
+                logger.warning(f"Position {position_id} not found")
+                return False
                 
-                position["trailing_stop_activated"] = True
-                self.position_tracker.update_position(position_id, position)
-                logger.info(f"Trailing stop activé pour {symbol} (ID: {position_id})")
-            
-            # Mise à jour du trailing stop
-            if position["trailing_stop_activated"]:
-                new_stop_loss = position["highest_price"] * (1 - TRAILING_STOP_STEP/100)
+            # Get stop loss order ID
+            stop_order_id = position.get("stop_loss_order_id")
+            if not stop_order_id:
+                logger.warning(f"No stop loss order ID for position {position_id}")
+                return False
                 
-                if new_stop_loss > stop_loss_price:
-                    try:
-                        # Annuler l'ancien ordre stop-loss
-                        self.api.cancel_order(
-                            symbol=symbol,
-                            order_id=position["stop_loss_order_id"]
-                        )
-                        
-                        # Créer un nouvel ordre stop-loss
-                        new_stop_order = self.api.create_order(
-                            symbol=symbol,
-                            side="SELL",
-                            order_type="STOP_MARKET",
-                            quantity=position["quantity"],
-                            stop_price=new_stop_loss,
-                            newClientOrderId=f"sl_trail_{position_id}"
-                        )
-                        
-                        # Mettre à jour la position
-                        position["stop_loss_price"] = new_stop_loss
-                        position["stop_loss_order_id"] = new_stop_order["orderId"]
-                        self.position_tracker.update_position(position_id, position)
-                        
-                        logger.info(f"Trailing stop mis à jour pour {symbol} (ID: {position_id}) à {new_stop_loss}")
-                        return {"success": True, "new_stop_loss": new_stop_loss}
-                    
-                    except Exception as e:
-                        logger.error(f"Erreur lors de la mise à jour du trailing stop pour {symbol} (ID: {position_id}): {str(e)}")
-                        return {"success": False, "message": str(e)}
-        
-        elif side == "SELL":
-            # Pour les positions courtes
-            profit_percent = (entry_price - current_price) / entry_price * 100
-            
-            # Mettre à jour le prix le plus bas observé
-            if current_price < position["lowest_price"]:
-                position["lowest_price"] = current_price
-                self.position_tracker.update_position(position_id, position)
-            
-            # Activation du trailing stop
-            if (not position["trailing_stop_activated"] and 
-                profit_percent >= TRAILING_STOP_ACTIVATION):
+            symbol = position.get("symbol")
                 
-                position["trailing_stop_activated"] = True
-                self.position_tracker.update_position(position_id, position)
-                logger.info(f"Trailing stop activé pour {symbol} (ID: {position_id})")
+            # Cancel existing stop loss
+            cancel_result = self.client.cancel_order(
+                symbol=symbol,
+                orderId=stop_order_id
+            )
             
-            # Mise à jour du trailing stop
-            if position["trailing_stop_activated"]:
-                new_stop_loss = position["lowest_price"] * (1 + TRAILING_STOP_STEP/100)
+            if not cancel_result:
+                logger.error(f"Failed to cancel existing stop loss order {stop_order_id}")
+                return False
                 
-                if new_stop_loss < stop_loss_price:
-                    try:
-                        # Annuler l'ancien ordre stop-loss
-                        self.api.cancel_order(
-                            symbol=symbol,
-                            order_id=position["stop_loss_order_id"]
-                        )
-                        
-                        # Créer un nouvel ordre stop-loss
-                        new_stop_order = self.api.create_order(
-                            symbol=symbol,
-                            side="BUY",
-                            order_type="STOP_MARKET",
-                            quantity=position["quantity"],
-                            stop_price=new_stop_loss,
-                            newClientOrderId=f"sl_trail_{position_id}"
-                        )
-                        
-                        # Mettre à jour la position
-                        position["stop_loss_price"] = new_stop_loss
-                        position["stop_loss_order_id"] = new_stop_order["orderId"]
-                        self.position_tracker.update_position(position_id, position)
-                        
-                        logger.info(f"Trailing stop mis à jour pour {symbol} (ID: {position_id}) à {new_stop_loss}")
-                        return {"success": True, "new_stop_loss": new_stop_loss}
-                    
-                    except Exception as e:
-                        logger.error(f"Erreur lors de la mise à jour du trailing stop pour {symbol} (ID: {position_id}): {str(e)}")
-                        return {"success": False, "message": str(e)}
-        
-        return {"success": True, "message": "Aucune mise à jour nécessaire"}
-    
+            # Create new stop loss order
+            quantity = position.get("quantity")
+            side = "SELL" if position.get("side") == "BUY" else "BUY"
+            
+            new_order = self.client.create_order(
+                symbol=symbol,
+                side=side,
+                type="STOP_LOSS",
+                timeInForce="GTC",
+                quantity=quantity,
+                stopPrice=new_price,
+                price=new_price  # For stop limit orders
+            )
+            
+            if new_order and "orderId" in new_order:
+                # Update position with new stop loss order ID
+                self.position_tracker.update_position(position_id, {
+                    "stop_loss_order_id": new_order["orderId"],
+                    "stop_loss_price": new_price
+                })
+                return True
+                
+            logger.error(f"Failed to create new stop loss order for position {position_id}")
+            return False
+            
+        except Exception as e:
+            logger.error(f"Error updating stop loss order: {str(e)}")
+            return False
+
     def close_position(self, symbol: str, position_id: str) -> Dict:
         """
         Ferme une position manuellement

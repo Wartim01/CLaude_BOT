@@ -72,21 +72,36 @@ class LSTMHyperparameterOptimizer:
     
     def objective(self, trial):
         """
-        Fonction objectif pour Optuna avec modèle à sortie unique
+        Optimized objective function for Optuna with model caching and early pruning
         """
         try:
-            # Configuration des paramètres
-            lstm_units_first = trial.suggest_int("lstm_units_first", 64, 256)
+            # Configuration parameters with intelligent defaults based on data characteristics
+            data_volatility = np.std(self.train_data['close'].pct_change().dropna())
+            
+            # Adjust parameter ranges based on data characteristics
+            if data_volatility > 0.02:  # High volatility
+                lstm_units_range = (96, 256)
+                dropout_range = (0.3, 0.5)
+            else:  # Lower volatility
+                lstm_units_range = (64, 192)
+                dropout_range = (0.2, 0.4)
+            
+            # Suggest hyperparameters
+            lstm_units_first = trial.suggest_int("lstm_units_first", lstm_units_range[0], lstm_units_range[1])
             lstm_layers = trial.suggest_int("lstm_layers", 1, 3)
-            dropout_rate = trial.suggest_float("dropout_rate", 0.1, 0.5)
+            dropout_rate = trial.suggest_float("dropout_rate", dropout_range[0], dropout_range[1])
             learning_rate = trial.suggest_float("learning_rate", 1e-5, 1e-2, log=True)
             
-            # Construction des unités LSTM en fonction du nombre de couches
+            # Efficient layering with decreasing units
             lstm_units = [lstm_units_first]
             for i in range(1, lstm_layers):
                 lstm_units.append(lstm_units[-1] // 2)
             
-            # Paramètres du modèle
+            # Add advanced model architecture parameters
+            use_attention = trial.suggest_categorical("use_attention", [False, True])  # Try both options
+            batch_norm = trial.suggest_categorical("batch_norm", [True, False])
+            
+            # Model parameters
             model_params = {
                 "input_length": trial.suggest_categorical("sequence_length", [30, 60, 90]),
                 "feature_dim": self.normalized_train.shape[1] if hasattr(self.normalized_train, "shape") else 30,
@@ -95,46 +110,48 @@ class LSTMHyperparameterOptimizer:
                 "learning_rate": learning_rate,
                 "l1_reg": trial.suggest_float("l1_reg", 1e-6, 1e-3, log=True),
                 "l2_reg": trial.suggest_float("l2_reg", 1e-6, 1e-3, log=True),
-                "use_attention": False,  # Simplifier pour l'optimisation
-                "use_residual": False,   # Simplifier pour l'optimisation
-                "prediction_horizons": [12, 24, 96]  # Horizons standards
+                "use_attention": use_attention,
+                "use_residual": trial.suggest_categorical("use_residual", [False, True]),
+                "prediction_horizons": [12, 24, 96],
+                "use_batch_norm": batch_norm
             }
             
-            logger.info(f"Essai {trial.number}: {json.dumps(model_params, indent=2)}")
+            # Log trial info
+            logger.info(f"Trial {trial.number} - Testing: {json.dumps(model_params, indent=2)}")
             
-            # Créer le trainer avec les paramètres
+            # Early pruning for obviously bad configurations
+            if lstm_units_first > 200 and dropout_rate < 0.3:
+                logger.info(f"Early pruning trial {trial.number}: high complexity with low regularization")
+                raise optuna.exceptions.TrialPruned()
+            
+            # Create model with single output for optimization
             trainer = ModelTrainer(model_params)
+            single_model = trainer.model.build_single_output_model(horizon_idx=0)  # Short-term direction
             
-            # Créer un modèle à sortie unique pour l'optimisation
-            single_model = trainer.model.build_single_output_model(horizon_idx=0)  # Utiliser l'horizon court terme
-            
-            # Préparer les données pour ce modèle
-            X_train, y_lists = trainer.feature_engineering.create_multi_horizon_data(
-                self.normalized_train,
-                sequence_length=model_params["input_length"],
-                horizons=model_params["prediction_horizons"],
-                is_training=True
+            # Prepare data efficiently - reuse for same sequence length
+            sequence_length = model_params["input_length"]
+            X_train, y_train_all = self._get_prepared_data(
+                self.normalized_train, sequence_length, model_params["prediction_horizons"], True
             )
             
-            X_val, y_val_lists = trainer.feature_engineering.create_multi_horizon_data(
-                self.normalized_val,
-                sequence_length=model_params["input_length"],
-                horizons=model_params["prediction_horizons"],
-                is_training=True
+            X_val, y_val_all = self._get_prepared_data(
+                self.normalized_val, sequence_length, model_params["prediction_horizons"], False
             )
             
-            # Extraire uniquement les directions pour l'horizon court terme
-            y_train = y_lists[0]  # Direction pour le premier horizon
-            y_val = y_val_lists[0]  # Direction pour le premier horizon
+            y_train = y_train_all[0]  # Direction for first horizon
+            y_val = y_val_all[0]  # Direction for first horizon
             
-            # Calculer les poids des classes pour l'équilibrage
+            # Implement class balancing
             class_counts = np.bincount(y_train.flatten())
-            class_weights = {
-                0: len(y_train) / (2 * class_counts[0]),
-                1: len(y_train) / (2 * class_counts[1])
-            }
+            if len(class_counts) > 1:
+                class_weights = {
+                    0: len(y_train) / (2 * class_counts[0]),
+                    1: len(y_train) / (2 * class_counts[1])
+                }
+            else:
+                class_weights = {0: 1.0, 1: 1.0}
             
-            # Définir les callbacks
+            # Enhanced callbacks with reporting to Optuna for pruning
             callbacks = [
                 tf.keras.callbacks.EarlyStopping(
                     monitor='val_accuracy',
@@ -146,15 +163,18 @@ class LSTMHyperparameterOptimizer:
                     factor=0.5,
                     patience=3,
                     min_lr=1e-6
+                ),
+                optuna.integration.TFKerasPruningCallback(
+                    trial, "val_accuracy", interval=1
                 )
             ]
             
-            # Entraîner le modèle
+            # Train model with dynamic batch size
             batch_size = trial.suggest_categorical("batch_size", [16, 32, 64, 128])
             history = single_model.fit(
                 x=X_train,
                 y=y_train,
-                epochs=30,  # Réduit pour l'optimisation
+                epochs=30,
                 batch_size=batch_size,
                 validation_data=(X_val, y_val),
                 class_weight=class_weights,
@@ -162,14 +182,15 @@ class LSTMHyperparameterOptimizer:
                 verbose=0
             )
             
-            # Évaluer le modèle
+            # Evaluate with multiple metrics for better model selection
             val_loss, val_accuracy = single_model.evaluate(X_val, y_val, verbose=0)
             
-            # Prédictions pour calculer le F1 score
-            y_pred = (single_model.predict(X_val) > 0.5).astype(int).flatten()
+            # Get predictions and calculate F1 score
+            y_pred_proba = single_model.predict(X_val)
+            y_pred = (y_pred_proba > 0.5).astype(int).flatten()
             f1 = f1_score(y_val, y_pred)
             
-            # Enregistrer les résultats
+            # Save trial results
             trial_result = {
                 "trial_number": trial.number,
                 "params": model_params,
@@ -183,17 +204,17 @@ class LSTMHyperparameterOptimizer:
             
             self.trials_history.append(trial_result)
             
-            # Sauvegarder périodiquement
+            # Save periodically
             if len(self.trials_history) % 5 == 0:
                 self._save_trials_history()
             
-            logger.info(f"Essai {trial.number}: F1={f1:.4f}, Accuracy={val_accuracy:.4f}")
+            logger.info(f"Trial {trial.number}: F1={f1:.4f}, Accuracy={val_accuracy:.4f}")
             
-            return f1  # Optimiser le F1 score
+            return f1  # Optimize F1 score
             
         except Exception as e:
-            logger.error(f"Erreur lors de l'entraînement: {str(e)}")
-            return 0.0  # Valeur par défaut en cas d'erreur
+            logger.error(f"Error during training: {str(e)}")
+            return 0.0  # Default value in case of error
     
     def _save_trials_history(self):
         """Sauvegarde l'historique des essais"""

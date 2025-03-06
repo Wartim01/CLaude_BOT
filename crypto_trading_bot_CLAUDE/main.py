@@ -8,6 +8,7 @@ from datetime import datetime
 import signal
 import sys
 import requests
+import pandas as pd
 
 from config.config import LOG_LEVEL, LOG_FORMAT, LOG_FILE
 from core.api_connector import BinanceConnector
@@ -19,6 +20,7 @@ from strategies.technical_bounce import TechnicalBounceStrategy
 from strategies.market_state import MarketStateAnalyzer
 from ai.scoring_engine import ScoringEngine
 from utils.logger import setup_logger
+from utils.network_utils import retry_with_backoff, binance_rate_limiter
 
 # Configuration du logger
 logger = setup_logger("main", LOG_LEVEL, LOG_FORMAT, LOG_FILE)
@@ -49,6 +51,10 @@ class TradingBot:
         # Variables d'état
         self.is_running = False
         self.last_trade_time = {}  # Pour suivre le temps entre les trades
+        self.error_counter = 0
+        self.max_consecutive_errors = 5
+        self.failsafe_enabled = True
+        self.failsafe_threshold = 10
         
         # Configuration des gestionnaires de signaux
         signal.signal(signal.SIGINT, self.handle_shutdown)
@@ -75,13 +81,102 @@ class TradingBot:
             
             # Boucle principale
             while self.is_running:
-                self.trading_cycle()
+                self.run_trading_cycle()
                 time.sleep(15)  # Attente de 15 secondes entre chaque cycle
                 
         except Exception as e:
             logger.error(f"Erreur critique lors de l'exécution: {str(e)}")
             self.shutdown()
     
+    @retry_with_backoff(max_retries=3, base_delay=2.0)
+    def fetch_market_data(self, pair, timeframe, limit=100):
+        """
+        Fetch market data from exchange with retry logic
+        """
+        try:
+            # Apply rate limiting to avoid hitting API limits
+            binance_rate_limiter.wait_if_needed()
+            
+            klines = self.client.get_klines(
+                symbol=pair,
+                interval=timeframe,
+                limit=limit
+            )
+            
+            df = pd.DataFrame(klines, columns=[
+                'timestamp', 'open', 'high', 'low', 'close', 'volume',
+                'close_time', 'quote_asset_volume', 'number_of_trades',
+                'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume', 'ignore'
+            ])
+            
+            # Convert numeric columns
+            numeric_columns = ['open', 'high', 'low', 'close', 'volume']
+            df[numeric_columns] = df[numeric_columns].apply(pd.to_numeric)
+            
+            # Convert timestamp
+            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+            
+            return df
+            
+        except Exception as e:
+            logger.error(f"Error fetching data for {pair}: {str(e)}")
+            # Re-raise to trigger retry logic
+            raise
+
+    def run_trading_cycle(self):
+        """
+        Runs a complete trading cycle with enhanced error handling
+        """
+        try:
+            # Apply circuit breaker pattern - if too many critical errors, pause trading
+            if self.error_counter > self.max_consecutive_errors:
+                recovery_time = min(30 * (self.error_counter - self.max_consecutive_errors), 300)
+                logger.warning(f"Too many consecutive errors ({self.error_counter}). "
+                              f"Pausing trading for {recovery_time} seconds")
+                time.sleep(recovery_time)
+                return
+            
+            # Main trading logic with granular error handling
+            try:
+                # Update market data
+                self._update_market_data()
+                
+                # Analyze current positions
+                self._analyze_positions()
+                
+                # Generate trading signals
+                self._generate_signals()
+                
+                # Execute trades
+                self._execute_trades()
+                
+                # Reset error counter after successful cycle
+                self.error_counter = 0
+                
+            except requests.exceptions.RequestException as e:
+                logger.error(f"Network error when communicating with exchange: {str(e)}")
+                self.error_counter += 1
+                # Short sleep to allow network to recover
+                time.sleep(5)
+                
+            except ValueError as e:
+                logger.error(f"Data processing error: {str(e)}")
+                self.error_counter += 1
+                
+            except Exception as e:
+                logger.critical(f"Critical error in trading cycle: {str(e)}")
+                self.error_counter += 1
+                # Send alert to admin if configured
+                if hasattr(self, 'alert_service'):
+                    self.alert_service.send_alert(f"Critical trading error: {str(e)}")
+        
+        except Exception as e:
+            logger.critical(f"Unhandled exception in trading loop: {str(e)}", exc_info=True)
+            # Emergency shutdown if necessary
+            if self.failsafe_enabled and self.error_counter > self.failsafe_threshold:
+                logger.critical("Failsafe triggered - shutting down trading")
+                self.stop_trading()
+
     def trading_cycle(self):
         """
         Cycle principal de trading avec gestion d'erreurs améliorée

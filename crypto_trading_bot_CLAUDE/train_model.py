@@ -8,6 +8,7 @@ import argparse
 import pandas as pd
 from sklearn.utils import class_weight
 import numpy as np
+import time
 from datetime import datetime, timedelta
 import json
 import matplotlib.pyplot as plt
@@ -25,42 +26,152 @@ from utils.logger import setup_logger
 # from download_data import load_historical_data
 from sklearn.utils import class_weight
 
+# Import our network utilities
+from utils.network_utils import retry_with_backoff
+
 logger = setup_logger("train_model")
+
+@retry_with_backoff(max_retries=3, base_delay=2.0)
+def download_binance_data(symbol, timeframe, start_date, end_date, save_path=None):
+    """
+    Downloads historical data from Binance with retry logic
+    
+    Args:
+        symbol: Trading pair symbol (e.g., 'BTCUSDT')
+        timeframe: Timeframe for the candles (e.g., '15m')
+        start_date: Start date in YYYY-MM-DD format
+        end_date: End date in YYYY-MM-DD format
+        save_path: Path to save the data (optional)
+        
+    Returns:
+        DataFrame with the historical data
+    """
+    from binance.client import Client
+    
+    # Convert date strings to timestamps
+    start_ts = int(datetime.strptime(start_date, '%Y-%m-%d').timestamp() * 1000)
+    end_ts = int(datetime.strptime(end_date, '%Y-%m-%d').timestamp() * 1000)
+    
+    try:
+        # Initialize client
+        client = Client("", "")  # Public API access doesn't need keys for historical data
+        
+        logger.info(f"Downloading {symbol} {timeframe} data from {start_date} to {end_date}")
+        
+        # Get data in chunks to avoid timeouts for large date ranges
+        klines_data = []
+        chunk_size = timedelta(days=30).total_seconds() * 1000  # 30 days in milliseconds
+        current_ts = start_ts
+        
+        while current_ts < end_ts:
+            next_ts = min(current_ts + chunk_size, end_ts)
+            
+            # Apply rate limiting
+            time.sleep(1.0)  # Sleep to respect rate limits
+            
+            chunk = client.get_historical_klines(
+                symbol=symbol,
+                interval=timeframe,
+                start_str=current_ts,
+                end_str=next_ts
+            )
+            
+            if chunk:
+                klines_data.extend(chunk)
+                logger.info(f"Downloaded chunk: {len(chunk)} candles")
+            else:
+                logger.warning(f"No data for chunk starting at {datetime.fromtimestamp(current_ts/1000)}")
+            
+            current_ts = next_ts
+            
+        # Convert to DataFrame
+        if klines_data:
+            df = pd.DataFrame(klines_data, columns=[
+                'timestamp', 'open', 'high', 'low', 'close', 'volume',
+                'close_time', 'quote_asset_volume', 'number_of_trades',
+                'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume', 'ignore'
+            ])
+            
+            # Convert numeric columns
+            for col in ['open', 'high', 'low', 'close', 'volume']:
+                df[col] = pd.to_numeric(df[col])
+            
+            # Convert timestamp
+            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+            
+            # Save data if path is provided
+            if save_path:
+                os.makedirs(os.path.dirname(os.path.abspath(save_path)), exist_ok=True)
+                df.to_csv(save_path, index=False)
+                logger.info(f"Data saved to {save_path}")
+                
+            return df
+        else:
+            logger.error("No data returned from Binance API")
+            return pd.DataFrame()
+            
+    except Exception as e:
+        logger.error(f"Error downloading data: {str(e)}")
+        raise  # Re-raise to trigger retry
 
 def load_data(symbol: str, timeframe: str, start_date: str, end_date: str) -> pd.DataFrame:
     """
-    Charge les données OHLCV depuis le disque
+    Loads OHLCV data from disk with improved error handling
     
     Args:
-        symbol: Paire de trading
-        timeframe: Intervalle de temps
-        start_date: Date de début (YYYY-MM-DD)
-        end_date: Date de fin (YYYY-MM-DD)
+        symbol: Trading pair symbol
+        timeframe: Time interval
+        start_date: Start date (YYYY-MM-DD)
+        end_date: End date (YYYY-MM-DD)
         
     Returns:
-        DataFrame avec les données OHLCV
+        DataFrame with OHLCV data
     """
-    # Construire le chemin du fichier
+    # Build file path
     data_path = os.path.join(DATA_DIR, "market_data", f"{symbol}_{timeframe}_{start_date}_{end_date}.csv")
     
-    # Vérifier si le fichier existe
+    # Check if file exists
     if not os.path.exists(data_path):
-        logger.error(f"Fichier non trouvé: {data_path}")
+        logger.error(f"File not found: {data_path}")
         return pd.DataFrame()
     
-    # Charger les données
+    # Load data with more robust error handling
     try:
+        # Try to load with pandas
         data = pd.read_csv(data_path)
         
-        # Convertir la colonne timestamp en datetime
+        # Validate required columns
+        required_columns = ['open', 'high', 'low', 'close', 'volume']
+        if not all(col in data.columns for col in required_columns):
+            logger.error(f"Missing required columns in {data_path}. Found: {data.columns.tolist()}")
+            return pd.DataFrame()
+            
+        # Convert timestamp column if present
         if "timestamp" in data.columns:
             data["timestamp"] = pd.to_datetime(data["timestamp"])
             data.set_index("timestamp", inplace=True)
         
-        logger.info(f"Données chargées: {len(data)} lignes")
+        # Check data validity
+        if data.empty:
+            logger.error(f"Empty data file: {data_path}")
+            return pd.DataFrame()
+            
+        if data.isnull().values.any():
+            logger.warning(f"File contains NaN values: {data_path}. Filling NaN values.")
+            # Forward fill, then backward fill to handle NaNs
+            data = data.ffill().bfill()
+        
+        logger.info(f"Data loaded: {len(data)} rows")
         return data
+        
+    except pd.errors.EmptyDataError:
+        logger.error(f"Empty file: {data_path}")
+        return pd.DataFrame()
+    except pd.errors.ParserError:
+        logger.error(f"Parser error loading {data_path}. File may be corrupted.")
+        return pd.DataFrame()
     except Exception as e:
-        logger.error(f"Erreur lors du chargement des données: {str(e)}")
+        logger.error(f"Error loading data: {str(e)}")
         return pd.DataFrame()
 
 # Add this function to replace the missing load_historical_data function
@@ -121,8 +232,6 @@ def download_data_if_needed(symbol: str, timeframe: str, start_date: str, end_da
     logger.info(f"Téléchargement des données pour {symbol} ({timeframe}) du {start_date} au {end_date}")
     
     try:
-        from download_data import download_binance_data
-        
         # Télécharger les données
         df = download_binance_data(symbol, timeframe, start_date, end_date, data_path)
         

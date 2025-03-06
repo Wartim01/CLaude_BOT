@@ -453,3 +453,109 @@ class ScoringEngine:
         
         # Sauvegarder les poids mis à jour
         self._save_weights()
+
+    def save_model_weights(self, filepath=None):
+        """
+        Saves model weights with robust error handling and backup creation
+        
+        Args:
+            filepath: Path to save the weights, uses default if None
+        """
+        if filepath is None:
+            filepath = os.path.join(self.models_dir, "scoring_weights.h5")
+        
+        # Create directory if it doesn't exist
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        
+        # Create backup of previous weights if they exist
+        if os.path.exists(filepath):
+            backup_path = filepath + f".backup_{int(time.time())}"
+            try:
+                shutil.copy2(filepath, backup_path)
+                logger.info(f"Created backup of previous weights: {backup_path}")
+            except Exception as e:
+                logger.warning(f"Could not create backup of weights: {str(e)}")
+        
+        # Save weights with atomic write pattern to prevent corruption
+        temp_filepath = filepath + ".tmp"
+        try:
+            self.model.save_weights(temp_filepath)
+            
+            # On Windows, we need to remove the target file first
+            if os.path.exists(filepath):
+                os.remove(filepath)
+            
+            os.rename(temp_filepath, filepath)
+            
+            logger.info(f"Successfully saved model weights to {filepath}")
+            return True
+        
+        except Exception as e:
+            logger.error(f"Error saving weights: {str(e)}")
+            
+            # If temporary file was created but not moved, clean it up
+            if os.path.exists(temp_filepath):
+                try:
+                    os.remove(temp_filepath)
+                except:
+                    pass
+            
+            return False
+
+    def save_history(self, history_data):
+        """
+        Saves training/prediction history with improved error handling
+        
+        Args:
+            history_data: History data to save
+        """
+        history_path = os.path.join(self.data_dir, "scoring_history.json")
+        
+        # Create directory if it doesn't exist
+        os.makedirs(os.path.dirname(history_path), exist_ok=True)
+        
+        try:
+            # Load existing history if available
+            existing_history = []
+            if os.path.exists(history_path):
+                try:
+                    with open(history_path, 'r') as f:
+                        existing_history = json.load(f)
+                except json.JSONDecodeError:
+                    logger.warning(f"Could not decode existing history file. Starting new history.")
+            
+            # Append new data
+            if not isinstance(existing_history, list):
+                existing_history = []
+            
+            existing_history.append(history_data)
+            
+            # Keep only last 1000 entries to avoid file growth
+            if len(existing_history) > 1000:
+                existing_history = existing_history[-1000:]
+            
+            # Write with atomic pattern
+            temp_path = history_path + ".tmp"
+            with open(temp_path, 'w') as f:
+                json.dump(existing_history, f, indent=2, default=str)
+            
+            # On Windows, we need to remove the target file first
+            if os.path.exists(history_path):
+                os.remove(history_path)
+            
+            os.rename(temp_path, history_path)
+            
+            logger.info(f"Successfully saved scoring history")
+            return True
+        
+        except Exception as e:
+            logger.error(f"Error saving history: {str(e)}")
+            
+            # Clean up temp file if it exists
+            if os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except:
+                    pass
+            
+            return False
