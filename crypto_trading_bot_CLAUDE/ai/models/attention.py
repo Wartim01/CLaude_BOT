@@ -1,510 +1,408 @@
 """
-Implémentation de mécanismes d'attention avancés pour le modèle LSTM
-Inspiré des architectures Transformer avec attention multi-tête
+Attention mechanisms for deep learning models
+Includes implementations of various attention mechanisms for time series analysis
 """
 import tensorflow as tf
-from tensorflow.keras.layers import Layer, Dense, Reshape, Permute, Concatenate, TimeDistributed, Activation
-from tensorflow.keras import backend as K
+from tensorflow.keras.layers import Layer
 import numpy as np
 
-
-
-class SelfAttention(Layer):
+class TimeSeriesAttention(Layer):
     """
-    Mécanisme d'attention qui permet au modèle de se concentrer sur certaines parties d'une séquence
+    Simple time series attention mechanism that focuses on important time steps
     """
-    def __init__(self, attention_units=128, return_attention=False, **kwargs):
-        """
-        Initialise la couche d'attention
+    def __init__(self, filters=32, kernel_size=1, **kwargs):
+        super(TimeSeriesAttention, self).__init__(**kwargs)
+        self.filters = filters
+        self.kernel_size = kernel_size
         
-        Args:
-            attention_units: Nombre d'unités dans la couche d'attention
-            return_attention: Si True, retourne également les poids d'attention
-        """
-        self.attention_units = attention_units
-        self.return_attention = return_attention
-        super(SelfAttention, self).__init__(**kwargs)
-    
     def build(self, input_shape):
-        """
-        Construit les couches d'attention
-        
-        Args:
-            input_shape: Forme de l'entrée
-        """
-        # Extraction des dimensions d'entrée
-        self.time_steps = input_shape[1]
-        self.input_dim = input_shape[2]
-        
-        # Initialisation des poids pour l'attention
-        self.W1 = self.add_weight(name='W1',
-                                  shape=(self.input_dim, self.attention_units),
-                                  initializer='glorot_uniform',
-                                  trainable=True)
-        
-        self.W2 = self.add_weight(name='W2',
-                                  shape=(self.attention_units, 1),
-                                  initializer='glorot_uniform',
-                                  trainable=True)
-        
-        super(SelfAttention, self).build(input_shape)
+        # Shape of input should be (batch_size, time_steps, features)
+        self.conv1d = tf.keras.layers.Conv1D(
+            filters=self.filters,
+            kernel_size=self.kernel_size,
+            padding="same",
+            activation="tanh"
+        )
+        self.dense = tf.keras.layers.Dense(1)
+        super(TimeSeriesAttention, self).build(input_shape)
     
-    def call(self, inputs, mask=None):
-        """
-        Applique le mécanisme d'attention
+    def call(self, inputs):
+        # Calculate attention weights
+        x = self.conv1d(inputs)
+        e = self.dense(x)  # (batch_size, time_steps, 1)
         
-        Args:
-            inputs: Entrée de forme (batch_size, time_steps, input_dim)
-            mask: Masque optionnel
-            
-        Returns:
-            Contexte pondéré par l'attention et poids d'attention si return_attention=True
-        """
-        # Calcul du score d'attention pour chaque pas de temps
-        # et = tanh(W1 * ht)
-        et = K.tanh(K.dot(inputs, self.W1))
+        # Convert attention weights to probabilities (softmax over time dimension)
+        alpha = tf.nn.softmax(e, axis=1)  # (batch_size, time_steps, 1)
         
-        # at = softmax(W2 * et)
-        at = K.dot(et, self.W2)
-        at = K.squeeze(at, axis=-1)
+        # Apply attention weights to input sequence
+        attended = inputs * alpha
         
-        # Application du masque si nécessaire
-        if mask is not None:
-            at *= K.cast(mask, K.floatx())
-        
-        # Normalisation par softmax
-        at = K.softmax(at)
-        
-        # Calcul du contexte pondéré par l'attention
-        # context = at * inputs
-        context = K.batch_dot(at, inputs)
-        
-        if self.return_attention:
-            return [context, at]
-        return context
+        return attended
     
     def compute_output_shape(self, input_shape):
-        """
-        Calcule la forme de la sortie
+        return input_shape
         
-        Args:
-            input_shape: Forme de l'entrée
-            
-        Returns:
-            Forme de la sortie
-        """
-        if self.return_attention:
-            return [(input_shape[0], self.input_dim), (input_shape[0], self.time_steps)]
-        return (input_shape[0], self.input_dim)
-
-
-class MultiHeadAttention(Layer):
-    """
-    Attention multi-tête pour capturer différents aspects des séquences temporelles
-    Inspiré des architectures Transformer
-    """
-    def __init__(self, num_heads=4, head_dim=32, dropout=0.1, use_bias=True, return_attention=False, **kwargs):
-        """
-        Initialise la couche d'attention multi-tête
-        
-        Args:
-            num_heads: Nombre de têtes d'attention
-            head_dim: Dimension de chaque tête
-            dropout: Taux de dropout
-            use_bias: Utiliser un terme de biais
-            return_attention: Si True, retourne également les poids d'attention
-        """
-        super(MultiHeadAttention, self).__init__(**kwargs)
-        self.num_heads = num_heads
-        self.head_dim = head_dim
-        self.dropout = dropout
-        self.use_bias = use_bias
-        self.return_attention = return_attention
-    
-    def build(self, input_shape):
-        """
-        Construit les couches de l'attention multi-tête
-        
-        Args:
-            input_shape: Forme de l'entrée (batch_size, time_steps, input_dim)
-        """
-        if isinstance(input_shape, list):
-            # Si l'entrée est [query, key, value]
-            q_shape, k_shape, v_shape = input_shape
-            self.query_dim = q_shape[-1]
-            self.key_dim = k_shape[-1]
-            self.value_dim = v_shape[-1]
-        else:
-            # Si une seule entrée (self-attention)
-            self.query_dim = input_shape[-1]
-            self.key_dim = input_shape[-1]
-            self.value_dim = input_shape[-1]
-        
-        self.output_dim = self.num_heads * self.head_dim
-        
-        # Matrices de projection pour query, key, value
-        self.query_weights = self.add_weight(
-            name='query_weights',
-            shape=(self.query_dim, self.num_heads * self.head_dim),
-            initializer='glorot_uniform',
-            trainable=True
-        )
-        
-        if self.use_bias:
-            self.query_bias = self.add_weight(
-                name='query_bias',
-                shape=(self.num_heads * self.head_dim,),
-                initializer='zeros',
-                trainable=True
-            )
-        
-        self.key_weights = self.add_weight(
-            name='key_weights',
-            shape=(self.key_dim, self.num_heads * self.head_dim),
-            initializer='glorot_uniform',
-            trainable=True
-        )
-        
-        if self.use_bias:
-            self.key_bias = self.add_weight(
-                name='key_bias',
-                shape=(self.num_heads * self.head_dim,),
-                initializer='zeros',
-                trainable=True
-            )
-        
-        self.value_weights = self.add_weight(
-            name='value_weights',
-            shape=(self.value_dim, self.num_heads * self.head_dim),
-            initializer='glorot_uniform',
-            trainable=True
-        )
-        
-        if self.use_bias:
-            self.value_bias = self.add_weight(
-                name='value_bias',
-                shape=(self.num_heads * self.head_dim,),
-                initializer='zeros',
-                trainable=True
-            )
-        
-        # Matrice de sortie pour combiner les têtes
-        self.output_weights = self.add_weight(
-            name='output_weights',
-            shape=(self.output_dim, self.value_dim),
-            initializer='glorot_uniform',
-            trainable=True
-        )
-        
-        if self.use_bias:
-            self.output_bias = self.add_weight(
-                name='output_bias',
-                shape=(self.value_dim,),
-                initializer='zeros',
-                trainable=True
-            )
-        
-        # Create dropout layer once instead of in call
-        self.attn_dropout = tf.keras.layers.Dropout(self.dropout)
-        
-        super(MultiHeadAttention, self).build(input_shape)
-    
-    def _split_heads(self, x, batch_size):
-        """
-        Divise la dernière dimension en (num_heads, head_dim)
-        
-        Args:
-            x: Entrée de forme (batch_size, seq_len, num_heads * head_dim)
-            batch_size: Taille du batch
-            
-        Returns:
-            Sortie de forme (batch_size, num_heads, seq_len, head_dim)
-        """
-        x = tf.reshape(x, (batch_size, -1, self.num_heads, self.head_dim))
-        return tf.transpose(x, perm=[0, 2, 1, 3])  # (batch_size, num_heads, seq_len, head_dim)
-    
-    def _combine_heads(self, x, batch_size):
-        """
-        Combine les têtes pour former (batch_size, seq_len, num_heads * head_dim)
-        
-        Args:
-            x: Entrée de forme (batch_size, num_heads, seq_len, head_dim)
-            batch_size: Taille du batch
-            
-        Returns:
-            Sortie de forme (batch_size, seq_len, num_heads * head_dim)
-        """
-        x = tf.transpose(x, perm=[0, 2, 1, 3])  # (batch_size, seq_len, num_heads, head_dim)
-        return tf.reshape(x, (batch_size, -1, self.num_heads * self.head_dim))
-    
-    def scaled_dot_product_attention(self, q, k, v, mask=None, training=None):
-        """
-        Calcule l'attention avec produit scalaire mis à l'échelle
-        
-        Args:
-            q: Query (batch_size, num_heads, seq_len_q, head_dim)
-            k: Key (batch_size, num_heads, seq_len_k, head_dim)
-            v: Value (batch_size, num_heads, seq_len_v, head_dim)
-            mask: Masque optionnel
-            
-        Returns:
-            Contexte et poids d'attention
-        """
-        # Produit scalaire entre query et key
-        matmul_qk = tf.matmul(q, k, transpose_b=True)  # (batch_size, num_heads, seq_len_q, seq_len_k)
-        
-        # Mise à l'échelle
-        dk = tf.cast(self.head_dim, tf.float32)
-        scaled_attention_logits = matmul_qk / tf.math.sqrt(dk)
-        
-        # Application du masque si fourni
-        if mask is not None:
-            scaled_attention_logits += (mask * -1e9)
-        
-        # Softmax sur la dernière dimension (seq_len_k)
-        attention_weights = tf.nn.softmax(scaled_attention_logits, axis=-1)
-        
-        # Use the pre-created dropout layer
-        attention_weights = self.attn_dropout(attention_weights, training=training)
-        
-        # Produit avec les valeurs
-        output = tf.matmul(attention_weights, v)  # (batch_size, num_heads, seq_len_q, head_dim)
-        
-        return output, attention_weights
-    
-    def call(self, inputs, mask=None, training=None):
-        """
-        Applique l'attention multi-tête
-        
-        Args:
-            inputs: Entrée ou liste [query, key, value]
-            mask: Masque optionnel
-            training: Indique si c'est l'entraînement
-            
-        Returns:
-            Sortie avec attention et poids d'attention si return_attention=True
-        """
-        # Gestion de différents types d'entrées
-        if isinstance(inputs, list):
-            query, key, value = inputs
-        else:
-            query = key = value = inputs
-        
-        batch_size = tf.shape(query)[0]
-        
-        # Projections linéaires et division en têtes
-        if self.use_bias:
-            query_proj = tf.matmul(query, self.query_weights) + self.query_bias
-            key_proj = tf.matmul(key, self.key_weights) + self.key_bias
-            value_proj = tf.matmul(value, self.value_weights) + self.value_bias
-        else:
-            query_proj = tf.matmul(query, self.query_weights)
-            key_proj = tf.matmul(key, self.key_weights)
-            value_proj = tf.matmul(value, self.value_weights)
-        
-        # Division en têtes
-        query_heads = self._split_heads(query_proj, batch_size)  # (batch_size, num_heads, seq_len_q, head_dim)
-        key_heads = self._split_heads(key_proj, batch_size)      # (batch_size, num_heads, seq_len_k, head_dim)
-        value_heads = self._split_heads(value_proj, batch_size)  # (batch_size, num_heads, seq_len_v, head_dim)
-        
-        # Attention avec produit scalaire mis à l'échelle
-        attention_output, attention_weights = self.scaled_dot_product_attention(
-            query_heads, key_heads, value_heads, mask, training=training)
-        
-        # Combinaison des têtes
-        attention_output = self._combine_heads(attention_output, batch_size)  # (batch_size, seq_len_q, output_dim)
-        
-        # Projection finale
-        if self.use_bias:
-            output = tf.matmul(attention_output, self.output_weights) + self.output_bias
-        else:
-            output = tf.matmul(attention_output, self.output_weights)
-        
-        if self.return_attention:
-            return [output, attention_weights]
-        return output
-    
-    def compute_output_shape(self, input_shape):
-        """
-        Calcule la forme de sortie
-        
-        Args:
-            input_shape: Forme de l'entrée
-            
-        Returns:
-            Forme de la sortie
-        """
-        if isinstance(input_shape, list):
-            q_shape = input_shape[0]
-            v_shape = input_shape[2]
-            output_shape = (q_shape[0], q_shape[1], v_shape[2])
-        else:
-            output_shape = (input_shape[0], input_shape[1], input_shape[2])
-        
-        if self.return_attention:
-            if isinstance(input_shape, list):
-                q_shape = input_shape[0]
-                k_shape = input_shape[1]
-                attention_shape = (q_shape[0], self.num_heads, q_shape[1], k_shape[1])
-            else:
-                attention_shape = (input_shape[0], self.num_heads, input_shape[1], input_shape[1])
-            return [output_shape, attention_shape]
-        
-        return output_shape
+    def get_config(self):
+        config = super(TimeSeriesAttention, self).get_config()
+        config.update({
+            "filters": self.filters,
+            "kernel_size": self.kernel_size
+        })
+        return config
 
 
 class TemporalAttentionBlock(Layer):
     """
-    Bloc d'attention temporelle pour séries financières
-    Combine l'attention multi-tête avec une connexion résiduelle et normalisation
+    Temporal attention block for focusing on relevant time steps in a sequence
+    Adapted for financial time series analysis
     """
-    def __init__(self, num_heads=4, head_dim=32, ff_dim=128, dropout=0.1, **kwargs):
-        """
-        Initialise le bloc d'attention temporelle
-        
-        Args:
-            num_heads: Nombre de têtes d'attention
-            head_dim: Dimension de chaque tête
-            ff_dim: Dimension du feed-forward
-            dropout: Taux de dropout
-        """
+    def __init__(self, units=32, return_attention=False, **kwargs):
         super(TemporalAttentionBlock, self).__init__(**kwargs)
-        self.num_heads = num_heads
-        self.head_dim = head_dim
-        self.ff_dim = ff_dim
-        self.dropout = dropout
-    
+        self.units = units
+        self.return_attention = return_attention
+        
     def build(self, input_shape):
-        """
-        Construit les couches du bloc d'attention
-        
-        Args:
-            input_shape: Forme de l'entrée
-        """
-        self.attention = MultiHeadAttention(
-            num_heads=self.num_heads,
-            head_dim=self.head_dim,
-            dropout=self.dropout
+        # Shape of input should be (batch_size, time_steps, features)
+        self.W = self.add_weight(
+            name="attention_weight",
+            shape=(input_shape[-1], self.units),
+            initializer="glorot_uniform",
+            trainable=True
         )
-        
-        self.ff1 = Dense(self.ff_dim, activation='relu')
-        self.ff2 = Dense(input_shape[-1])
-        
-        self.dropout1 = tf.keras.layers.Dropout(self.dropout)
-        self.dropout2 = tf.keras.layers.Dropout(self.dropout)
-        
-        self.layernorm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
-        self.layernorm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
-        
+        self.b = self.add_weight(
+            name="attention_bias",
+            shape=(self.units,),
+            initializer="zeros",
+            trainable=True
+        )
+        self.u = self.add_weight(
+            name="context_vector",
+            shape=(self.units, 1),
+            initializer="glorot_uniform",
+            trainable=True
+        )
         super(TemporalAttentionBlock, self).build(input_shape)
     
-    def call(self, inputs, training=None, mask=None):
-        """
-        Applique le bloc d'attention
+    def call(self, inputs):
+        # Shape: (batch_size, time_steps, features) @ (features, units) + (units,)
+        # Result: (batch_size, time_steps, units)
+        uit = tf.tanh(tf.tensordot(inputs, self.W, axes=1) + self.b)
         
-        Args:
-            inputs: Entrée de forme (batch_size, seq_len, features)
-            training: Indique si c'est l'entraînement
-            mask: Masque optionnel
-            
-        Returns:
-            Sortie du bloc d'attention
-        """
-        # Sous-couche d'attention multi-tête
-        attn_output = self.attention(inputs, mask=mask)
-        attn_output = self.dropout1(attn_output, training=training)
-        out1 = self.layernorm1(inputs + attn_output)  # Connexion résiduelle
+        # Shape: (batch_size, time_steps, units) @ (units, 1)
+        # Result: (batch_size, time_steps, 1)
+        scores = tf.tensordot(uit, self.u, axes=1)
         
-        # Sous-couche feed-forward
-        ff_output = self.ff1(out1)
-        ff_output = self.ff2(ff_output)
-        ff_output = self.dropout2(ff_output, training=training)
+        # Apply softmax to get attention weights (over time dimension)
+        # Shape: (batch_size, time_steps, 1)
+        attention_weights = tf.nn.softmax(scores, axis=1)
         
-        # Connexion résiduelle finale
-        return self.layernorm2(out1 + ff_output)
-
-
-class TimeSeriesAttention(Layer):
-    """
-    Mécanisme d'attention spécialisé pour séries temporelles financières
-    """
-    def __init__(self, filters=64, kernel_size=1, **kwargs):
-        """
-        Initialise la couche d'attention
+        # Apply attention weights to the input sequence
+        # Shape: (batch_size, time_steps, features) * (batch_size, time_steps, 1)
+        # Result: (batch_size, time_steps, features)
+        weighted_inputs = inputs * attention_weights
         
-        Args:
-            filters: Nombre de filtres convolutifs
-            kernel_size: Taille du noyau convolutif
-        """
-        super(TimeSeriesAttention, self).__init__(**kwargs)
-        self.filters = filters
-        self.kernel_size = kernel_size
+        # Sum over time dimension to get context vector
+        # Shape: (batch_size, features)
+        context = tf.reduce_sum(weighted_inputs, axis=1)
+        
+        if self.return_attention:
+            return [context, attention_weights]
+        
+        return context
     
+    def compute_output_shape(self, input_shape):
+        if self.return_attention:
+            return [(input_shape[0], input_shape[2]), (input_shape[0], input_shape[1], 1)]
+        return (input_shape[0], input_shape[2])
+        
+    def get_config(self):
+        config = super(TemporalAttentionBlock, self).get_config()
+        config.update({
+            "units": self.units,
+            "return_attention": self.return_attention
+        })
+        return config
+
+
+class MultiHeadAttention(Layer):
+    """
+    Multi-head attention mechanism inspired by the Transformer architecture
+    Adapted for time series analysis
+    """
+    def __init__(self, num_heads=8, head_dim=32, dropout=0.1, use_residual=True, **kwargs):
+        super(MultiHeadAttention, self).__init__(**kwargs)
+        self.num_heads = num_heads
+        self.head_dim = head_dim
+        self.output_dim = num_heads * head_dim
+        self.dropout_rate = dropout
+        self.use_residual = use_residual
+        
     def build(self, input_shape):
-        """
-        Construit les couches de l'attention
+        self.query_dense = tf.keras.layers.Dense(self.output_dim, use_bias=False)
+        self.key_dense = tf.keras.layers.Dense(self.output_dim, use_bias=False)
+        self.value_dense = tf.keras.layers.Dense(self.output_dim, use_bias=False)
         
-        Args:
-            input_shape: Forme de l'entrée
-        """
-        # Extraction des dimensions
-        self.time_steps = input_shape[1]
-        self.input_dim = input_shape[2]
+        self.output_dense = tf.keras.layers.Dense(input_shape[-1])
+        self.dropout = tf.keras.layers.Dropout(self.dropout_rate)
         
-        # Couche de réduction de dimension temporelle
-        self.conv_qkv = tf.keras.layers.Conv1D(
-            filters=self.filters * 3,  # Pour query, key et value
-            kernel_size=self.kernel_size,
-            padding='same',
-            use_bias=True
-        )
+        if self.use_residual:
+            self.layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
         
-        # Couche de sortie
-        self.conv_out = tf.keras.layers.Conv1D(
-            filters=self.input_dim,
-            kernel_size=self.kernel_size,
-            padding='same',
-            use_bias=True
-        )
-        
-        super(TimeSeriesAttention, self).build(input_shape)
+        super(MultiHeadAttention, self).build(input_shape)
     
-    def call(self, inputs, mask=None):
-        """
-        Applique le mécanisme d'attention
+    def call(self, inputs, training=None):
+        # Original inputs shape: (batch_size, time_steps, features)
         
-        Args:
-            inputs: Entrée de forme (batch_size, time_steps, input_dim)
-            mask: Masque optionnel
-            
-        Returns:
-            Sortie avec attention
-        """
-        # Projection QKV
-        qkv = self.conv_qkv(inputs)
+        # Linear projections
+        query = self.query_dense(inputs)  # (batch_size, time_steps, output_dim)
+        key = self.key_dense(inputs)      # (batch_size, time_steps, output_dim)
+        value = self.value_dense(inputs)  # (batch_size, time_steps, output_dim)
         
-        # Séparation en query, key, value
-        batch_size = tf.shape(qkv)[0]
-        q, k, v = tf.split(qkv, 3, axis=-1)
+        # Reshape for multi-head attention
+        batch_size = tf.shape(query)[0]
+        time_steps = tf.shape(query)[1]
         
-        # Calcul du score d'attention
-        # Produit scalaire de q et k, puis mise à l'échelle
-        score = tf.matmul(q, k, transpose_b=True)
-        scale = tf.sqrt(tf.cast(self.filters, tf.float32))
-        score = score / scale
+        # Reshape to (batch_size, time_steps, num_heads, head_dim)
+        query = tf.reshape(query, [batch_size, time_steps, self.num_heads, self.head_dim])
+        key = tf.reshape(key, [batch_size, time_steps, self.num_heads, self.head_dim])
+        value = tf.reshape(value, [batch_size, time_steps, self.num_heads, self.head_dim])
         
-        # Application du masque si nécessaire
-        if mask is not None:
-            score += (1.0 - mask) * -1e9
+        # Transpose to (batch_size, num_heads, time_steps, head_dim)
+        query = tf.transpose(query, [0, 2, 1, 3])
+        key = tf.transpose(key, [0, 2, 1, 3])
+        value = tf.transpose(value, [0, 2, 1, 3])
         
-        # Appliquer softmax pour obtenir les poids d'attention
-        attention_weights = tf.nn.softmax(score, axis=-1)
+        # Scaled dot-product attention
+        # matmul_qk shape: (batch_size, num_heads, time_steps, time_steps)
+        matmul_qk = tf.matmul(query, key, transpose_b=True)
         
-        # Appliquer l'attention aux valeurs
-        context = tf.matmul(attention_weights, v)
+        # Scale matmul_qk
+        dk = tf.cast(self.head_dim, tf.float32)
+        scaled_attention_logits = matmul_qk / tf.math.sqrt(dk)
         
-        # Projection finale
-        output = self.conv_out(context)
+        # Apply softmax to get attention weights
+        attention_weights = tf.nn.softmax(scaled_attention_logits, axis=-1)
         
-        # Connexion résiduelle
-        return inputs + output
+        # Apply dropout to attention weights
+        attention_weights = self.dropout(attention_weights, training=training)
+        
+        # Apply attention weights to value
+        # output shape: (batch_size, num_heads, time_steps, head_dim)
+        output = tf.matmul(attention_weights, value)
+        
+        # Reshape back to original shape
+        # First transpose back to (batch_size, time_steps, num_heads, head_dim)
+        output = tf.transpose(output, [0, 2, 1, 3])
+        
+        # Then reshape to (batch_size, time_steps, output_dim)
+        output = tf.reshape(output, [batch_size, time_steps, self.output_dim])
+        
+        # Final linear projection
+        output = self.output_dense(output)
+        
+        # Apply residual connection and layer normalization if specified
+        if self.use_residual:
+            output = self.layer_norm(output + inputs)
+        
+        return output
+    
+    def compute_output_shape(self, input_shape):
+        return input_shape
+        
+    def get_config(self):
+        config = super(MultiHeadAttention, self).get_config()
+        config.update({
+            "num_heads": self.num_heads,
+            "head_dim": self.head_dim,
+            "dropout_rate": self.dropout_rate,
+            "use_residual": self.use_residual
+        })
+        return config
+
+
+class CrossTimeAttention(Layer):
+    """
+    Cross-time attention mechanism that enables looking at relationships between
+    different time scales (e.g., short-term patterns vs long-term trends)
+    """
+    def __init__(self, num_time_scales=3, units=32, **kwargs):
+        super(CrossTimeAttention, self).__init__(**kwargs)
+        self.num_time_scales = num_time_scales
+        self.units = units
+        
+    def build(self, input_shape):
+        # Input shape should be a list of tensors, each with shape (batch, time_steps, features)
+        if not isinstance(input_shape, list) or len(input_shape) != self.num_time_scales:
+            raise ValueError(f"Input should be a list of {self.num_time_scales} tensors")
+        
+        # Create projection layers for each time scale
+        self.projections = []
+        for i in range(self.num_time_scales):
+            self.projections.append(tf.keras.layers.Dense(self.units))
+        
+        # Create output projection
+        self.output_projection = tf.keras.layers.Dense(input_shape[0][-1])
+        
+        super(CrossTimeAttention, self).build(input_shape)
+    
+    def call(self, inputs):
+        # Inputs should be a list of tensors for different time scales
+        if not isinstance(inputs, list) or len(inputs) != self.num_time_scales:
+            raise ValueError(f"Expected a list of {self.num_time_scales} tensors, got {len(inputs)}")
+        
+        # Project each input to the same dimension
+        projected = [proj(inp) for proj, inp in zip(self.projections, inputs)]
+        
+        # Calculate attention scores between each pair of time scales
+        attention_maps = []
+        for i in range(self.num_time_scales):
+            for j in range(self.num_time_scales):
+                if i != j:
+                    # Calculate attention from time scale i to time scale j
+                    # Shape: (batch, time_i, time_j)
+                    attention = tf.matmul(projected[i], projected[j], transpose_b=True)
+                    
+                    # Scale and apply softmax
+                    scale = tf.math.sqrt(tf.cast(self.units, tf.float32))
+                    attention = tf.nn.softmax(attention / scale, axis=-1)
+                    
+                    # Apply attention to get context
+                    # Shape: (batch, time_i, features_j)
+                    context = tf.matmul(attention, inputs[j])
+                    
+                    attention_maps.append(context)
+        
+        # Combine all contexts (simple mean for now)
+        combined = tf.reduce_mean(tf.stack(attention_maps, axis=0), axis=0)
+        
+        # Project back to original feature dimension
+        output = self.output_projection(combined)
+        
+        # Add residual connection with the primary input (first in the list)
+        output = output + inputs[0]
+        
+        return output
+    
+    def compute_output_shape(self, input_shape):
+        return input_shape[0]
+        
+    def get_config(self):
+        config = super(CrossTimeAttention, self).get_config()
+        config.update({
+            "num_time_scales": self.num_time_scales,
+            "units": self.units
+        })
+        return config
+
+
+class FeatureAttention(Layer):
+    """
+    Cross-feature attention module to capture relationships between different features
+    Useful for extracting which features are most important at different times
+    """
+    def __init__(self, use_residual=True, **kwargs):
+        super(FeatureAttention, self).__init__(**kwargs)
+        self.use_residual = use_residual
+        
+    def build(self, input_shape):
+        # Shape of input should be (batch_size, time_steps, features)
+        self.feature_dense = tf.keras.layers.Dense(input_shape[-1], use_bias=False)
+        self.time_dense = tf.keras.layers.Dense(input_shape[1], use_bias=False)
+        
+        if self.use_residual:
+            self.layer_norm = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        
+        super(FeatureAttention, self).build(input_shape)
+    
+    def call(self, inputs):
+        # Calculate feature attention
+        # First, transpose to (batch_size, features, time_steps)
+        transposed = tf.transpose(inputs, [0, 2, 1])
+        
+        # Calculate attention scores between features
+        # Shape: (batch_size, features, features)
+        feature_attention = tf.matmul(
+            self.feature_dense(transposed), 
+            transposed, 
+            transpose_b=True
+        )
+        
+        # Apply softmax to get feature attention weights
+        feature_attention = tf.nn.softmax(feature_attention, axis=-1)
+        
+        # Apply feature attention
+        # Shape: (batch_size, features, time_steps)
+        feature_context = tf.matmul(feature_attention, transposed)
+        
+        # Transpose back to (batch_size, time_steps, features)
+        feature_context = tf.transpose(feature_context, [0, 2, 1])
+        
+        # Calculate time attention
+        # Shape: (batch_size, time_steps, time_steps)
+        time_attention = tf.matmul(
+            self.time_dense(inputs),
+            inputs,
+            transpose_b=True
+        )
+        
+        # Apply softmax to get time attention weights
+        time_attention = tf.nn.softmax(time_attention, axis=-1)
+        
+        # Apply time attention
+        # Shape: (batch_size, time_steps, features)
+        time_context = tf.matmul(time_attention, inputs)
+        
+        # Combine feature and time context (simple average)
+        combined = (feature_context + time_context) / 2.0
+        
+        # Apply residual connection if specified
+        if self.use_residual:
+            combined = self.layer_norm(combined + inputs)
+        
+        return combined
+    
+    def compute_output_shape(self, input_shape):
+        return input_shape
+        
+    def get_config(self):
+        config = super(FeatureAttention, self).get_config()
+        config.update({
+            "use_residual": self.use_residual
+        })
+        return config
+
+
+# Testing utilities
+def test_attention_mechanism():
+    """Test the attention mechanisms on random data"""
+    # Create random input
+    batch_size = 32
+    time_steps = 60
+    features = 30
+    
+    inputs = tf.random.normal((batch_size, time_steps, features))
+    
+    # Test TimeSeriesAttention
+    attention1 = TimeSeriesAttention(filters=32)
+    output1 = attention1(inputs)
+    print(f"TimeSeriesAttention output shape: {output1.shape}")
+    
+    # Test TemporalAttentionBlock
+    attention2 = TemporalAttentionBlock(units=32, return_attention=True)
+    output2 = attention2(inputs)
+    print(f"TemporalAttentionBlock output shapes: {[out.shape for out in output2]}")
+    
+    # Test MultiHeadAttention
+    attention3 = MultiHeadAttention(num_heads=8, head_dim=16)
+    output3 = attention3(inputs)
+    print(f"MultiHeadAttention output shape: {output3.shape}")
+    
+    # Test FeatureAttention
+    attention4 = FeatureAttention()
+    output4 = attention4(inputs)
+    print(f"FeatureAttention output shape: {output4.shape}")
+    
+    print("All attention mechanisms tested successfully!")
+
+if __name__ == "__main__":
+    test_attention_mechanism()

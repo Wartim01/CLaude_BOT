@@ -1,352 +1,376 @@
 #!/usr/bin/env python
 # hyperparameter_search.py
 """
-Script pour rechercher automatiquement les meilleurs hyperparamètres 
-pour le modèle LSTM de prédiction de crypto-monnaies
+Script d'optimisation des hyperparamètres pour le modèle LSTM
+Utilise Optuna pour une recherche bayésienne efficace
 """
 import os
-import sys
-import json
-import numpy as np
+import argparse
 import pandas as pd
-from datetime import datetime
-from sklearn.model_selection import ParameterGrid
-import tensorflow as tf
-from tensorflow.keras.callbacks import EarlyStopping
+import numpy as np
 import optuna
-import joblib
-import logging
+from datetime import datetime, timedelta
+import json
+import matplotlib.pyplot as plt
+from sklearn.metrics import f1_score
 
-# Ajouter le répertoire parent au PYTHONPATH
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-from config.config import DATA_DIR, MODEL_CHECKPOINTS_DIR
-from utils.logger import setup_logger
 from ai.models.lstm_model import LSTMModel
 from ai.models.feature_engineering import FeatureEngineering
+from ai.models.model_trainer import ModelTrainer
+from ai.models.model_validator import ModelValidator
+from config.config import DATA_DIR
+from utils.logger import setup_logger
+from train_model import load_data, download_data_if_needed, load_historical_data
 
-# Configurer le logger
+# Configuration du logger
 logger = setup_logger("hyperparameter_search")
 
-class HyperparameterSearch:
+class LSTMHyperparameterOptimizer:
     """
-    Classe pour la recherche des meilleurs hyperparamètres pour le modèle LSTM
+    Classe pour l'optimisation des hyperparamètres du modèle LSTM
     """
-    def __init__(self, data_path, symbol, timeframe, search_method='optuna'):
+    def __init__(self, train_data, val_data, symbol="BTCUSDT", timeframe="15m"):
         """
-        Initialise la recherche d'hyperparamètres
+        Initialise l'optimiseur d'hyperparamètres
         
         Args:
-            data_path: Chemin vers les données
-            symbol: Symbole de trading (ex: BTCUSDT)
-            timeframe: Intervalle de temps (ex: 15m)
-            search_method: Méthode de recherche ('grid', 'random', 'optuna')
+            train_data: Données d'entraînement
+            val_data: Données de validation
+            symbol: Symbole de la paire de trading
+            timeframe: Intervalle de temps
         """
-        self.data_path = data_path
+        self.train_data = train_data
+        self.val_data = val_data
         self.symbol = symbol
         self.timeframe = timeframe
-        self.search_method = search_method
-        self.feature_engineering = FeatureEngineering(save_scalers=True)
-        
-        # Résultats de la recherche
-        self.results = []
-        self.best_params = None
         
         # Répertoire pour sauvegarder les résultats
-        self.output_dir = os.path.join(DATA_DIR, "hyperparameter_search")
+        self.output_dir = os.path.join(DATA_DIR, "models", "optimization")
         os.makedirs(self.output_dir, exist_ok=True)
         
-    def load_data(self):
-        """
-        Charge et prépare les données
+        # Feature engineering partagé entre toutes les tentatives
+        self.feature_engineering = FeatureEngineering(save_scalers=True)
         
-        Returns:
-            Les données préparées
-        """
-        # Déterminer le chemin du fichier
-        file_path = os.path.join(self.data_path, f"{self.symbol}_{self.timeframe}.csv")
-        
-        # Vérifier si le fichier existe
-        if not os.path.exists(file_path):
-            # Chercher un fichier qui contient le symbole et le timeframe
-            possible_files = [f for f in os.listdir(self.data_path) if f.endswith('.csv') and self.symbol in f and self.timeframe in f]
-            
-            if possible_files:
-                file_path = os.path.join(self.data_path, possible_files[0])
-                logger.info(f"Utilisation du fichier trouvé: {file_path}")
-            else:
-                raise FileNotFoundError(f"Aucun fichier de données trouvé pour {self.symbol}_{self.timeframe} dans {self.data_path}")
-        
-        # Charger les données
-        logger.info(f"Chargement des données depuis {file_path}...")
-        df = pd.read_csv(file_path)
-        
-        # Convertir timestamp en datetime et définir comme index
-        if 'timestamp' in df.columns:
-            df['timestamp'] = pd.to_datetime(df['timestamp'])
-            df.set_index('timestamp', inplace=True)
-        elif 'date' in df.columns:
-            df['timestamp'] = pd.to_datetime(df['date'])
-            df.set_index('timestamp', inplace=True)
-        
-        # Trier par index pour assurer l'ordre chronologique
-        df = df.sort_index()
-        
-        logger.info(f"Données chargées: {len(df)} lignes de {df.index.min()} à {df.index.max()}")
-        
-        # 1. Préparer les données
-        featured_data = self.feature_engineering.create_features(
-            df, 
-            include_time_features=True,
-            include_price_patterns=True
-        )
-        
-        # Normaliser les données
-        normalized_data = self.feature_engineering.scale_features(
-            featured_data,
+        # Préparer les données une seule fois
+        logger.info("Préparation des données pour l'optimisation...")
+        self.featured_train, self.normalized_train = self.feature_engineering.create_features(train_data), self.feature_engineering.scale_features(
+            self.feature_engineering.create_features(train_data),
             is_training=True,
             method='standard',
-            feature_group='lstm'
+            feature_group='lstm_optim'
         )
         
-        # Diviser en ensembles d'entraînement et de validation (chronologiquement)
-        train_size = int(len(normalized_data) * 0.7)
-        val_size = int(len(normalized_data) * 0.15)
-        
-        train_data = normalized_data.iloc[:train_size]
-        val_data = normalized_data.iloc[train_size:train_size+val_size]
-        test_data = normalized_data.iloc[train_size+val_size:]
-        
-        return train_data, val_data, test_data
-    
-    def prepare_sequences(self, data, sequence_length, horizons):
-        """
-        Prépare les séquences d'entrée et les cibles
-        
-        Args:
-            data: DataFrame avec les données normalisées
-            sequence_length: Longueur des séquences
-            horizons: Horizons de prédiction
-            
-        Returns:
-            Séquences X et cibles y
-        """
-        X, y = self.feature_engineering.create_multi_horizon_data(
-            data, 
-            sequence_length=sequence_length,
-            horizons=horizons,
-            is_training=True
+        self.featured_val, self.normalized_val = self.feature_engineering.create_features(val_data), self.feature_engineering.scale_features(
+            self.feature_engineering.create_features(val_data),
+            is_training=False,
+            method='standard',
+            feature_group='lstm_optim'
         )
         
-        return X, y
+        # Historique des essais
+        self.trials_history = []
     
     def objective(self, trial):
         """
-        Fonction objectif pour Optuna
-        
-        Args:
-            trial: Objet trial d'Optuna
-            
-        Returns:
-            Score d'évaluation du modèle (à minimiser)
+        Fonction objectif pour Optuna avec modèle à sortie unique
         """
-        # Charger les données
-        train_data, val_data, _ = self.load_data()
-        
-        # Définir les hyperparamètres à optimiser
-        lstm_units = []
-        for i in range(trial.suggest_int('n_layers', 1, 3)):
-            lstm_units.append(trial.suggest_int(f'lstm_units_{i}', 32, 256))
-        
-        dropout_rate = trial.suggest_float('dropout_rate', 0.1, 0.5)
-        learning_rate = trial.suggest_float('learning_rate', 1e-5, 1e-2, log=True)
-        sequence_length = trial.suggest_categorical('sequence_length', [30, 60, 90, 120])
-        batch_size = trial.suggest_categorical('batch_size', [32, 64, 128])
-        
-        # Utiliser des horizons courts pour une optimisation plus rapide
-        horizons = [12, 24]  # Optimisés pour les horizons qui posent problème
-        
-        # Préparer les séquences
-        X_train, y_train = self.prepare_sequences(train_data, sequence_length, horizons)
-        X_val, y_val = self.prepare_sequences(val_data, sequence_length, horizons)
-        
-        # Créer le modèle
-        model = LSTMModel(
-            input_length=sequence_length,
-            feature_dim=X_train.shape[2],
-            lstm_units=lstm_units,
-            dropout_rate=dropout_rate,
-            learning_rate=learning_rate,
-            prediction_horizons=horizons,
-            use_attention=trial.suggest_categorical('use_attention', [True, False])
-        )
-        
-        # Callbacks
-        callbacks = [
-            EarlyStopping(
-                monitor='val_loss',
-                patience=10,
-                restore_best_weights=True
+        try:
+            # Configuration des paramètres
+            lstm_units_first = trial.suggest_int("lstm_units_first", 64, 256)
+            lstm_layers = trial.suggest_int("lstm_layers", 1, 3)
+            dropout_rate = trial.suggest_float("dropout_rate", 0.1, 0.5)
+            learning_rate = trial.suggest_float("learning_rate", 1e-5, 1e-2, log=True)
+            
+            # Construction des unités LSTM en fonction du nombre de couches
+            lstm_units = [lstm_units_first]
+            for i in range(1, lstm_layers):
+                lstm_units.append(lstm_units[-1] // 2)
+            
+            # Paramètres du modèle
+            model_params = {
+                "input_length": trial.suggest_categorical("sequence_length", [30, 60, 90]),
+                "feature_dim": self.normalized_train.shape[1] if hasattr(self.normalized_train, "shape") else 30,
+                "lstm_units": lstm_units,
+                "dropout_rate": dropout_rate,
+                "learning_rate": learning_rate,
+                "l1_reg": trial.suggest_float("l1_reg", 1e-6, 1e-3, log=True),
+                "l2_reg": trial.suggest_float("l2_reg", 1e-6, 1e-3, log=True),
+                "use_attention": False,  # Simplifier pour l'optimisation
+                "use_residual": False,   # Simplifier pour l'optimisation
+                "prediction_horizons": [12, 24, 96]  # Horizons standards
+            }
+            
+            logger.info(f"Essai {trial.number}: {json.dumps(model_params, indent=2)}")
+            
+            # Créer le trainer avec les paramètres
+            trainer = ModelTrainer(model_params)
+            
+            # Créer un modèle à sortie unique pour l'optimisation
+            single_model = trainer.model.build_single_output_model(horizon_idx=0)  # Utiliser l'horizon court terme
+            
+            # Préparer les données pour ce modèle
+            X_train, y_lists = trainer.feature_engineering.create_multi_horizon_data(
+                self.normalized_train,
+                sequence_length=model_params["input_length"],
+                horizons=model_params["prediction_horizons"],
+                is_training=True
             )
-        ]
-        
-        # Entraîner le modèle
-        history = model.model.fit(
-            x=X_train,
-            y=y_train,
-            epochs=50,  # Limiter pour l'optimisation
-            batch_size=batch_size,
-            validation_data=(X_val, y_val),
-            callbacks=callbacks,
-            verbose=0
-        )
-        
-        # Évaluer le modèle
-        val_loss = history.history['val_loss'][-1]
-        
-        # Calculer des métriques spécifiques de direction pour chaque horizon
-        direction_accuracies = []
-        
-        predictions = model.model.predict(X_val)
-        
-        for i, horizon_idx in enumerate(range(len(horizons))):
-            y_true = y_val[horizon_idx].flatten()
-            y_pred = (predictions[horizon_idx].flatten() > 0.5).astype(int)
             
-            # Calculer l'accuracy directionnelle
-            accuracy = np.mean(y_true == y_pred)
-            direction_accuracies.append(accuracy)
-        
-        # Mettre plus de poids sur les horizons faibles (24 et 96)
-        # Horizon 12 est le premier, horizon 24 est le second
-        weighted_accuracy = direction_accuracies[0] * 0.3 + direction_accuracies[1] * 0.7
-        
-        # Objectif: maximiser l'accuracy pondérée (Optuna minimise par défaut)
-        return -weighted_accuracy  # Négation pour maximiser
+            X_val, y_val_lists = trainer.feature_engineering.create_multi_horizon_data(
+                self.normalized_val,
+                sequence_length=model_params["input_length"],
+                horizons=model_params["prediction_horizons"],
+                is_training=True
+            )
+            
+            # Extraire uniquement les directions pour l'horizon court terme
+            y_train = y_lists[0]  # Direction pour le premier horizon
+            y_val = y_val_lists[0]  # Direction pour le premier horizon
+            
+            # Calculer les poids des classes pour l'équilibrage
+            class_counts = np.bincount(y_train.flatten())
+            class_weights = {
+                0: len(y_train) / (2 * class_counts[0]),
+                1: len(y_train) / (2 * class_counts[1])
+            }
+            
+            # Définir les callbacks
+            callbacks = [
+                tf.keras.callbacks.EarlyStopping(
+                    monitor='val_accuracy',
+                    patience=5,
+                    restore_best_weights=True
+                ),
+                tf.keras.callbacks.ReduceLROnPlateau(
+                    monitor='val_loss',
+                    factor=0.5,
+                    patience=3,
+                    min_lr=1e-6
+                )
+            ]
+            
+            # Entraîner le modèle
+            batch_size = trial.suggest_categorical("batch_size", [16, 32, 64, 128])
+            history = single_model.fit(
+                x=X_train,
+                y=y_train,
+                epochs=30,  # Réduit pour l'optimisation
+                batch_size=batch_size,
+                validation_data=(X_val, y_val),
+                class_weight=class_weights,
+                callbacks=callbacks,
+                verbose=0
+            )
+            
+            # Évaluer le modèle
+            val_loss, val_accuracy = single_model.evaluate(X_val, y_val, verbose=0)
+            
+            # Prédictions pour calculer le F1 score
+            y_pred = (single_model.predict(X_val) > 0.5).astype(int).flatten()
+            f1 = f1_score(y_val, y_pred)
+            
+            # Enregistrer les résultats
+            trial_result = {
+                "trial_number": trial.number,
+                "params": model_params,
+                "batch_size": batch_size,
+                "val_loss": float(val_loss),
+                "val_accuracy": float(val_accuracy),
+                "f1_score": float(f1),
+                "class_weights": {str(k): float(v) for k, v in class_weights.items()},
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            self.trials_history.append(trial_result)
+            
+            # Sauvegarder périodiquement
+            if len(self.trials_history) % 5 == 0:
+                self._save_trials_history()
+            
+            logger.info(f"Essai {trial.number}: F1={f1:.4f}, Accuracy={val_accuracy:.4f}")
+            
+            return f1  # Optimiser le F1 score
+            
+        except Exception as e:
+            logger.error(f"Erreur lors de l'entraînement: {str(e)}")
+            return 0.0  # Valeur par défaut en cas d'erreur
     
-    def run_optuna_search(self, n_trials=100):
+    def _save_trials_history(self):
+        """Sauvegarde l'historique des essais"""
+        history_path = os.path.join(self.output_dir, f"trials_history_{datetime.now().strftime('%Y%m%d')}.json")
+        
+        try:
+            with open(history_path, 'w') as f:
+                json.dump(self.trials_history, f, indent=2, default=str)
+            logger.info(f"Historique des essais sauvegardé: {history_path}")
+        except Exception as e:
+            logger.error(f"Erreur lors de la sauvegarde de l'historique: {str(e)}")
+    
+    def run_optimization(self, n_trials=50, timeout=None):
         """
-        Lance une recherche d'hyperparamètres avec Optuna
+        Lance l'optimisation des hyperparamètres
         
         Args:
             n_trials: Nombre d'essais
+            timeout: Temps maximum en secondes
             
         Returns:
-            Les meilleurs paramètres trouvés
+            Les meilleurs hyperparamètres trouvés
         """
-        study = optuna.create_study(direction='minimize')
-        study.optimize(self.objective, n_trials=n_trials)
+        logger.info(f"Démarrage de l'optimisation avec {n_trials} essais...")
         
-        # Meilleurs paramètres
+        # Créer l'étude Optuna
+        study = optuna.create_study(
+            direction="maximize",
+            sampler=optuna.samplers.TPESampler(seed=42),
+            pruner=optuna.pruners.MedianPruner()
+        )
+        
+        # Lancer l'optimisation
+        study.optimize(self.objective, n_trials=n_trials, timeout=timeout)
+        
+        # Obtenir les meilleurs hyperparamètres
         best_params = study.best_params
-        best_value = -study.best_value  # Convertir à l'accuracy (positive)
+        best_value = study.best_value
         
-        # Reconstruire les unités LSTM en une liste
-        lstm_units = []
-        for i in range(best_params['n_layers']):
-            lstm_units.append(best_params[f'lstm_units_{i}'])
-            del best_params[f'lstm_units_{i}']
+        logger.info(f"Optimisation terminée!")
+        logger.info(f"Meilleur F1 score: {best_value:.4f}")
+        logger.info(f"Meilleurs hyperparamètres: {json.dumps(best_params, indent=2)}")
         
-        del best_params['n_layers']
-        best_params['lstm_units'] = lstm_units
+        # Sauvegarder les meilleurs hyperparamètres
+        best_params_path = os.path.join(self.output_dir, f"best_params_{datetime.now().strftime('%Y%m%d')}.json")
         
-        logger.info(f"Meilleurs paramètres: {best_params}, Accuracy: {best_value:.4f}")
+        try:
+            with open(best_params_path, 'w') as f:
+                json.dump({
+                    "best_params": best_params,
+                    "best_value": best_value,
+                    "n_trials": n_trials,
+                    "timestamp": datetime.now().isoformat()
+                }, f, indent=2)
+            logger.info(f"Meilleurs hyperparamètres sauvegardés: {best_params_path}")
+        except Exception as e:
+            logger.error(f"Erreur lors de la sauvegarde des meilleurs hyperparamètres: {str(e)}")
         
-        self.best_params = best_params
-        
-        # Sauvegarder les résultats
-        results_path = os.path.join(self.output_dir, f"{self.symbol}_{self.timeframe}_optuna_results.json")
-        
-        with open(results_path, 'w') as f:
-            json.dump({
-                'best_params': best_params,
-                'best_value': best_value,
-                'timestamp': datetime.now().isoformat()
-            }, f, indent=2)
-        
-        # Sauvegarder l'étude complète
-        study_path = os.path.join(self.output_dir, f"{self.symbol}_{self.timeframe}_optuna_study.pkl")
-        joblib.dump(study, study_path)
+        # Visualiser l'importance des hyperparamètres
+        self._visualize_importance(study)
         
         return best_params
     
-    def find_best_parameters(self):
+    def _visualize_importance(self, study):
         """
-        Exécute la recherche d'hyperparamètres selon la méthode choisie
+        Visualise l'importance des hyperparamètres
         
-        Returns:
-            Les meilleurs paramètres trouvés
+        Args:
+            study: Étude Optuna
         """
-        if self.search_method == 'optuna':
-            return self.run_optuna_search()
-        else:
-            logger.error(f"Méthode de recherche non supportée: {self.search_method}")
-            return None
+        try:
+            # Créer la figure
+            plt.figure(figsize=(10, 6))
+            
+            # Calculer l'importance des paramètres
+            importances = optuna.importance.get_param_importances(study)
+            
+            # Trier les paramètres par importance
+            params = list(importances.keys())
+            scores = list(importances.values())
+            indices = np.argsort(scores)
+            
+            # Créer le graphique à barres horizontales
+            plt.barh(range(len(indices)), [scores[i] for i in indices], color='skyblue')
+            plt.yticks(range(len(indices)), [params[i] for i in indices])
+            plt.xlabel('Importance relative')
+            plt.title('Importance des hyperparamètres')
+            plt.tight_layout()
+            
+            # Sauvegarder la figure
+            figure_path = os.path.join(self.output_dir, f"param_importance_{datetime.now().strftime('%Y%m%d')}.png")
+            plt.savefig(figure_path)
+            plt.close()
+            
+            logger.info(f"Visualisation de l'importance des hyperparamètres sauvegardée: {figure_path}")
+        except Exception as e:
+            logger.error(f"Erreur lors de la visualisation de l'importance des hyperparamètres: {str(e)}")
 
-def run_hyperparameter_search(data_path, symbol, timeframe, method='optuna', n_trials=50):
-    """
-    Fonction principale pour lancer la recherche d'hyperparamètres
-    
-    Args:
-        data_path: Chemin vers les données
-        symbol: Symbole de trading
-        timeframe: Intervalle de temps
-        method: Méthode de recherche
-        n_trials: Nombre d'essais pour les méthodes basées sur l'optimisation bayésienne
-        
-    Returns:
-        Les meilleurs paramètres trouvés
-    """
-    logger.info(f"Début de la recherche d'hyperparamètres pour {symbol} {timeframe}")
-    
-    searcher = HyperparameterSearch(
-        data_path=data_path,
-        symbol=symbol,
-        timeframe=timeframe,
-        search_method=method
-    )
-    
-    # Vérifier si des résultats existent déjà
-    results_path = os.path.join(searcher.output_dir, f"{symbol}_{timeframe}_optuna_results.json")
-    
-    if os.path.exists(results_path):
-        with open(results_path, 'r') as f:
-            results = json.load(f)
-        logger.info(f"Résultats précédents trouvés: {results['best_params']}")
-        
-        # Option de réutiliser les résultats précédents ou relancer la recherche
-        best_params = results['best_params']
-    else:
-        # Lancer une nouvelle recherche
-        best_params = searcher.find_best_parameters()
-    
-    return best_params
 
-if __name__ == "__main__":
-    import argparse
+def main():
+    """Point d'entrée principal"""
+    parser = argparse.ArgumentParser(description="Optimisation des hyperparamètres du modèle LSTM")
     
-    parser = argparse.ArgumentParser(description="Recherche d'hyperparamètres pour le modèle LSTM")
+    # Arguments pour les données
+    parser.add_argument("--symbol", type=str, default="BTCUSDT", help="Paire de trading")
+    parser.add_argument("--timeframe", type=str, default="15m", help="Intervalle de temps")
+    parser.add_argument("--start-date", type=str, required=True, help="Date de début (YYYY-MM-DD)")
+    parser.add_argument("--end-date", type=str, required=True, help="Date de fin (YYYY-MM-DD)")
     
-    parser.add_argument("--symbol", type=str, required=True,
-                      help="Symbole de la paire de trading (ex: BTCUSDT)")
-    parser.add_argument("--timeframe", type=str, required=True,
-                      help="Intervalle de temps (ex: 15m, 1h)")
-    parser.add_argument("--data_path", type=str, required=True,
-                      help="Chemin vers les données de marché")
-    parser.add_argument("--method", type=str, default="optuna",
-                      help="Méthode de recherche (grid, random, optuna)")
-    parser.add_argument("--n_trials", type=int, default=50,
-                      help="Nombre d'essais pour les méthodes basées sur l'optimisation bayésienne")
+    # Arguments pour l'optimisation
+    parser.add_argument("--n-trials", type=int, default=50, help="Nombre d'essais")
+    parser.add_argument("--timeout", type=int, default=None, help="Temps maximum en secondes")
+    parser.add_argument("--train-ratio", type=float, default=0.7, help="Ratio des données d'entraînement")
+    parser.add_argument("--val-ratio", type=float, default=0.15, help="Ratio des données de validation")
     
     args = parser.parse_args()
     
-    best_params = run_hyperparameter_search(
-        data_path=args.data_path,
+    # Télécharger les données si nécessaire
+    if not download_data_if_needed(args.symbol, args.timeframe, args.start_date, args.end_date):
+        logger.error("Impossible de continuer sans données")
+        return
+    
+    # Charger les données
+    data = load_data(args.symbol, args.timeframe, args.start_date, args.end_date)
+    
+    if data.empty:
+        logger.error("Données vides, impossible de continuer")
+        return
+    
+    # Diviser les données en ensembles d'entraînement et de validation
+    train_size = int(len(data) * args.train_ratio)
+    val_size = int(len(data) * args.val_ratio)
+    
+    train_data = data.iloc[:train_size]
+    val_data = data.iloc[train_size:train_size+val_size]
+    
+    logger.info(f"Données divisées: {len(train_data)} lignes pour l'entraînement, {len(val_data)} lignes pour la validation")
+    
+    # Créer l'optimiseur
+    optimizer = LSTMHyperparameterOptimizer(
+        train_data=train_data,
+        val_data=val_data,
         symbol=args.symbol,
-        timeframe=args.timeframe,
-        method=args.method,
-        n_trials=args.n_trials
+        timeframe=args.timeframe
     )
     
-    print("Meilleurs paramètres trouvés:")
-    print(json.dumps(best_params, indent=2))
+    # Lancer l'optimisation
+    best_params = optimizer.run_optimization(
+        n_trials=args.n_trials,
+        timeout=args.timeout
+    )
+    
+    # Afficher un résumé
+    logger.info("\n=== Résumé de l'optimisation ===")
+    logger.info(f"Meilleurs hyperparamètres: {json.dumps(best_params, indent=2)}")
+    logger.info("Utilisez ces paramètres pour entraîner votre modèle final:")
+    
+    # Construire la commande pour l'entraînement
+    lstm_units = best_params.get("lstm_units_first", 128)
+    
+    cmd = f"python train_model.py train --symbol {args.symbol} --timeframe {args.timeframe} "
+    cmd += f"--start-date {args.start_date} --end-date {args.end_date} "
+    cmd += f"--sequence-length {best_params.get('sequence_length', 60)} "
+    cmd += f"--lstm-units {lstm_units} "
+    cmd += f"--dropout {best_params.get('dropout_rate', 0.3)} "
+    cmd += f"--learning-rate {best_params.get('learning_rate', 0.001)} "
+    cmd += f"--l1-reg {best_params.get('l1_reg', 0.0001)} "
+    cmd += f"--l2-reg {best_params.get('l2_reg', 0.0001)} "
+    cmd += f"--batch-size {best_params.get('batch_size', 32)} "
+    
+    if not best_params.get("use_attention", True):
+        cmd += "--no-attention "
+    
+    if not best_params.get("use_residual", True):
+        cmd += "--no-residual "
+    
+    logger.info(f"Commande suggérée: {cmd}")
+
+if __name__ == "__main__":
+    main()

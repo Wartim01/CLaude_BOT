@@ -3,9 +3,9 @@ Directory structure:
     └── crypto_trading_bot_CLAUDE/
         ├── README.md
         ├── backtest.py
-        ├── concigne.txt
         ├── download_data.py
         ├── evaluate_model.py
+        ├── hyperparameter_search.py
         ├── install.py
         ├── main.py
         ├── requirements.txt
@@ -15,11 +15,16 @@ Directory structure:
         ├── __pycache__/
         ├── ai/
         │   ├── __init__.py
+        │   ├── decision_engine.py
         │   ├── market_anomaly_detector.py
+        │   ├── news_sentiment_analyzer.py
         │   ├── parameter_optimizer.py
+        │   ├── prediction_orchestrator.py
         │   ├── reasoning_engine.py
         │   ├── scoring_engine.py
+        │   ├── strategy_integrator.py
         │   ├── trade_analyzer.py
+        │   ├── trading_agent.py
         │   ├── __pycache__/
         │   └── models/
         │       ├── __init__.py
@@ -41,6 +46,7 @@ Directory structure:
         │   ├── __init__.py
         │   ├── adaptive_risk_manager.py
         │   ├── api_connector.py
+        │   ├── dashboard_integrator.py
         │   ├── data_fetcher.py
         │   ├── order_manager.py
         │   ├── position_tracker.py
@@ -55,12 +61,34 @@ Directory structure:
         ├── data/
         │   ├── ai_weights.json
         │   ├── scoring_history.json
-        │   └── backtest_results/
-        │       ├── BTCUSDT_technical_bounce_2023-01-01_2023-06-30.json
-        │       ├── BTCUSDT_technical_bounce_2023-01-01_2024-12-30.json
-        │       ├── BTCUSDT_technical_bounce_2023-01-01_2025-02-28.json
-        │       ├── BTCUSDT_technical_bounce_2024-01-01_2025-02-28.json
-        │       └── charts/
+        │   ├── backtest_results/
+        │   │   ├── BTCUSDT_technical_bounce_2023-01-01_2023-06-30.json
+        │   │   ├── BTCUSDT_technical_bounce_2023-01-01_2024-12-30.json
+        │   │   ├── BTCUSDT_technical_bounce_2023-01-01_2025-02-28.json
+        │   │   ├── BTCUSDT_technical_bounce_2024-01-01_2025-02-28.json
+        │   │   └── charts/
+        │   └── models/
+        │       ├── checkpoints/
+        │       │   └── lstm_BTCUSDT_15m_checkpoint.keras
+        │       ├── evaluation/
+        │       │   ├── BTCUSDT_evaluation_20250304.json
+        │       │   └── figures/
+        │       ├── optimization/
+        │       │   └── best_params_20250305.json
+        │       ├── production/
+        │       │   ├── lstm_best.keras
+        │       │   └── lstm_final.h5
+        │       ├── scalers/
+        │       │   ├── lstm_optim_standard_scaler.pkl
+        │       │   └── lstm_standard_scaler.pkl
+        │       ├── training_history/
+        │       │   ├── final_model_history_20250304_110305.json
+        │       │   └── final_model_history_20250304_124731.json
+        │       └── visualizations/
+        ├── docs/
+        │   └── training_guide.txt
+        ├── examples/
+        │   └── sentiment_analysis_demo.py
         ├── indicators/
         │   ├── __init__.py
         │   ├── advanced_features.py
@@ -90,13 +118,23 @@ Directory structure:
         │       ├── test_backtesting.py
         │       ├── test_feature_eng.py
         │       └── test_lstm.py
-        └── utils/
-            ├── __init__.py
-            ├── backtest_engine.py
-            ├── logger.py
-            ├── model_backtester.py
-            ├── model_explainer.py
-            ├── model_monitor.py
-            ├── notification_service.py
-            ├── visualizer.py
-            └── __pycache__/
+        ├── ui/
+        │   ├── correlation_dashboard.py
+        │   └── main_dashboard.py
+        ├── utils/
+        │   ├── __init__.py
+        │   ├── backtest_engine.py
+        │   ├── correlation_matrix.py
+        │   ├── exceptions.py
+        │   ├── logger.py
+        │   ├── market_risk_feed.py
+        │   ├── model_backtester.py
+        │   ├── model_explainer.py
+        │   ├── model_monitor.py
+        │   ├── network_utils.py
+        │   ├── notification_service.py
+        │   ├── performance_analyzer.py
+        │   ├── visualizer.py
+        │   └── __pycache__/
+        └── visualizers/
+            └── sentiment_visualizer.py

@@ -1,896 +1,752 @@
 """
-Trading agent that integrates AI predictions with trading logic
-to make decisions and execute trades
+Agent de trading intelligent qui utilise les prédictions des modèles d'IA
+pour prendre des décisions de trading optimales
 """
 import os
-import time
 import json
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Optional, Tuple, Union, Any
 from datetime import datetime, timedelta
-import threading
-from enum import Enum
+import time
+import traceback
 
-from config.config import DATA_DIR
-from config.trading_params import (
-    MAX_POSITIONS, RISK_PER_TRADE, DEFAULT_STOP_LOSS_PERCENT,
-    TARGET_PROFIT_PERCENT, TIMEFRAMES
-)
+from config.config import DATA_DIR, TRADING_CONFIG
 from utils.logger import setup_logger
-from core.risk_manager import RiskManager
-from core.position_tracker import PositionTracker
+from core.position_manager import PositionManager
+from core.order_manager import OrderManager
+from core.exchange_client import ExchangeClient
+from core.adaptive_risk_manager import AdaptiveRiskManager
 from ai.prediction_orchestrator import PredictionOrchestrator
 
 logger = setup_logger("trading_agent")
 
-class TradeState(Enum):
-    """Enum for different trade states"""
-    SEARCHING = "searching"  # Looking for opportunities
-    MONITORING = "monitoring"  # Watching market for entry
-    POSITIONING = "positioning"  # Preparing to enter
-    ENTERED = "entered"  # In position
-    MANAGING = "managing"  # Managing open position
-    EXITING = "exiting"  # Exiting position
-    STANDBY = "standby"  # Temporarily not trading
-
 class TradingAgent:
     """
-    Agent that integrates AI predictions with trading logic to
-    make trading decisions and execute trades
+    Agent intelligent qui utilise les prédictions des modèles d'IA
+    pour prendre des décisions de trading et gérer les positions
     """
     def __init__(self, 
-                 risk_manager: Optional[RiskManager] = None,
-                 position_tracker: Optional[PositionTracker] = None,
-                 prediction_orchestrator: Optional[PredictionOrchestrator] = None,
-                 trading_enabled: bool = False):
+               exchange_client: Optional[ExchangeClient] = None,
+               position_manager: Optional[PositionManager] = None,
+               order_manager: Optional[OrderManager] = None,
+               prediction_orchestrator: Optional[PredictionOrchestrator] = None,
+               risk_manager: Optional[AdaptiveRiskManager] = None):
         """
-        Initialize the trading agent
+        Initialise l'agent de trading
         
         Args:
-            risk_manager: Risk manager instance
-            position_tracker: Position tracker instance
-            prediction_orchestrator: Prediction orchestrator instance
-            trading_enabled: Whether trading is enabled initially
+            exchange_client: Client d'échange pour les opérations de trading
+            position_manager: Gestionnaire de positions
+            order_manager: Gestionnaire d'ordres
+            prediction_orchestrator: Orchestrateur de prédictions
+            risk_manager: Gestionnaire de risque adaptatif
         """
-        # Core components
+        self.exchange_client = exchange_client
+        self.position_manager = position_manager
+        self.order_manager = order_manager
+        self.prediction_orchestrator = prediction_orchestrator
         self.risk_manager = risk_manager
-        self.position_tracker = position_tracker
-        self.prediction_orchestrator = prediction_orchestrator or PredictionOrchestrator()
         
-        # Trading state
-        self.trading_enabled = trading_enabled
-        self.trading_state = TradeState.STANDBY if not trading_enabled else TradeState.SEARCHING
-        self.watched_symbols = {}  # {symbol: {state, last_update, data}}
+        # Configuration de trading par défaut
+        self.config = {
+            "default_symbol": "BTCUSDT",
+            "default_timeframe": "15m",
+            "confidence_threshold": 0.6,  # Seuil de confiance pour les trades
+            "position_size_pct": 0.05,    # 5% du capital par défaut
+            "max_open_positions": 3,      # Nombre maximum de positions ouvertes
+            "use_stop_loss": True,        # Utiliser les stop-loss
+            "stop_loss_pct": 2.0,         # Stop-loss par défaut (%)
+            "use_take_profit": True,      # Utiliser les take-profit
+            "take_profit_pct": 4.0,       # Take-profit par défaut (%)
+            "auto_trade": False,          # Trading automatique activé
+            "trading_enabled": True,      # Trading en général activé
+            "dry_run": True,              # Mode simulation si True
+            "risk_adjustment": True       # Ajustement du risque automatique
+        }
         
-        # Configuration
-        self.confidence_threshold = 0.65  # Min confidence to consider a trade
-        self.min_strength = 6  # Minimum strength (0-10) for a trade
-        self.max_positions = MAX_POSITIONS
-        self.risk_per_trade = RISK_PER_TRADE
-        self.retry_interval = 60  # seconds to wait after failed trade
+        # Historique des trades
+        self.trade_history = []
         
-        # Auto trading thread
-        self.trading_thread = None
-        self.should_stop = False
-        self.trading_interval = 300  # seconds between trading cycles
-        
-        # Trading metrics
-        self.trading_metrics = {
-            "trades_executed": 0,
-            "successful_trades": 0,
-            "failed_trades": 0,
+        # Statistiques de performance
+        self.performance_stats = {
+            "total_trades": 0,
+            "winning_trades": 0,
+            "losing_trades": 0,
+            "win_rate": 0.0,
             "total_profit": 0.0,
             "total_loss": 0.0,
-            "net_pnl": 0.0,
-            "win_rate": 0.0
+            "profit_factor": 0.0,
+            "avg_profit": 0.0,
+            "avg_loss": 0.0,
+            "largest_profit": 0.0,
+            "largest_loss": 0.0
         }
         
-        # Trade decisions history
-        self.trade_decisions = []
-        self.max_decisions_history = 1000
-        
-        # Trading log
-        self.trades_dir = os.path.join(DATA_DIR, "trades")
-        self.metrics_path = os.path.join(self.trades_dir, "trading_metrics.json")
-        self.decisions_path = os.path.join(self.trades_dir, "trade_decisions.json")
-        
-        # Ensure directories exist
-        os.makedirs(self.trades_dir, exist_ok=True)
-        
-        # Load trading metrics and history
-        self._load_trading_data()
-        
-        logger.info("Trading agent initialized")
-    
-    def _load_trading_data(self):
-        """Load trading metrics and history"""
-        try:
-            # Load trading metrics
-            if os.path.exists(self.metrics_path):
-                with open(self.metrics_path, 'r') as f:
-                    self.trading_metrics = json.load(f)
-                logger.info("Trading metrics loaded")
-            
-            # Load trade decisions history
-            if os.path.exists(self.decisions_path):
-                with open(self.decisions_path, 'r') as f:
-                    self.trade_decisions = json.load(f)
-                logger.info("Trade decisions history loaded")
-        except Exception as e:
-            logger.error(f"Error loading trading data: {str(e)}")
-    
-    def _save_trading_data(self):
-        """Save trading metrics and history"""
-        try:
-            # Save trading metrics
-            with open(self.metrics_path, 'w') as f:
-                json.dump(self.trading_metrics, f, indent=2)
-            
-            # Limit the size of decisions history
-            if len(self.trade_decisions) > self.max_decisions_history:
-                self.trade_decisions = self.trade_decisions[-self.max_decisions_history:]
-            
-            # Save trade decisions history
-            with open(self.decisions_path, 'w') as f:
-                json.dump(self.trade_decisions, f, indent=2)
-            
-            logger.debug("Trading data saved")
-        except Exception as e:
-            logger.error(f"Error saving trading data: {str(e)}")
-    
-    def start_auto_trading(self):
-        """
-        Start automatic trading in background thread
-        """
-        if not self.trading_enabled:
-            logger.warning("Cannot start auto trading - trading is disabled")
-            return False
-        
-        if self.trading_thread is None or not self.trading_thread.is_alive():
-            self.should_stop = False
-            self.trading_thread = threading.Thread(target=self._trading_worker)
-            self.trading_thread.daemon = True
-            self.trading_thread.start()
-            
-            self.trading_state = TradeState.SEARCHING
-            logger.info(f"Auto trading started (interval: {self.trading_interval}s)")
-            return True
-        
-        return False
-    
-    def stop_auto_trading(self):
-        """
-        Stop automatic trading
-        """
-        self.should_stop = True
-        if self.trading_thread and self.trading_thread.is_alive():
-            self.trading_thread.join(timeout=2.0)
-        
-        self.trading_state = TradeState.STANDBY
-        logger.info("Auto trading stopped")
-        return True
-    
-    def _trading_worker(self):
-        """
-        Background worker thread for automatic trading
-        """
-        while not self.should_stop:
-            try:
-                # Main trading cycle
-                self._trading_cycle()
-                
-                # Sleep until next cycle
-                time.sleep(self.trading_interval)
-            except Exception as e:
-                logger.error(f"Error in trading worker: {str(e)}")
-                time.sleep(self.retry_interval)
-    
-    def _trading_cycle(self):
-        """
-        One complete trading cycle:
-        1. Check existing positions
-        2. Look for new opportunities
-        3. Execute trades if conditions are met
-        """
-        # Skip if trading is disabled
-        if not self.trading_enabled:
-            return
-        
-        # 1. Check and manage existing positions
-        if self.position_tracker:
-            self._manage_positions()
-        
-        # 2. Look for new trading opportunities (if we have capacity)
-        if self._has_position_capacity():
-            self._find_opportunities()
-    
-    def _manage_positions(self):
-        """
-        Check and manage all open positions
-        """
-        if not self.position_tracker:
-            logger.warning("Cannot manage positions - position tracker not available")
-            return
-        
-        try:
-            # Get all open positions
-            open_positions = self.position_tracker.get_all_open_positions()
-            
-            for symbol, positions in open_positions.items():
-                for position in positions:
-                    # Set state to managing for this symbol
-                    if symbol in self.watched_symbols:
-                        self.watched_symbols[symbol]["state"] = TradeState.MANAGING
-                    
-                    # Check if we should modify or close the position
-                    self._check_position_exit(symbol, position)
-        except Exception as e:
-            logger.error(f"Error managing positions: {str(e)}")
-    
-    def _check_position_exit(self, symbol: str, position: Dict):
-        """
-        Check if a position should be exited or modified
-        
-        Args:
-            symbol: Trading symbol
-            position: Position data dictionary
-        """
-        if not self.position_tracker or not self.risk_manager:
-            return
-        
-        try:
-            # Get latest market data
-            market_data = self.position_tracker.get_symbol_data(symbol)
-            if market_data is None or market_data.empty:
-                logger.warning(f"No market data available for {symbol}")
-                return
-            
-            # Check if this is a trade we're tracking
-            position_id = position.get("id")
-            is_tracked = position.get("metadata", {}).get("managed_by_agent", False)
-            
-            if not is_tracked:
-                # Skip positions not managed by this agent
-                logger.debug(f"Skipping unmanaged position: {position_id}")
-                return
-            
-            # Get current price
-            current_price = float(market_data['close'].iloc[-1])
-            
-            # Get position details
-            entry_price = position.get("entry_price", 0)
-            stop_loss = position.get("stop_loss", 0)
-            take_profit = position.get("take_profit", 0)
-            position_type = position.get("type", "UNKNOWN")
-            
-            # Calculate unrealized PnL
-            if position_type == "LONG":
-                unrealized_pnl_pct = (current_price - entry_price) / entry_price * 100
-            else:  # SHORT
-                unrealized_pnl_pct = (entry_price - current_price) / entry_price * 100
-            
-            # Check if stop loss or take profit has been hit
-            should_close = False
-            close_reason = ""
-            
-            if position_type == "LONG":
-                if stop_loss > 0 and current_price <= stop_loss:
-                    should_close = True
-                    close_reason = "stop_loss"
-                elif take_profit > 0 and current_price >= take_profit:
-                    should_close = True
-                    close_reason = "take_profit"
-            else:  # SHORT
-                if stop_loss > 0 and current_price >= stop_loss:
-                    should_close = True
-                    close_reason = "stop_loss"
-                elif take_profit > 0 and current_price <= take_profit:
-                    should_close = True
-                    close_reason = "take_profit"
-            
-            # Get new prediction to see if we should exit based on signal change
-            prediction_result = self.prediction_orchestrator.get_prediction(
-                symbol, market_data, include_details=False
-            )
-            
-            if prediction_result["success"]:
-                prediction = prediction_result["prediction"]
-                
-                # Check if prediction now contradicts position direction
-                if position_type == "LONG" and prediction["direction"] == "SELL":
-                    should_close = True
-                    close_reason = "signal_change"
-                elif position_type == "SHORT" and prediction["direction"] == "BUY":
-                    should_close = True
-                    close_reason = "signal_change"
-            
-            # Execute position closure if needed
-            if should_close:
-                close_result = self.position_tracker.close_position(
-                    symbol=symbol,
-                    position_id=position_id,
-                    current_price=current_price
-                )
-                
-                if close_result.get("success", False):
-                    # Record trade result
-                    self._record_trade_result(symbol, position, close_result, close_reason)
-                    
-                    logger.info(f"Closed position {position_id} for {symbol} ({close_reason}) - PnL: {unrealized_pnl_pct:.2f}%")
-                else:
-                    logger.error(f"Failed to close position {position_id}: {close_result.get('error', 'Unknown error')}")
-            
-            # If not closing, see if we should adjust stop loss (trailing)
-            elif position.get("metadata", {}).get("use_trailing_stop", True):
-                self._adjust_trailing_stop(symbol, position, current_price)
-            
-        except Exception as e:
-            logger.error(f"Error checking position exit for {symbol}: {str(e)}")
-    
-    def _adjust_trailing_stop(self, symbol: str, position: Dict, current_price: float):
-        """
-        Adjust trailing stop loss for a position
-        
-        Args:
-            symbol: Trading symbol
-            position: Position data
-            current_price: Current market price
-        """
-        if not self.position_tracker:
-            return
-        
-        try:
-            # Get position details
-            position_id = position.get("id")
-            position_type = position.get("type", "UNKNOWN")
-            current_stop = position.get("stop_loss", 0)
-            
-            if current_stop <= 0:
-                return  # No stop loss set
-            
-            # Calculate potential new stop
-            trail_pct = position.get("metadata", {}).get("trailing_stop_pct", 2.0)
-            trail_activation_pct = position.get("metadata", {}).get("trailing_activation_pct", 1.0)
-            
-            if position_type == "LONG":
-                # For long positions, trail upwards only
-                trail_distance = current_price * (trail_pct / 100)
-                new_stop = current_price - trail_distance
-                
-                # Only move stop loss up, never down
-                if new_stop > current_stop:
-                    # Update stop loss
-                    update_result = self.position_tracker.update_position_stop_loss(
-                        symbol=symbol,
-                        position_id=position_id,
-                        new_stop_loss=new_stop
-                    )
-                    
-                    if update_result.get("success", False):
-                        logger.info(f"Updated trailing stop for {symbol} position {position_id}: {new_stop:.2f}")
-            elif position_type == "SHORT":
-                # For short positions, trail downwards only
-                trail_distance = current_price * (trail_pct / 100)
-                new_stop = current_price + trail_distance
-                
-                # Only move stop loss down, never up
-                if new_stop < current_stop:
-                    # Update stop loss
-                    update_result = self.position_tracker.update_position_stop_loss(
-                        symbol=symbol,
-                        position_id=position_id,
-                        new_stop_loss=new_stop
-                    )
-                    
-                    if update_result.get("success", False):
-                        logger.info(f"Updated trailing stop for {symbol} position {position_id}: {new_stop:.2f}")
-        except Exception as e:
-            logger.error(f"Error adjusting trailing stop for {symbol}: {str(e)}")
-    
-    def _has_position_capacity(self) -> bool:
-        """
-        Check if we have capacity for new positions
-        
-        Returns:
-            True if we have capacity, False otherwise
-        """
-        if not self.position_tracker:
-            return False
-        
-        try:
-            # Count current open positions
-            open_positions = self.position_tracker.get_all_open_positions()
-            total_positions = sum(len(pos) for pos in open_positions.values())
-            
-            # Check if we're under the maximum
-            return total_positions < self.max_positions
-        except Exception as e:
-            logger.error(f"Error checking position capacity: {str(e)}")
-            return False
-    
-    def _find_opportunities(self):
-        """
-        Look for new trading opportunities
-        """
-        # Get symbols to check
-        symbols = self._get_tradable_symbols()
-        
-        for symbol in symbols:
-            try:
-                # Skip symbols we're already watching or trading
-                if symbol in self.watched_symbols and self.watched_symbols[symbol]["state"] not in [
-                    TradeState.SEARCHING, TradeState.STANDBY
-                ]:
-                    continue
-                
-                # Get market data
-                market_data = self._get_symbol_data(symbol)
-                if market_data is None or market_data.empty:
-                    continue
-                
-                # Get prediction
-                prediction_result = self.prediction_orchestrator.get_prediction(
-                    symbol, market_data, include_details=True
-                )
-                
-                if not prediction_result["success"]:
-                    continue
-                
-                # Evaluate prediction for trading
-                trade_decision = self._evaluate_prediction(symbol, prediction_result, market_data)
-                
-                # Record the decision
-                self._record_trade_decision(symbol, prediction_result, trade_decision)
-                
-                # If we should trade, execute it
-                if trade_decision["should_trade"]:
-                    self._execute_trade(symbol, trade_decision)
-            
-            except Exception as e:
-                logger.error(f"Error finding opportunity for {symbol}: {str(e)}")
-    
-    def _get_tradable_symbols(self) -> List[str]:
-        """
-        Get list of symbols to check for trading opportunities
-        
-        Returns:
-            List of tradable symbols
-        """
-        if self.position_tracker:
-            # Get list of available symbols from position tracker
-            available_symbols = self.position_tracker.get_available_symbols()
-            
-            # Filter to symbols with minimum criteria
-            tradable = []
-            for symbol in available_symbols:
-                # Check if symbol meets basic requirements
-                # For now, we'll accept all available symbols
-                tradable.append(symbol)
-            
-            return tradable
-        
-        # Default test symbols
-        return ["BTCUSDT", "ETHUSDT"]
-    
-    def _get_symbol_data(self, symbol: str) -> pd.DataFrame:
-        """
-        Get market data for a symbol
-        
-        Args:
-            symbol: Trading symbol
-        
-        Returns:
-            DataFrame with OHLCV data
-        """
-        if self.position_tracker:
-            return self.position_tracker.get_symbol_data(symbol)
-        
-        return None
-    
-    def _evaluate_prediction(self, symbol: str, prediction_result: Dict, market_data: pd.DataFrame) -> Dict:
-        """
-        Evaluate a prediction to decide if we should trade
-        
-        Args:
-            symbol: Trading symbol
-            prediction_result: Result from prediction_orchestrator
-            market_data: Market data DataFrame
-        
-        Returns:
-            Trade decision dictionary
-        """
-        prediction = prediction_result["prediction"]
-        
-        # Initialize decision
-        decision = {
-            "should_trade": False,
-            "direction": "NEUTRAL",
-            "entry_price": 0,
-            "stop_loss": 0,
-            "take_profit": 0,
-            "confidence": prediction["confidence"],
-            "strength": prediction["strength"],
-            "signals": prediction.get("signals", []),
-            "reason": "neutral_signal"
+        # État du système
+        self.state = {
+            "is_trading": False,
+            "last_prediction_time": None,
+            "last_trade_time": None,
+            "pending_orders": 0,
+            "open_positions": 0,
+            "auto_trade_enabled": self.config["auto_trade"],
+            "dry_run": self.config["dry_run"],
+            "errors": []
         }
         
-        # Check basic signal
-        if prediction["direction"] not in ["BUY", "SELL"]:
-            return decision
+        # Répertoires pour la sauvegarde des données
+        self.data_dir = os.path.join(DATA_DIR, "trading_agent")
+        self.config_path = os.path.join(self.data_dir, "trading_config.json")
+        self.history_path = os.path.join(self.data_dir, "trade_history.json")
+        self.stats_path = os.path.join(self.data_dir, "performance_stats.json")
         
-        # Check confidence and strength
-        if prediction["confidence"] < self.confidence_threshold or prediction["strength"] < self.min_strength:
-            decision["reason"] = "below_threshold"
-            return decision
+        # Créer les répertoires si nécessaires
+        os.makedirs(self.data_dir, exist_ok=True)
         
-        # Check if the risk manager approves this trade
-        risk_check = True  # Default to True
-        if self.risk_manager:
-            risk_check = self.risk_manager.check_trade_risk(
-                symbol=symbol,
-                trade_direction=prediction["direction"],
-                confidence=prediction["confidence"]
-            )
+        # Charger la configuration et l'historique
+        self._load_config()
+        self._load_trade_history()
+        self._load_performance_stats()
         
-        if not risk_check:
-            decision["reason"] = "risk_manager_rejected"
-            return decision
-        
-        # Calculate entry, stop loss, and take profit
-        current_price = float(market_data['close'].iloc[-1])
-        direction = prediction["direction"]
-        
-        # For simplicity, using fixed percentages for SL/TP
-        # In a real implementation, these would be adaptive based on volatility
-        stop_loss_pct = DEFAULT_STOP_LOSS_PERCENT
-        take_profit_pct = TARGET_PROFIT_PERCENT
-        
-        # Set decision parameters
-        decision["should_trade"] = True
-        decision["direction"] = direction
-        decision["entry_price"] = current_price
-        
-        if direction == "BUY":
-            decision["stop_loss"] = current_price * (1 - stop_loss_pct/100)
-            decision["take_profit"] = current_price * (1 + take_profit_pct/100)
-        else:  # SELL
-            decision["stop_loss"] = current_price * (1 + stop_loss_pct/100)
-            decision["take_profit"] = current_price * (1 - take_profit_pct/100)
-        
-        return decision
+        logger.info("Agent de trading initialisé")
     
-    def _execute_trade(self, symbol: str, decision: Dict) -> Dict:
+    def update_trading_pairs(self, pairs: List[str]) -> None:
         """
-        Execute a trade based on decision
+        Met à jour la liste des paires de trading suivies
         
         Args:
-            symbol: Trading symbol
-            decision: Trade decision dictionary
-        
-        Returns:
-            Trade execution results
+            pairs: Liste des paires à suivre
         """
-        if not self.position_tracker:
-            logger.warning(f"Cannot execute trade for {symbol} - position tracker not available")
-            return {"success": False, "error": "Position tracker not available"}
+        self.trading_pairs = pairs
+        logger.info(f"Paires de trading mises à jour: {pairs}")
+    
+    def process_new_data(self, symbol: str, timeframe: str, data: pd.DataFrame) -> Dict:
+        """
+        Traite de nouvelles données et génère une décision de trading
         
-        if not decision["should_trade"]:
-            return {"success": False, "error": "Decision indicates not to trade"}
-        
-        try:
-            # Calculate position size
-            position_size = self._calculate_position_size(symbol, decision)
+        Args:
+            symbol: Symbole de trading
+            timeframe: Période de temps
+            data: DataFrame avec les données OHLCV
             
-            # Prepare trade metadata
-            metadata = {
-                "managed_by_agent": True,
-                "use_trailing_stop": True,
-                "trailing_stop_pct": 2.0,  # 2% trailing stop
-                "trailing_activation_pct": 1.0,  # Activate after 1% profit
-                "strategy": "ai_prediction",
-                "confidence": decision["confidence"],
-                "strength": decision["strength"],
-                "signals": decision["signals"],
-                "prediction_id": datetime.now().isoformat()
+        Returns:
+            Résultat de la décision de trading
+        """
+        if not self.config["trading_enabled"]:
+            return {
+                "decision": "SKIP",
+                "reason": "Trading désactivé"
             }
-            
-            # Execute the trade
-            position_result = self.position_tracker.open_position(
+        
+        if not self.prediction_orchestrator:
+            return {
+                "decision": "ERROR",
+                "reason": "Orchestrateur de prédictions non disponible"
+            }
+        
+        try:
+            # 1. Obtenir une prédiction
+            prediction = self.prediction_orchestrator.get_prediction(
                 symbol=symbol,
-                position_type=decision["direction"],
-                entry_price=decision["entry_price"],
-                stop_loss=decision["stop_loss"],
-                take_profit=decision["take_profit"],
-                quantity=position_size,
-                metadata=metadata
+                timeframe=timeframe,
+                data=data
             )
             
-            if position_result.get("success", False):
-                logger.info(f"Executed trade for {symbol}: {decision['direction']} {position_size:.6f} @ {decision['entry_price']:.2f}")
-                
-                # Update watched symbols
-                self.watched_symbols[symbol] = {
-                    "state": TradeState.ENTERED,
-                    "last_update": datetime.now().isoformat(),
-                    "position_id": position_result.get("position_id"),
-                    "direction": decision["direction"]
+            # Mettre à jour l'état
+            self.state["last_prediction_time"] = datetime.now().isoformat()
+            
+            # 2. Analyser la prédiction pour prendre une décision
+            decision = self._analyze_prediction(symbol, prediction)
+            
+            # 3. Si auto-trade est activé, exécuter automatiquement le trade
+            if self.config["auto_trade"] and decision["action"] != "NONE":
+                self._execute_trade_from_decision(decision)
+            
+            return decision
+            
+        except Exception as e:
+            logger.error(f"Erreur lors du traitement des données pour {symbol}: {str(e)}")
+            logger.error(traceback.format_exc())
+            
+            self.state["errors"].append({
+                "time": datetime.now().isoformat(),
+                "error": str(e),
+                "context": f"process_new_data:{symbol}:{timeframe}"
+            })
+            
+            return {
+                "decision": "ERROR",
+                "reason": f"Erreur: {str(e)}"
+            }
+    
+    def _analyze_prediction(self, symbol: str, prediction: Dict) -> Dict:
+        """
+        Analyse une prédiction pour générer une décision de trading
+        
+        Args:
+            symbol: Symbole de trading
+            prediction: Prédiction du modèle
+            
+        Returns:
+            Décision de trading
+        """
+        # Vérifier si la prédiction contient une erreur
+        if "error" in prediction:
+            return {
+                "action": "NONE",
+                "reason": f"Erreur dans la prédiction: {prediction['error']}",
+                "confidence": 0.0,
+                "prediction": prediction
+            }
+        
+        # Extraire les informations principales
+        primary = prediction.get("primary", {})
+        direction = primary.get("direction", "NEUTRAL")
+        confidence = primary.get("confidence", 0.0)
+        signal_type = primary.get("signal_type", "NEUTRAL")
+        
+        # Vérifier le seuil de confiance
+        confidence_threshold = self.config["confidence_threshold"]
+        
+        if confidence < confidence_threshold:
+            return {
+                "action": "NONE",
+                "reason": f"Confiance insuffisante ({confidence:.2f} < {confidence_threshold})",
+                "confidence": confidence,
+                "symbol": symbol,
+                "direction": direction,
+                "prediction": prediction,
+                "timestamp": datetime.now().isoformat()
+            }
+        
+        # Vérifier les positions existantes
+        if self.position_manager:
+            open_positions = self.position_manager.get_open_positions(symbol)
+            
+            # Si position longue existe déjà et signal baissier fort
+            if any(p["side"] == "BUY" for p in open_positions) and direction == "DOWN" and confidence > 0.7:
+                return {
+                    "action": "CLOSE_LONG",
+                    "reason": f"Signal baissier fort ({confidence:.2f}) alors que position longue ouverte",
+                    "confidence": confidence,
+                    "symbol": symbol,
+                    "direction": direction,
+                    "signal_type": signal_type,
+                    "prediction": prediction,
+                    "timestamp": datetime.now().isoformat(),
+                    "position_ids": [p["id"] for p in open_positions if p["side"] == "BUY"]
                 }
+            
+            # Si position courte existe déjà et signal haussier fort
+            if any(p["side"] == "SELL" for p in open_positions) and direction == "UP" and confidence > 0.7:
+                return {
+                    "action": "CLOSE_SHORT",
+                    "reason": f"Signal haussier fort ({confidence:.2f}) alors que position courte ouverte",
+                    "confidence": confidence,
+                    "symbol": symbol,
+                    "direction": direction,
+                    "signal_type": signal_type,
+                    "prediction": prediction,
+                    "timestamp": datetime.now().isoformat(),
+                    "position_ids": [p["id"] for p in open_positions if p["side"] == "SELL"]
+                }
+        
+        # Vérifier le nombre maximum de positions
+        max_positions = self.config["max_open_positions"]
+        current_positions = 0
+        
+        if self.position_manager:
+            current_positions = len(self.position_manager.get_open_positions())
+        
+        if current_positions >= max_positions:
+            return {
+                "action": "NONE",
+                "reason": f"Nombre maximum de positions atteint ({current_positions}/{max_positions})",
+                "confidence": confidence,
+                "symbol": symbol,
+                "direction": direction,
+                "prediction": prediction,
+                "timestamp": datetime.now().isoformat()
+            }
+        
+        # Déterminer l'action en fonction de la direction
+        if direction == "UP":
+            return {
+                "action": "BUY",
+                "reason": f"Signal haussier avec confiance suffisante ({confidence:.2f})",
+                "confidence": confidence,
+                "symbol": symbol,
+                "direction": direction,
+                "signal_type": signal_type,
+                "prediction": prediction,
+                "timestamp": datetime.now().isoformat()
+            }
+        elif direction == "DOWN":
+            return {
+                "action": "SELL",
+                "reason": f"Signal baissier avec confiance suffisante ({confidence:.2f})",
+                "confidence": confidence,
+                "symbol": symbol,
+                "direction": direction,
+                "signal_type": signal_type,
+                "prediction": prediction,
+                "timestamp": datetime.now().isoformat()
+            }
+        else:
+            return {
+                "action": "NONE",
+                "reason": "Signal neutre",
+                "confidence": confidence,
+                "symbol": symbol,
+                "direction": direction,
+                "prediction": prediction,
+                "timestamp": datetime.now().isoformat()
+            }
+    
+    def _execute_trade_from_decision(self, decision: Dict) -> Dict:
+        """
+        Exécute un trade en fonction d'une décision
+        
+        Args:
+            decision: Décision de trading
+            
+        Returns:
+            Résultat de l'exécution
+        """
+        action = decision["action"]
+        symbol = decision["symbol"]
+        
+        if action == "NONE":
+            return {
+                "success": True,
+                "message": "Aucune action à exécuter"
+            }
+        
+        # Fermer des positions existantes
+        if action in ["CLOSE_LONG", "CLOSE_SHORT"]:
+            if "position_ids" in decision and self.position_manager:
+                position_ids = decision["position_ids"]
                 
-                # Update trading metrics
-                self.trading_metrics["trades_executed"] += 1
+                results = []
+                for position_id in position_ids:
+                    result = self.position_manager.close_position(position_id)
+                    results.append(result)
                 
-                # Save trading data
-                self._save_trading_data()
+                # Enregistrer le trade
+                self._record_trade({
+                    "symbol": symbol,
+                    "action": action,
+                    "positions_closed": position_ids,
+                    "results": results,
+                    "timestamp": datetime.now().isoformat(),
+                    "prediction": decision["prediction"],
+                    "reason": decision["reason"]
+                })
                 
                 return {
                     "success": True,
-                    "position_id": position_result.get("position_id"),
-                    "entry_price": decision["entry_price"],
-                    "direction": decision["direction"]
+                    "message": f"Positions fermées: {position_ids}",
+                    "results": results
                 }
-            else:
-                logger.error(f"Failed to execute trade for {symbol}: {position_result.get('error', 'Unknown error')}")
-                return {"success": False, "error": position_result.get("error", "Unknown error")}
         
-        except Exception as e:
-            logger.error(f"Error executing trade for {symbol}: {str(e)}")
-            return {"success": False, "error": str(e)}
+        # Ouvrir une nouvelle position
+        if action in ["BUY", "SELL"] and self.position_manager:
+            # Calculer la taille de position
+            position_size = self._calculate_position_size(symbol, decision)
+            
+            # Calculer les niveaux de stop-loss et take-profit
+            stop_loss, take_profit = self._calculate_exit_levels(symbol, action, decision)
+            
+            # Créer la position
+            try:
+                result = self.position_manager.create_position(
+                    symbol=symbol,
+                    side=action,
+                    quantity=position_size,
+                    stop_loss=stop_loss,
+                    take_profit=take_profit
+                )
+                
+                # Enregistrer le trade
+                self._record_trade({
+                    "symbol": symbol,
+                    "action": action,
+                    "position_id": result.get("position_id"),
+                    "size": position_size,
+                    "stop_loss": stop_loss,
+                    "take_profit": take_profit,
+                    "timestamp": datetime.now().isoformat(),
+                    "prediction": decision["prediction"],
+                    "reason": decision["reason"],
+                    "confidence": decision["confidence"]
+                })
+                
+                # Mettre à jour l'état
+                self.state["last_trade_time"] = datetime.now().isoformat()
+                self.state["open_positions"] = len(self.position_manager.get_open_positions())
+                
+                return {
+                    "success": True,
+                    "message": f"Position {action} créée pour {symbol}",
+                    "result": result
+                }
+                
+            except Exception as e:
+                logger.error(f"Erreur lors de la création de la position {action} pour {symbol}: {str(e)}")
+                
+                self.state["errors"].append({
+                    "time": datetime.now().isoformat(),
+                    "error": str(e),
+                    "context": f"execute_trade:{action}:{symbol}"
+                })
+                
+                return {
+                    "success": False,
+                    "error": str(e)
+                }
+        
+        return {
+            "success": False,
+            "error": f"Action non prise en charge: {action}"
+        }
     
     def _calculate_position_size(self, symbol: str, decision: Dict) -> float:
         """
-        Calculate position size based on risk parameters
+        Calcule la taille optimale de la position
         
         Args:
-            symbol: Trading symbol
-            decision: Trade decision
+            symbol: Symbole de trading
+            decision: Décision de trading
             
         Returns:
-            Position size in units of base asset
+            Taille de la position
         """
-        if not self.position_tracker:
-            return 0.0
+        # Taille de position par défaut (pourcentage du capital)
+        position_size_pct = self.config["position_size_pct"]
         
-        try:
-            # Get account balance
-            balance = self.position_tracker.get_account_balance()
+        # Si un gestionnaire de risque est disponible, l'utiliser
+        if self.risk_manager:
+            # La confiance de la prédiction peut influencer la taille
+            confidence = decision.get("confidence", 0.5)
             
-            if not balance or balance <= 0:
-                return 0.0
-            
-            # Calculate risk amount
-            risk_amount = balance * self.risk_per_trade
-            
-            # Calculate stop loss distance in percentage
-            entry = decision["entry_price"]
-            stop = decision["stop_loss"]
-            
-            if entry <= 0 or stop <= 0:
-                return 0.0
-            
-            if decision["direction"] == "BUY":
-                stop_distance_pct = (entry - stop) / entry
-            else:  # SELL
-                stop_distance_pct = (stop - entry) / entry
-            
-            if stop_distance_pct <= 0:
-                logger.warning(f"Invalid stop distance for {symbol}: {stop_distance_pct}")
-                return 0.0
-            
-            # Calculate position size based on risk and stop distance
-            position_value = risk_amount / stop_distance_pct
-            
-            # Limit position size to a percentage of account
-            max_position_value = balance * 0.2  # Max 20% of account per position
-            position_value = min(position_value, max_position_value)
-            
-            # Calculate quantity
-            quantity = position_value / entry
-            
-            # Apply symbol-specific rounding
-            # This would normally come from exchange info
-            quantity = round(quantity, 6)
-            
-            return quantity
-            
-        except Exception as e:
-            logger.error(f"Error calculating position size for {symbol}: {str(e)}")
-            return 0.0
-    
-    def _record_trade_decision(self, symbol: str, prediction_result: Dict, decision: Dict):
-        """
-        Record a trade decision for analysis
-        
-        Args:
-            symbol: Trading symbol
-            prediction_result: Result from prediction_orchestrator
-            decision: Trade decision
-        """
-        entry = {
-            "timestamp": datetime.now().isoformat(),
-            "symbol": symbol,
-            "prediction": prediction_result["prediction"],
-            "decision": decision,
-            "models": prediction_result.get("model_predictions", {}),
-            "executed": decision["should_trade"]
-        }
-        
-        # Add to decisions history
-        self.trade_decisions.append(entry)
-        
-        # Save trading data
-        self._save_trading_data()
-    
-    def _record_trade_result(self, symbol: str, position: Dict, close_result: Dict, reason: str):
-        """
-        Record the result of a closed trade
-        
-        Args:
-            symbol: Trading symbol
-            position: Position data
-            close_result: Result from position closure
-            reason: Reason for closure
-        """
-        # Calculate PnL
-        entry_price = position.get("entry_price", 0)
-        exit_price = close_result.get("exit_price", 0)
-        position_type = position.get("type", "UNKNOWN")
-        
-        if position_type == "LONG":
-            pnl_pct = (exit_price - entry_price) / entry_price * 100 if entry_price > 0 else 0
-        else:  # SHORT
-            pnl_pct = (entry_price - exit_price) / entry_price * 100 if entry_price > 0 else 0
-        
-        # Get position size and calculate absolute PnL
-        quantity = position.get("quantity", 0)
-        absolute_pnl = (exit_price - entry_price) * quantity if position_type == "LONG" else (entry_price - exit_price) * quantity
-        
-        # Update trading metrics
-        self.trading_metrics["trades_executed"] += 1
-        
-        if pnl_pct > 0:
-            self.trading_metrics["successful_trades"] += 1
-            self.trading_metrics["total_profit"] += absolute_pnl
-        else:
-            self.trading_metrics["failed_trades"] += 1
-            self.trading_metrics["total_loss"] += absolute_pnl
-        
-        # Calculate total PnL and win rate
-        self.trading_metrics["net_pnl"] = self.trading_metrics["total_profit"] + self.trading_metrics["total_loss"]
-        
-        if self.trading_metrics["trades_executed"] > 0:
-            self.trading_metrics["win_rate"] = self.trading_metrics["successful_trades"] / self.trading_metrics["trades_executed"] * 100
-        
-        # Save trading data
-        self._save_trading_data()
-        
-        # Update prediction model performance
-        if "prediction_id" in position.get("metadata", {}):
-            # Extract prediction ID used for this trade
-            prediction_id = position["metadata"]["prediction_id"]
-            
-            # Determine actual outcome
-            if pnl_pct > 0:
-                actual_outcome = "BULLISH" if position_type == "LONG" else "BEARISH"
-            else:
-                actual_outcome = "BEARISH" if position_type == "LONG" else "BULLISH"
-            
-            # Update model performance metrics
-            try:
-                self.prediction_orchestrator.update_model_performance(
+            # Vérifier si un ajustement du risque est nécessaire
+            if self.config["risk_adjustment"]:
+                position_size = self.risk_manager.calculate_position_size(
                     symbol=symbol,
-                    prediction_id=prediction_id,
-                    actual_outcome=actual_outcome,
-                    pnl=absolute_pnl
+                    confidence=confidence,
+                    market_volatility=None  # On pourrait ajouter d'autres paramètres
                 )
+                
+                return position_size
+        
+        # Calcul simple par défaut
+        account_balance = 1000.0  # Valeur par défaut
+        
+        if self.exchange_client:
+            try:
+                account_info = self.exchange_client.get_account_info()
+                account_balance = account_info.get("balance", 1000.0)
             except Exception as e:
-                logger.error(f"Error updating model performance metrics: {str(e)}")
+                logger.warning(f"Impossible d'obtenir la balance du compte: {str(e)}")
+        
+        position_size = account_balance * position_size_pct
+        
+        return position_size
     
-    def get_status(self) -> Dict:
+    def _calculate_exit_levels(self, symbol: str, action: str, decision: Dict) -> Tuple[float, float]:
         """
-        Get current status of the trading agent
-        
-        Returns:
-            Status dictionary
-        """
-        # Count current positions
-        open_positions = 0
-        active_symbols = []
-        
-        if self.position_tracker:
-            positions = self.position_tracker.get_all_open_positions()
-            open_positions = sum(len(pos) for pos in positions.values())
-            active_symbols = list(positions.keys())
-        
-        # Get overall statistics
-        return {
-            "trading_enabled": self.trading_enabled,
-            "trading_state": self.trading_state.value,
-            "open_positions": open_positions,
-            "active_symbols": active_symbols,
-            "watched_symbols": list(self.watched_symbols.keys()),
-            "trades_executed": self.trading_metrics["trades_executed"],
-            "successful_trades": self.trading_metrics["successful_trades"],
-            "win_rate": f"{self.trading_metrics['win_rate']:.2f}%",
-            "net_pnl": self.trading_metrics["net_pnl"],
-            "auto_trading": self.trading_thread is not None and self.trading_thread.is_alive()
-        }
-    
-    def enable_trading(self, enabled: bool = True) -> bool:
-        """
-        Enable or disable trading
+        Calcule les niveaux de stop-loss et take-profit
         
         Args:
-            enabled: Whether to enable trading
+            symbol: Symbole de trading
+            action: Action de trading (BUY/SELL)
+            decision: Décision de trading
             
         Returns:
-            Success of the operation
+            Tuple (stop_loss, take_profit)
         """
-        self.trading_enabled = enabled
+        # Obtenir le prix actuel
+        current_price = 0.0
         
-        if enabled:
-            self.trading_state = TradeState.SEARCHING
-            logger.info("Trading enabled")
-        else:
-            self.trading_state = TradeState.STANDBY
-            # Stop auto trading if running
-            if self.trading_thread and self.trading_thread.is_alive():
-                self.stop_auto_trading()
-            logger.info("Trading disabled")
+        if self.exchange_client:
+            try:
+                ticker = self.exchange_client.get_ticker(symbol)
+                current_price = ticker.get("last", 0.0)
+            except Exception as e:
+                logger.warning(f"Impossible d'obtenir le prix actuel pour {symbol}: {str(e)}")
         
-        return True
+        if current_price == 0.0:
+            raise ValueError(f"Prix actuel non disponible pour {symbol}")
+        
+        # Pourcentages par défaut
+        stop_loss_pct = self.config["stop_loss_pct"] / 100.0
+        take_profit_pct = self.config["take_profit_pct"] / 100.0
+        
+        # Ajuster les niveaux en fonction de la confiance
+        confidence = decision.get("confidence", 0.5)
+        
+        # Plus la confiance est élevée, plus le stop-loss peut être serré
+        # et le take-profit éloigné
+        stop_loss_pct = stop_loss_pct * (1.1 - confidence * 0.2)
+        take_profit_pct = take_profit_pct * (0.9 + confidence * 0.2)
+        
+        # Calculer les niveaux absolus
+        if action == "BUY":
+            stop_loss = current_price * (1 - stop_loss_pct)
+            take_profit = current_price * (1 + take_profit_pct)
+        else:  # SELL
+            stop_loss = current_price * (1 + stop_loss_pct)
+            take_profit = current_price * (1 - take_profit_pct)
+        
+        return stop_loss, take_profit
     
-    def manual_trade(self, symbol: str, direction: str) -> Dict:
+    def manual_trade(self, symbol: str, direction: str, quantity: Optional[float] = None,
+                   reason: str = "Manual trade") -> Dict:
         """
-        Execute a manual trade based on specified direction
+        Exécute un trade manuellement
         
         Args:
-            symbol: Trading symbol
-            direction: Trade direction ('BUY' or 'SELL')
+            symbol: Symbole de trading
+            direction: Direction du trade (BUY/SELL)
+            quantity: Quantité à trader (calculée automatiquement si None)
+            reason: Raison du trade
             
         Returns:
-            Result of the trade execution
+            Résultat de l'exécution
         """
-        if not self.trading_enabled:
-            return {"success": False, "error": "Trading is disabled"}
+        if not self.config["trading_enabled"]:
+            return {
+                "success": False,
+                "error": "Trading désactivé"
+            }
         
-        if direction not in ["BUY", "SELL"]:
-            return {"success": False, "error": "Invalid trade direction"}
-        
-        if not self.position_tracker:
-            return {"success": False, "error": "Position tracker not available"}
+        if direction not in ["BUY", "SELL", "CLOSE"]:
+            return {
+                "success": False,
+                "error": f"Direction invalide: {direction}"
+            }
         
         try:
-            # Get market data
-            market_data = self._get_symbol_data(symbol)
-            if market_data is None or market_data.empty:
-                return {"success": False, "error": "No market data available"}
+            if direction == "CLOSE":
+                # Fermer toutes les positions sur ce symbole
+                if not self.position_manager:
+                    return {
+                        "success": False,
+                        "error": "Gestionnaire de positions non disponible"
+                    }
+                
+                open_positions = self.position_manager.get_open_positions(symbol)
+                
+                if not open_positions:
+                    return {
+                        "success": False,
+                        "error": f"Aucune position ouverte pour {symbol}"
+                    }
+                
+                results = []
+                for position in open_positions:
+                    result = self.position_manager.close_position(position["id"])
+                    results.append(result)
+                
+                # Enregistrer le trade
+                self._record_trade({
+                    "symbol": symbol,
+                    "action": "CLOSE",
+                    "positions_closed": [p["id"] for p in open_positions],
+                    "results": results,
+                    "timestamp": datetime.now().isoformat(),
+                    "reason": reason
+                })
+                
+                return {
+                    "success": True,
+                    "message": f"Positions fermées: {len(results)}",
+                    "results": results
+                }
             
-            # Create a simple decision
-            current_price = float(market_data['close'].iloc[-1])
+            # Pour BUY ou SELL
+            if not self.position_manager:
+                return {
+                    "success": False,
+                    "error": "Gestionnaire de positions non disponible"
+                }
             
-            decision = {
-                "should_trade": True,
-                "direction": direction,
-                "entry_price": current_price,
-                "confidence": 0.9,  # High confidence for manual trades
-                "strength": 10,     # Max strength for manual trades
-                "signals": ["manual_trade"]
+            # Calculer la quantité si nécessaire
+            if quantity is None:
+                # Créer une décision fictive pour le calcul
+                mock_decision = {
+                    "action": direction,
+                    "confidence": 0.75,
+                    "symbol": symbol
+                }
+                
+                quantity = self._calculate_position_size(symbol, mock_decision)
+            
+            # Calculer les niveaux de stop-loss et take-profit
+            mock_decision = {
+                "action": direction,
+                "confidence": 0.75,
+                "symbol": symbol
             }
             
-            # Add stop loss and take profit
-            if direction == "BUY":
-                decision["stop_loss"] = current_price * (1 - DEFAULT_STOP_LOSS_PERCENT/100)
-                decision["take_profit"] = current_price * (1 + TARGET_PROFIT_PERCENT/100)
-            else:  # SELL
-                decision["stop_loss"] = current_price * (1 + DEFAULT_STOP_LOSS_PERCENT/100)
-                decision["take_profit"] = current_price * (1 - TARGET_PROFIT_PERCENT/100)
+            stop_loss, take_profit = self._calculate_exit_levels(symbol, direction, mock_decision)
             
-            # Execute the trade
-            result = self._execute_trade(symbol, decision)
+            # Créer la position
+            result = self.position_manager.create_position(
+                symbol=symbol,
+                side=direction,
+                quantity=quantity,
+                stop_loss=stop_loss,
+                take_profit=take_profit
+            )
             
-            return result
+            # Enregistrer le trade
+            self._record_trade({
+                "symbol": symbol,
+                "action": direction,
+                "position_id": result.get("position_id"),
+                "size": quantity,
+                "stop_loss": stop_loss,
+                "take_profit": take_profit
+            })
+            
+            return {
+                "success": True,
+                "message": f"Trade manuel {direction} exécuté pour {symbol}",
+                "result": result
+            }
             
         except Exception as e:
-            logger.error(f"Error executing manual trade for {symbol}: {str(e)}")
-            return {"success": False, "error": str(e)}
+            logger.error(f"Erreur lors de l'exécution du trade manuel pour {symbol}: {str(e)}")
+            
+            self.state["errors"].append({
+                "time": datetime.now().isoformat(),
+                "error": str(e),
+                "context": f"manual_trade:{direction}:{symbol}"
+            })
+            
+            return {
+                "success": False,
+                "error": str(e)
+            }
+    
+    def _record_trade(self, trade: Dict) -> None:
+        """
+        Enregistre un trade dans l'historique
+        
+        Args:
+            trade: Dictionnaire contenant les informations du trade
+        """
+        self.trade_history.append(trade)
+        
+        # Mettre à jour les statistiques de performance
+        self._update_performance_stats(trade)
+        
+        # Sauvegarder l'historique
+        self._save_trade_history()
+    
+    def _update_performance_stats(self, trade: Dict) -> None:
+        """
+        Met à jour les statistiques de performance en fonction d'un trade
+        
+        Args:
+            trade: Dictionnaire contenant les informations du trade
+        """
+        self.performance_stats["total_trades"] += 1
+        
+        if "results" in trade:
+            for result in trade["results"]:
+                if result.get("success", False):
+                    self.performance_stats["winning_trades"] += 1
+                    self.performance_stats["total_profit"] += result.get("profit", 0.0)
+                else:
+                    self.performance_stats["losing_trades"] += 1
+                    self.performance_stats["total_loss"] += result.get("loss", 0.0)
+        
+        # Calculer le taux de réussite
+        total_trades = self.performance_stats["total_trades"]
+        winning_trades = self.performance_stats["winning_trades"]
+        
+        if total_trades > 0:
+            self.performance_stats["win_rate"] = (winning_trades / total_trades) * 100.0
+        
+        # Calculer le facteur de profit
+        total_profit = self.performance_stats["total_profit"]
+        total_loss = self.performance_stats["total_loss"]
+        
+        if total_loss != 0:
+            self.performance_stats["profit_factor"] = total_profit / abs(total_loss)
+        
+        # Calculer les profits et pertes moyens
+        if winning_trades > 0:
+            self.performance_stats["avg_profit"] = total_profit / winning_trades
+        
+        if self.performance_stats["losing_trades"] > 0:
+            self.performance_stats["avg_loss"] = total_loss / self.performance_stats["losing_trades"]
+        
+        # Mettre à jour les plus grands profits et pertes
+        if "results" in trade:
+            for result in trade["results"]:
+                profit = result.get("profit", 0.0)
+                loss = result.get("loss", 0.0)
+                
+                if profit > self.performance_stats["largest_profit"]:
+                    self.performance_stats["largest_profit"] = profit
+                
+                if loss < self.performance_stats["largest_loss"]:
+                    self.performance_stats["largest_loss"] = loss
+        
+        # Sauvegarder les statistiques de performance
+        self._save_performance_stats()
+    
+    def _load_config(self) -> None:
+        """
+        Charge la configuration de trading depuis un fichier
+        """
+        if os.path.exists(self.config_path):
+            with open(self.config_path, 'r') as f:
+                self.config = json.load(f)
+            logger.info("Configuration de trading chargée")
+    
+    def _save_config(self) -> None:
+        """
+        Sauvegarde la configuration de trading dans un fichier
+        """
+        with open(self.config_path, 'w') as f:
+            json.dump(self.config, f, indent=2)
+        logger.info("Configuration de trading sauvegardée")
+    
+    def _load_trade_history(self) -> None:
+        """
+        Charge l'historique des trades depuis un fichier
+        """
+        if os.path.exists(self.history_path):
+            with open(self.history_path, 'r') as f:
+                self.trade_history = json.load(f)
+            logger.info("Historique des trades chargé")
+    
+    def _save_trade_history(self) -> None:
+        """
+        Sauvegarde l'historique des trades dans un fichier
+        """
+        with open(self.history_path, 'w') as f:
+            json.dump(self.trade_history, f, indent=2)
+        logger.info("Historique des trades sauvegardé")
+    
+    def _load_performance_stats(self) -> None:
+        """
+        Charge les statistiques de performance depuis un fichier
+        """
+        if os.path.exists(self.stats_path):
+            with open(self.stats_path, 'r') as f:
+                self.performance_stats = json.load(f)
+            logger.info("Statistiques de performance chargées")
+    
+    def _save_performance_stats(self) -> None:
+        """
+        Sauvegarde les statistiques de performance dans un fichier
+        """
+        with open(self.stats_path, 'w') as f:
+            json.dump(self.performance_stats, f, indent=2)
+        logger.info("Statistiques de performance sauvegardées")

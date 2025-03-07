@@ -1,62 +1,126 @@
-# utils/logger.py
 """
-Configuration du système de journalisation
+Logger setup and utilities
 """
 import os
 import logging
 from logging.handlers import RotatingFileHandler
-from typing import Optional
+import json
+from datetime import datetime
 
-from config.config import LOG_LEVEL, LOG_FORMAT, LOG_FILE, LOG_DIR
+from config.config import LOG_DIR
 
-# Créer le répertoire de logs s'il n'existe pas
-if not os.path.exists(LOG_DIR):
-    os.makedirs(LOG_DIR)
+# Create log directory if it doesn't exist
+os.makedirs(LOG_DIR, exist_ok=True)
 
-def setup_logger(name: str, level: Optional[int] = None, 
-                log_format: Optional[str] = None, log_file: Optional[str] = None) -> logging.Logger:
+# Set up logging format
+FORMATTER = logging.Formatter(
+    "%(asctime)s — %(name)s — %(levelname)s — %(message)s"
+)
+
+def setup_logger(name: str, log_file: str = None, level=logging.INFO) -> logging.Logger:
     """
-    Configure un logger avec rotation des fichiers
+    Set up logger with console and file handlers
     
     Args:
-        name: Nom du logger
-        level: Niveau de journalisation
-        log_format: Format des messages de log
-        log_file: Chemin du fichier de log
-    
+        name: Logger name
+        log_file: Log file name (default: <name>.log)
+        level: Logging level
+        
     Returns:
-        Logger configuré
+        Logger instance
     """
-    # Utiliser les valeurs par défaut si non spécifiées
-    if level is None:
-        level = LOG_LEVEL
-    if log_format is None:
-        log_format = LOG_FORMAT
+    # Use default log file name if not specified
     if log_file is None:
-        log_file = LOG_FILE.replace('.log', f'_{name}.log')
+        log_file = f"{name.lower()}.log"
     
-    # Créer et configurer le logger
+    # Create full path to log file
+    log_file_path = os.path.join(LOG_DIR, log_file)
+    
+    # Create logger
     logger = logging.getLogger(name)
+    logger.setLevel(level)
     
-    # Éviter d'ajouter des handlers multiples
-    if not logger.handlers:
-        logger.setLevel(level)
-        
-        # Formatter pour les messages de log
-        formatter = logging.Formatter(log_format)
-        
-        # Handler pour la console
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(formatter)
-        logger.addHandler(console_handler)
-        
-        # Handler pour le fichier avec rotation
-        file_handler = RotatingFileHandler(
-            log_file, 
-            maxBytes=5*1024*1024,  # 5 MB
-            backupCount=10
-        )
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
+    # Remove existing handlers to avoid duplicates
+    if logger.handlers:
+        logger.handlers = []
+    
+    # Create console handler
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(FORMATTER)
+    logger.addHandler(console_handler)
+    
+    # Create file handler
+    file_handler = RotatingFileHandler(
+        log_file_path, maxBytes=10485760, backupCount=5
+    )
+    file_handler.setFormatter(FORMATTER)
+    logger.addHandler(file_handler)
     
     return logger
+
+# Main application logger
+logger = setup_logger("main")
+
+def log_trade(symbol: str, direction: str, entry_price: float, 
+             position_size: float, stop_loss: float = None) -> None:
+    """
+    Log trade entry information
+    
+    Args:
+        symbol: Trading symbol
+        direction: Trade direction (BUY/SELL)
+        entry_price: Entry price
+        position_size: Position size
+        stop_loss: Stop loss price
+    """
+    trade_log_path = os.path.join(LOG_DIR, "trades.log")
+    
+    trade_data = {
+        "timestamp": datetime.now().isoformat(),
+        "symbol": symbol,
+        "direction": direction,
+        "entry_price": entry_price,
+        "position_size": position_size,
+        "stop_loss": stop_loss,
+        "value": entry_price * position_size
+    }
+    
+    with open(trade_log_path, "a") as trade_log:
+        trade_log.write(json.dumps(trade_data) + "\n")
+    
+    logger.info(f"Trade logged: {direction} {symbol} @ {entry_price}")
+
+def log_performance(metrics: dict) -> None:
+    """
+    Log performance metrics
+    
+    Args:
+        metrics: Performance metrics dictionary
+    """
+    performance_log_path = os.path.join(LOG_DIR, "performance.log")
+    
+    log_data = {
+        "timestamp": datetime.now().isoformat(),
+        **metrics
+    }
+    
+    with open(performance_log_path, "a") as perf_log:
+        perf_log.write(json.dumps(log_data) + "\n")
+    
+    logger.info(f"Performance logged: {metrics.get('total_trades', 0)} trades, PnL: {metrics.get('total_pnl', 0)}")
+
+def log_error(module: str, message: str, exception: Exception = None) -> None:
+    """
+    Log an error with detailed information
+    
+    Args:
+        module: Module where error occurred
+        message: Error message
+        exception: Exception object
+    """
+    error_logger = setup_logger("errors", "errors.log", logging.ERROR)
+    
+    if exception:
+        error_logger.error(f"{module}: {message} - {str(exception)}")
+    else:
+        error_logger.error(f"{module}: {message}")

@@ -1,70 +1,142 @@
 """
-Configuration globale du bot de trading crypto
+Configuration management for the crypto trading bot
 """
 import os
-from dotenv import load_dotenv
+import json
 import logging
+from typing import Dict, Any, Optional
 
-# Chargement des variables d'environnement
-load_dotenv()
+# Define paths
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CONFIG_DIR = os.path.join(BASE_DIR, "config")
+DATA_DIR = os.path.join(BASE_DIR, "data")
+LOG_DIR = os.path.join(BASE_DIR, "logs")
+CONFIG_PATH = os.path.join(CONFIG_DIR, "config.json")
 
-# Configuration de l'API Binance
-# Structure correcte des clés API
-API_KEYS = {
-    "BINANCE": {
-        # Production keys
-        "key": "hodtSbBNLSBrDaqAMBEzfdMoGikNynB5wh2cL3xCUVubxMyZYLCP6iRDGffuaCsS",
-        "secret": "pzbN2NalNjWTQOE0aiYTuSWGp44t0fzS7RTH3dsgKTvbmzZNoY6Lam2HAACoTgis"
+# Default configuration
+DEFAULT_CONFIG = {
+    "bot": {
+        "name": "CryptoTradingBot",
+        "version": "1.0.0",
+        "check_interval_seconds": 60,
+        "log_level": "INFO"
     },
-    "BINANCE_TESTNET": {
-        # Testnet keys
-        "key": "u6cP7KVlRmHLTC4RnGD0jkDZzgEkyK4nXVfIwlxQoM1j9HZZPUu8Vkrbk6ymfIlD",
-        "secret": "P5v5e3Zw24ACZVEnM35NuX3q98ZX29b3tfVHkyzhuEjtvITfCnZUFMKExm8gV2c"
+    "exchange": {
+        "name": "paper",  # "binance", "paper"
+        "api_key": "",
+        "api_secret": "",
+        "testnet": True
+    },
+    "trading": {
+        "mode": "paper",  # "live", "paper", "backtest"
+        "pairs": ["BTCUSDT", "ETHUSDT", "BNBUSDT", "ADAUSDT", "XRPUSDT"],
+        "timeframes": ["1h", "4h", "1d"],
+        "risk_per_trade": 0.02,  # 2% risk per trade
+        "max_risk": 0.10,        # 10% maximum risk across all trades
+        "auto_select_pairs": False
+    },
+    "strategies": {
+        "active": ["trend_following", "breakout"],
+        "weights": {
+            "trend_following": 0.6,
+            "breakout": 0.4
+        },
+        "parameters": {
+            "trend_following": {
+                "ema_short": 9,
+                "ema_long": 21,
+                "atr_period": 14
+            },
+            "breakout": {
+                "lookback_period": 20,
+                "volatility_factor": 1.5
+            }
+        }
+    },
+    "risk_management": {
+        "stop_loss": True,
+        "trailing_stop": True,
+        "take_profit": True,
+        "trailing_stop_distance": 0.02,  # 2% trailing stop
+        "take_profit_targets": [0.03, 0.05, 0.1]  # 3%, 5%, 10% targets
+    },
+    "notifications": {
+        "enabled": False,
+        "telegram_token": "",
+        "telegram_chat_id": "",
+        "notify_on": ["trade_opened", "trade_closed", "bot_started", "bot_stopped", "error"]
     }
 }
 
-# Utiliser testnet ou production
-USE_TESTNET = os.getenv("USE_TESTNET", "True").lower() in ("true", "1", "t")
+# Create directories if they don't exist
+for directory in [CONFIG_DIR, DATA_DIR, LOG_DIR]:
+    os.makedirs(directory, exist_ok=True)
 
-# Récupérer les bonnes clés en fonction du mode
-if USE_TESTNET:
-    ACTIVE_API_KEY = API_KEYS["BINANCE_TESTNET"]["key"]
-    ACTIVE_API_SECRET = API_KEYS["BINANCE_TESTNET"]["secret"]
-else:
-    ACTIVE_API_KEY = API_KEYS["BINANCE"]["key"]
-    ACTIVE_API_SECRET = API_KEYS["BINANCE"]["secret"]
+def load_config(config_path: Optional[str] = CONFIG_PATH) -> Dict[str, Any]:
+    """
+    Load configuration from file, create default if not exists
+    
+    Args:
+        config_path: Path to configuration file
+        
+    Returns:
+        Configuration dictionary
+    """
+    # Use specified config path or default
+    config_path = config_path or CONFIG_PATH
+    
+    # Create default config if file doesn't exist
+    if not os.path.exists(config_path):
+        with open(config_path, 'w') as config_file:
+            json.dump(DEFAULT_CONFIG, config_file, indent=4)
+        
+        print(f"Created default configuration at {config_path}")
+        return DEFAULT_CONFIG
+    
+    # Load existing config
+    try:
+        with open(config_path, 'r') as config_file:
+            config = json.load(config_file)
+        
+        # Ensure all default settings exist (for backwards compatibility)
+        merged_config = DEFAULT_CONFIG.copy()
+        _update_dict_recursively(merged_config, config)
+        
+        return merged_config
+    
+    except Exception as e:
+        print(f"Error loading config: {str(e)}. Using default configuration.")
+        return DEFAULT_CONFIG
 
-# Paramètres généraux
-INITIAL_CAPITAL = 200  # USDT
-BASE_CURRENCY = "USDT"
-TRADING_PAIRS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "AVAXUSDT", "BNBUSDT"]
-DEFAULT_TRADING_PAIR = "BTCUSDT"
+def save_config(config: Dict[str, Any], config_path: Optional[str] = CONFIG_PATH) -> bool:
+    """
+    Save configuration to file
+    
+    Args:
+        config: Configuration dictionary
+        config_path: Path to configuration file
+        
+    Returns:
+        Success status
+    """
+    try:
+        with open(config_path, 'w') as config_file:
+            json.dump(config, config_file, indent=4)
+        return True
+    except Exception as e:
+        print(f"Error saving config: {str(e)}")
+        return False
 
-# Intervalles de temps pour l'analyse
-PRIMARY_TIMEFRAME = "15m"  # Timeframe principal (15 minutes)
-SECONDARY_TIMEFRAMES = ["1h", "4h"]  # Timeframes secondaires pour confirmation
-
-# Chemins des répertoires
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(BASE_DIR, "data")
-LOG_DIR = os.path.join(BASE_DIR, "logs")
-
-# Création des répertoires s'ils n'existent pas
-for directory in [DATA_DIR, LOG_DIR]:
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-# Configuration du logging
-LOG_LEVEL = logging.INFO
-LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-LOG_FILE = os.path.join(LOG_DIR, "trading_bot.log")
-
-# Paramètres du système
-MAX_API_RETRIES = 3
-API_RETRY_DELAY = 2  # secondes
-
-# Paramètres de notification (à implémenter ultérieurement)
-ENABLE_NOTIFICATIONS = False
-NOTIFICATION_EMAIL = os.getenv("NOTIFICATION_EMAIL", "")
-
-MODEL_CHECKPOINTS_DIR = os.path.join(DATA_DIR, "models", "checkpoints")
+def _update_dict_recursively(target_dict: Dict, source_dict: Dict) -> None:
+    """
+    Update target dictionary with values from source dictionary recursively
+    
+    Args:
+        target_dict: Target dictionary to update
+        source_dict: Source dictionary with values to copy
+    """
+    for key, value in source_dict.items():
+        if key in target_dict and isinstance(target_dict[key], dict) and isinstance(value, dict):
+            _update_dict_recursively(target_dict[key], value)
+        else:
+            target_dict[key] = value
