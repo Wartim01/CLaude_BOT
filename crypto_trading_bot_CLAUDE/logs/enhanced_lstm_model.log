@@ -1,0 +1,87 @@
+2025-03-07 23:24:36,225 — enhanced_lstm_model — INFO — Loaded best hyperparameters from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\optimization\best_params_20250307.json
+2025-03-07 23:24:36,226 — enhanced_lstm_model — INFO — Using optimized hyperparameters:
+2025-03-07 23:24:36,226 — enhanced_lstm_model — INFO —   - LSTM units: [136, 68, 34]
+2025-03-07 23:24:36,226 — enhanced_lstm_model — INFO —   - Input length: 30
+2025-03-07 23:24:36,227 — enhanced_lstm_model — INFO —   - Dropout rate: 0.39279757672456206
+2025-03-07 23:24:36,227 — enhanced_lstm_model — INFO —   - Learning rate: 0.0006251373574521745
+2025-03-07 23:24:36,228 — enhanced_lstm_model — INFO —   - L1 regularization: 0.0003967605077052988
+2025-03-07 23:24:36,228 — enhanced_lstm_model — INFO —   - L2 regularization: 6.358358856676247e-05
+2025-03-07 23:24:36,228 — enhanced_lstm_model — INFO — Model parameters: sequence_length=30, lstm_units=[136, 68, 34], dropout=0.39279757672456206, learning_rate=0.0006251373574521745, l1_reg=0.0003967605077052988, l2_reg=6.358358856676247e-05
+2025-03-07 23:30:21,681 — enhanced_lstm_model — INFO — Loaded best hyperparameters from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\optimization\best_params_20250307.json
+2025-03-07 23:30:21,682 — enhanced_lstm_model — INFO — Using optimized hyperparameters:
+2025-03-07 23:30:21,682 — enhanced_lstm_model — INFO —   - LSTM units: [136, 68, 34]
+2025-03-07 23:30:21,682 — enhanced_lstm_model — INFO —   - Input length: 30
+2025-03-07 23:30:21,683 — enhanced_lstm_model — INFO —   - Dropout rate: 0.39279757672456206
+2025-03-07 23:30:21,683 — enhanced_lstm_model — INFO —   - Learning rate: 0.0006251373574521745
+2025-03-07 23:30:21,683 — enhanced_lstm_model — INFO —   - L1 regularization: 0.0003967605077052988
+2025-03-07 23:30:21,683 — enhanced_lstm_model — INFO —   - L2 regularization: 6.358358856676247e-05
+2025-03-07 23:30:21,684 — enhanced_lstm_model — INFO — Model parameters: sequence_length=30, lstm_units=[136, 68, 34], dropout=0.39279757672456206, learning_rate=0.0006251373574521745, l1_reg=0.0003967605077052988, l2_reg=6.358358856676247e-05
+2025-03-07 23:36:13,071 — enhanced_lstm_model — INFO — Loaded best hyperparameters from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\optimization\best_params_20250307.json
+2025-03-07 23:36:13,071 — enhanced_lstm_model — INFO — Using optimized hyperparameters:
+2025-03-07 23:36:13,072 — enhanced_lstm_model — INFO —   - LSTM units: [136, 68, 34]
+2025-03-07 23:36:13,072 — enhanced_lstm_model — INFO —   - Input length: 30
+2025-03-07 23:36:13,072 — enhanced_lstm_model — INFO —   - Dropout rate: 0.39279757672456206
+2025-03-07 23:36:13,073 — enhanced_lstm_model — INFO —   - Learning rate: 0.0006251373574521745
+2025-03-07 23:36:13,073 — enhanced_lstm_model — INFO —   - L1 regularization: 0.0003967605077052988
+2025-03-07 23:36:13,073 — enhanced_lstm_model — INFO —   - L2 regularization: 6.358358856676247e-05
+2025-03-07 23:36:13,074 — enhanced_lstm_model — INFO — Model parameters: sequence_length=30, lstm_units=[136, 68, 34], dropout=0.39279757672456206, learning_rate=0.0006251373574521745, l1_reg=0.0003967605077052988, l2_reg=6.358358856676247e-05
+2025-03-07 23:43:04,555 — enhanced_lstm_model — INFO — Loaded best hyperparameters from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\optimization\best_params_20250307.json
+2025-03-07 23:43:04,555 — enhanced_lstm_model — INFO — Using optimized hyperparameters:
+2025-03-07 23:43:04,556 — enhanced_lstm_model — INFO —   - LSTM units: [136, 68, 34]
+2025-03-07 23:43:04,556 — enhanced_lstm_model — INFO —   - Input length: 30
+2025-03-07 23:43:04,556 — enhanced_lstm_model — INFO —   - Dropout rate: 0.39279757672456206
+2025-03-07 23:43:04,556 — enhanced_lstm_model — INFO —   - Learning rate: 0.0006251373574521745
+2025-03-07 23:43:04,557 — enhanced_lstm_model — INFO —   - L1 regularization: 0.0003967605077052988
+2025-03-07 23:43:04,557 — enhanced_lstm_model — INFO —   - L2 regularization: 6.358358856676247e-05
+2025-03-07 23:43:04,557 — enhanced_lstm_model — INFO — Model parameters: sequence_length=30, lstm_units=[136, 68, 34], dropout=0.39279757672456206, learning_rate=0.0006251373574521745, l1_reg=0.0003967605077052988, l2_reg=6.358358856676247e-05
+2025-03-08 08:04:15,760 — enhanced_lstm_model — INFO — Loaded best hyperparameters from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\optimization\best_params_20250307.json
+2025-03-08 08:04:15,762 — enhanced_lstm_model — INFO — Using optimized hyperparameters:
+2025-03-08 08:04:15,762 — enhanced_lstm_model — INFO —   - LSTM units: [136, 68, 34]
+2025-03-08 08:04:15,763 — enhanced_lstm_model — INFO —   - Input length: 30
+2025-03-08 08:04:15,763 — enhanced_lstm_model — INFO —   - Dropout rate: 0.39279757672456206
+2025-03-08 08:04:15,763 — enhanced_lstm_model — INFO —   - Learning rate: 0.0006251373574521745
+2025-03-08 08:04:15,764 — enhanced_lstm_model — INFO —   - L1 regularization: 0.0003967605077052988
+2025-03-08 08:04:15,764 — enhanced_lstm_model — INFO —   - L2 regularization: 6.358358856676247e-05
+2025-03-08 08:04:15,764 — enhanced_lstm_model — INFO — Model parameters: sequence_length=30, lstm_units=[136, 68, 34], dropout=0.39279757672456206, learning_rate=0.0006251373574521745, l1_reg=0.0003967605077052988, l2_reg=6.358358856676247e-05
+2025-03-08 08:08:26,197 — enhanced_lstm_model — INFO — Loaded best hyperparameters from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\optimization\best_params_20250307.json
+2025-03-08 08:08:26,198 — enhanced_lstm_model — INFO — Using optimized hyperparameters:
+2025-03-08 08:08:26,198 — enhanced_lstm_model — INFO —   - LSTM units: [136, 68, 34]
+2025-03-08 08:08:26,199 — enhanced_lstm_model — INFO —   - Input length: 30
+2025-03-08 08:08:26,199 — enhanced_lstm_model — INFO —   - Dropout rate: 0.39279757672456206
+2025-03-08 08:08:26,199 — enhanced_lstm_model — INFO —   - Learning rate: 0.0006251373574521745
+2025-03-08 08:08:26,200 — enhanced_lstm_model — INFO —   - L1 regularization: 0.0003967605077052988
+2025-03-08 08:08:26,200 — enhanced_lstm_model — INFO —   - L2 regularization: 6.358358856676247e-05
+2025-03-08 08:08:26,200 — enhanced_lstm_model — INFO — Model parameters: sequence_length=30, lstm_units=[136, 68, 34], dropout=0.39279757672456206, learning_rate=0.0006251373574521745, l1_reg=0.0003967605077052988, l2_reg=6.358358856676247e-05
+2025-03-08 08:12:48,739 — enhanced_lstm_model — INFO — Loaded best hyperparameters from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\optimization\best_params_20250307.json
+2025-03-08 08:12:48,739 — enhanced_lstm_model — INFO — Using optimized hyperparameters:
+2025-03-08 08:12:48,740 — enhanced_lstm_model — INFO —   - LSTM units: [136, 68, 34]
+2025-03-08 08:12:48,740 — enhanced_lstm_model — INFO —   - Input length: 30
+2025-03-08 08:12:48,740 — enhanced_lstm_model — INFO —   - Dropout rate: 0.39279757672456206
+2025-03-08 08:12:48,740 — enhanced_lstm_model — INFO —   - Learning rate: 0.0006251373574521745
+2025-03-08 08:12:48,741 — enhanced_lstm_model — INFO —   - L1 regularization: 0.0003967605077052988
+2025-03-08 08:12:48,741 — enhanced_lstm_model — INFO —   - L2 regularization: 6.358358856676247e-05
+2025-03-08 08:12:48,741 — enhanced_lstm_model — INFO — Model parameters: sequence_length=30, lstm_units=[136, 68, 34], dropout=0.39279757672456206, learning_rate=0.0006251373574521745, l1_reg=0.0003967605077052988, l2_reg=6.358358856676247e-05
+2025-03-08 08:20:48,350 — enhanced_lstm_model — INFO — Loaded best hyperparameters from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\optimization\best_params_20250307.json
+2025-03-08 08:20:48,351 — enhanced_lstm_model — INFO — Using optimized hyperparameters:
+2025-03-08 08:20:48,351 — enhanced_lstm_model — INFO —   - LSTM units: [136, 68, 34]
+2025-03-08 08:20:48,352 — enhanced_lstm_model — INFO —   - Input length: 30
+2025-03-08 08:20:48,352 — enhanced_lstm_model — INFO —   - Dropout rate: 0.39279757672456206
+2025-03-08 08:20:48,352 — enhanced_lstm_model — INFO —   - Learning rate: 0.0006251373574521745
+2025-03-08 08:20:48,353 — enhanced_lstm_model — INFO —   - L1 regularization: 0.0003967605077052988
+2025-03-08 08:20:48,353 — enhanced_lstm_model — INFO —   - L2 regularization: 6.358358856676247e-05
+2025-03-08 08:20:48,353 — enhanced_lstm_model — INFO — Model parameters: sequence_length=30, lstm_units=[136, 68, 34], dropout=0.39279757672456206, learning_rate=0.0006251373574521745, l1_reg=0.0003967605077052988, l2_reg=6.358358856676247e-05
+2025-03-08 08:25:21,981 — enhanced_lstm_model — INFO — Loaded best hyperparameters from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\optimization\best_params_20250307.json
+2025-03-08 08:25:21,982 — enhanced_lstm_model — INFO — Using optimized hyperparameters:
+2025-03-08 08:25:21,982 — enhanced_lstm_model — INFO —   - LSTM units: [136, 68, 34]
+2025-03-08 08:25:21,982 — enhanced_lstm_model — INFO —   - Input length: 30
+2025-03-08 08:25:21,983 — enhanced_lstm_model — INFO —   - Dropout rate: 0.39279757672456206
+2025-03-08 08:25:21,983 — enhanced_lstm_model — INFO —   - Learning rate: 0.0006251373574521745
+2025-03-08 08:25:21,983 — enhanced_lstm_model — INFO —   - L1 regularization: 0.0003967605077052988
+2025-03-08 08:25:21,984 — enhanced_lstm_model — INFO —   - L2 regularization: 6.358358856676247e-05
+2025-03-08 08:25:21,984 — enhanced_lstm_model — INFO — Model parameters: sequence_length=30, lstm_units=[136, 68, 34], dropout=0.39279757672456206, learning_rate=0.0006251373574521745, l1_reg=0.0003967605077052988, l2_reg=6.358358856676247e-05
+2025-03-08 08:43:57,065 — enhanced_lstm_model — WARNING — No optimization results found
+2025-03-08 08:43:57,065 — enhanced_lstm_model — INFO — Model parameters: sequence_length=30, lstm_units=[136, 68, 34], dropout=0.39279757672456206, learning_rate=0.0006251373574521745, l1_reg=0.0003967605077052988, l2_reg=6.358358856676247e-05
+2025-03-08 08:48:26,294 — enhanced_lstm_model — WARNING — No optimization results found
+2025-03-08 08:48:26,294 — enhanced_lstm_model — INFO — Model parameters: sequence_length=30, lstm_units=[104], dropout=0.17336180394137352, learning_rate=8.17949947521167e-05, l1_reg=6.847920095574779e-05, l2_reg=2.62108787826544e-06
+2025-03-08 08:48:26,435 — enhanced_lstm_model — WARNING — No optimization results found
+2025-03-08 08:48:26,436 — enhanced_lstm_model — INFO — Model parameters: sequence_length=90, lstm_units=[120, 60], dropout=0.28242799368681437, learning_rate=0.0022673986523780395, l1_reg=1.3783237455007196e-06, l2_reg=6.647135865318028e-05

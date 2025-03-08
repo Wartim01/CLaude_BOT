@@ -101,26 +101,152 @@ class ResidualBlock(Layer):
             'use_batch_norm': self.use_batch_norm
         })
         return config
-# Dans le fichier ai/models/lstm_model.py, après les définitions des couches personnalisées (ex. SpatialDropout1D, etc.)
+
+import os
+import json
+from pathlib import Path
+
+def load_best_hyperparameters(symbol="BTCUSDT", timeframe="15m"):
+    """
+    Load the best hyperparameters from optimization results
+    
+    Args:
+        symbol: Trading pair symbol
+        timeframe: Timeframe for the model
+        
+    Returns:
+        Dictionary with best parameters or empty dict if not found
+    """
+    # Path to optimization results
+    from config.config import DATA_DIR
+    optimization_dir = os.path.join(DATA_DIR, "models", "optimization")
+    
+    if not os.path.exists(optimization_dir):
+        logger.warning(f"Optimization directory not found: {optimization_dir}")
+        return {}
+    
+    # Find the most recent best_params file
+    param_files = [f for f in os.listdir(optimization_dir) 
+                  if f.startswith("best_params_") and f.endswith(".json")]
+    
+    if not param_files:
+        logger.warning("No optimization results found")
+        return {}
+    
+    # Sort by date (newest first)
+    param_files.sort(reverse=True)
+    best_params_path = os.path.join(optimization_dir, param_files[0])
+    
+    try:
+        with open(best_params_path, 'r') as f:
+            params_data = json.load(f)
+            
+        best_params = params_data.get("best_params", {})
+        if best_params:
+            logger.info(f"Loaded best hyperparameters from {best_params_path}")
+            return best_params
+        else:
+            return {}
+            
+    except Exception as e:
+        logger.error(f"Error loading best hyperparameters: {str(e)}")
+        return {}
+
+# Import the model parameters
+from config.model_params import LSTM_DEFAULT_PARAMS, LSTM_OPTIMIZED_PARAMS
+
 class LSTMModel:
     """
     Modèle LSTM avancé pour prédictions multi-horizon et multi-facteur.
     Intègre éventuellement attention et connexions résiduelles.
     """
-    def __init__(self, input_length=60, feature_dim=30, lstm_units=[128, 64, 32],
-                 dropout_rate=0.3, learning_rate=0.001, use_attention=True, use_residual=True,
-                 prediction_horizons=[12, 24, 96], l1_reg=0.0001, l2_reg=0.0001):
-        self.input_length = input_length
+    def __init__(self, input_length=None, feature_dim=30, lstm_units=None,
+                 dropout_rate=None, learning_rate=None, use_attention=None, use_residual=None,
+                 prediction_horizons=[12, 24, 96], l1_reg=None, l2_reg=None,
+                 symbol="BTCUSDT", timeframe="15m", use_optimized_params=True):
+        
+        # First check if there are optimized parameters for this timeframe
+        optimized_params = None
+        if use_optimized_params and timeframe in LSTM_OPTIMIZED_PARAMS:
+            # Only use if they've been optimized (not the default values)
+            if LSTM_OPTIMIZED_PARAMS[timeframe]["last_optimized"] is not None:
+                optimized_params = LSTM_OPTIMIZED_PARAMS[timeframe]
+                logger.info(f"Using optimized parameters for {timeframe} from config.model_params")
+                logger.info(f"Last optimization: {optimized_params['last_optimized']} with F1 score: {optimized_params['f1_score']:.4f}")
+        
+        # Load parameters with priority: 
+        # 1. Explicitly provided params
+        # 2. Optimized params from config
+        # 3. Default params from config
+        # 4. Hyperparameter optimization results (as before)
+        
+        # Start with default params
+        params_source = LSTM_DEFAULT_PARAMS
+        
+        # Override with optimized params if available
+        if optimized_params is not None:
+            params_source = optimized_params
+        
+        # Set parameters, with explicitly provided params taking precedence
+        self.input_length = input_length if input_length is not None else params_source["sequence_length"]
         self.feature_dim = feature_dim
-        self.lstm_units = lstm_units
-        self.dropout_rate = dropout_rate
-        self.learning_rate = learning_rate
-        self.use_attention = use_attention
-        self.use_residual = use_residual
+        self.lstm_units = lstm_units if lstm_units is not None else params_source["lstm_units"]
+        self.dropout_rate = dropout_rate if dropout_rate is not None else params_source["dropout_rate"]
+        self.learning_rate = learning_rate if learning_rate is not None else params_source["learning_rate"]
+        self.use_attention = use_attention if use_attention is not None else params_source["use_attention"]
+        self.use_residual = use_residual if use_residual is not None else params_source["use_residual"]
+        self.l1_reg = l1_reg if l1_reg is not None else params_source["l1_regularization"]
+        self.l2_reg = l2_reg if l2_reg is not None else params_source["l2_regularization"]
         self.prediction_horizons = prediction_horizons
-        self.l1_reg = l1_reg
-        self.l2_reg = l2_reg
+        
+        # Then, if use_optimized_params and no optimized params in config, try to load from files as before
+        if use_optimized_params and optimized_params is None:
+            best_params = load_best_hyperparameters(symbol, timeframe)
+            
+            if best_params:
+                logger.info("Using optimized hyperparameters from saved files:")
+                
+                # Extract LSTM units from optimization results
+                if "lstm_units_first" in best_params and "lstm_layers" in best_params:
+                    lstm_units = [best_params["lstm_units_first"]]
+                    for i in range(1, best_params["lstm_layers"]):
+                        lstm_units.append(lstm_units[-1] // 2)
+                    self.lstm_units = lstm_units
+                    logger.info(f"  - LSTM units: {lstm_units}")
+                
+                # Map other parameters
+                if "sequence_length" in best_params:
+                    self.input_length = best_params["sequence_length"]
+                    logger.info(f"  - Input length: {self.input_length}")
+                
+                if "dropout_rate" in best_params:
+                    self.dropout_rate = best_params["dropout_rate"]
+                    logger.info(f"  - Dropout rate: {self.dropout_rate}")
+                
+                if "learning_rate" in best_params:
+                    self.learning_rate = best_params["learning_rate"]
+                    logger.info(f"  - Learning rate: {self.learning_rate}")
+                
+                if "l1_reg" in best_params:
+                    self.l1_reg = best_params["l1_reg"]
+                    logger.info(f"  - L1 regularization: {self.l1_reg}")
+                
+                if "l2_reg" in best_params:
+                    self.l2_reg = best_params["l2_reg"]
+                    logger.info(f"  - L2 regularization: {self.l2_reg}")
+        
+        # Finally, log which parameters are being used
+        logger.info(f"Model parameters: sequence_length={self.input_length}, lstm_units={self.lstm_units}, "
+                   f"dropout={self.dropout_rate}, learning_rate={self.learning_rate}, "
+                   f"l1_reg={self.l1_reg}, l2_reg={self.l2_reg}")
+                    
         self.model = None
+        
+        # Store symbol and timeframe for potential retraining
+        self.symbol = symbol
+        self.timeframe = timeframe
+        
+        # Build the model with the parameters
         self.build_model()
 
     def build_model(self):
@@ -169,7 +295,7 @@ class LSTMModel:
         self.model.compile(
             optimizer=Adam(learning_rate=self.learning_rate),
             loss=['binary_crossentropy' for _ in outputs],
-            metrics=['accuracy']
+            metrics=[['accuracy'], ['accuracy'], ['accuracy']]  # Fixed syntax for metrics
         )
         return self.model
 
@@ -1022,4 +1148,5 @@ def test_model():
 
 if __name__ == "__main__":
     test_model()
+
 

@@ -20,6 +20,51 @@ LSTM_DEFAULT_PARAMS = {
     "reduce_lr_patience": 7
 }
 
+# [AUTO-UPDATE SECTION] - DO NOT EDIT MANUALLY
+# This section is automatically updated by hyperparameter_search.py
+# Last optimization: None
+LSTM_OPTIMIZED_PARAMS = {
+    "15m": {
+        "lstm_units": [128, 64, 32],
+        "dropout_rate": 0.3,
+        "learning_rate": 0.001,
+        "batch_size": 64,
+        "sequence_length": 60,
+        "l1_regularization": 0.0001,
+        "l2_regularization": 0.0001,
+        "use_attention": True,
+        "use_residual": True,
+        "last_optimized": None,
+        "f1_score": 0.0
+    },
+    "1h": {
+        "lstm_units": [128, 64, 32],
+        "dropout_rate": 0.3,
+        "learning_rate": 0.001,
+        "batch_size": 64,
+        "sequence_length": 60,
+        "l1_regularization": 0.0001,
+        "l2_regularization": 0.0001,
+        "use_attention": True,
+        "use_residual": True,
+        "last_optimized": None,
+        "f1_score": 0.0
+    },
+    "4h": {
+        "lstm_units": [128, 64, 32],
+        "dropout_rate": 0.3,
+        "learning_rate": 0.001,
+        "batch_size": 64,
+        "sequence_length": 60,
+        "l1_regularization": 0.0001,
+        "l2_regularization": 0.0001,
+        "use_attention": True,
+        "use_residual": True,
+        "last_optimized": None,
+        "f1_score": 0.0
+    }
+}
+
 # Transformer model parameters
 TRANSFORMER_DEFAULT_PARAMS = {
     "num_layers": 4,
@@ -85,15 +130,15 @@ FEATURE_GROUPS = {
     "full": "all"  # Use all available features
 }
 
-# Training horizons for different timeframes
+# Training horizons for different timeframes - Modified for single horizon focus
 PREDICTION_HORIZONS = {
     # Format: (periods, name, is_main)
-    "1m": [(15, "15min", True), (60, "1h", True), (240, "4h", True)],
-    "5m": [(12, "1h", True), (36, "3h", True), (48, "4h", True)],
-    "15m": [(12, "3h", True), (24, "6h", True), (96, "24h", True)],
-    "1h": [(3, "3h", True), (6, "6h", True), (24, "24h", True)],
-    "4h": [(3, "12h", True), (6, "24h", True), (12, "48h", True)],
-    "1d": [(3, "3d", True), (7, "7d", True), (14, "14d", True)]
+    "1m": [(4, "1h", True)],  # 1 hour ahead only
+    "5m": [(12, "1h", True)], # 1 hour ahead only
+    "15m": [(4, "1h", True)], # 1 hour ahead only (4 periods of 15min = 1h)
+    "1h": [(1, "1h", True)],  # 1 hour ahead only
+    "4h": [(6, "24h", True)], # 24 hours ahead only
+    "1d": [(7, "7d", True)]   # 7 days ahead only
 }
 
 # Model optimization settings

@@ -453,6 +453,18 @@ class FeatureEngineering:
             
             y_list.extend([np.array(y_direction), np.array(y_volatility), np.array(y_volume), np.array(y_momentum)])
         
+        # Before returning, ensure X has the right dimensions (3D)
+        if len(X.shape) == 2:
+            # If X is 2D (n_samples, n_features), reshape to 3D
+            # This can happen with some data preparation methods
+            n_samples, n_features = X.shape
+            X = X.reshape(n_samples, 1, n_features)
+            logger.debug(f"Reshaped X from 2D to 3D: {X.shape}")
+        
+        # Validate dimensions before return
+        if len(X.shape) != 3:
+            raise ValueError(f"Expected X to be 3D, but got shape {X.shape} with dimensions {len(X.shape)}")
+        
         return X, y_list
 
 def add_market_sentiment_features(df: pd.DataFrame) -> pd.DataFrame:

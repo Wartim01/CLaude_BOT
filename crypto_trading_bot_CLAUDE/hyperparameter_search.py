@@ -9,10 +9,12 @@ import argparse
 import pandas as pd
 import numpy as np
 import optuna
+import tensorflow as tf
 from datetime import datetime, timedelta
 import json
 import matplotlib.pyplot as plt
 from sklearn.metrics import f1_score
+import re
 
 from ai.models.lstm_model import LSTMModel
 from ai.models.feature_engineering import FeatureEngineering
@@ -20,10 +22,128 @@ from ai.models.model_trainer import ModelTrainer
 from ai.models.model_validator import ModelValidator
 from config.config import DATA_DIR
 from utils.logger import setup_logger
-from train_model import load_data, download_data_if_needed, load_historical_data
+from train_model import load_data
+from config.model_params import LSTM_DEFAULT_PARAMS
 
 # Configuration du logger
 logger = setup_logger("hyperparameter_search")
+
+def update_model_params_file(best_params, timeframe, f1_score):
+    """
+    Updates the parameters in config.model_params.py with the best parameters
+    found during hyperparameter optimization
+    
+    Args:
+        best_params: Dictionary containing the best hyperparameters
+        timeframe: Current timeframe (e.g. 15m, 1h)
+        f1_score: F1 score achieved by the best parameters
+    """
+    # Path to the model_params.py file
+    params_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
+                             'config', 'model_params.py')
+    
+    if not os.path.exists(params_file):
+        logger.error(f"Configuration file not found: {params_file}")
+        return False
+    
+    try:
+        # Read the current file content
+        with open(params_file, 'r') as file:
+            content = file.read()
+        
+        # Update both LSTM_DEFAULT_PARAMS and LSTM_OPTIMIZED_PARAMS
+        
+        # 1. First update the default params as before
+        new_params = {
+            "lstm_units": [best_params.get("lstm_units_first", 128)] + 
+                         [best_params.get("lstm_units_first", 128) // 2] * (best_params.get("lstm_layers", 2) - 1),
+            "dropout_rate": best_params.get("dropout_rate", 0.3),
+            "learning_rate": best_params.get("learning_rate", 0.001),
+            "batch_size": best_params.get("batch_size", 64),
+            "sequence_length": best_params.get("sequence_length", 60),
+            "l1_regularization": best_params.get("l1_reg", 0.0001),
+            "l2_regularization": best_params.get("l2_reg", 0.0001)
+        }
+        
+        # 2. Now update the optimized params for this specific timeframe
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Convert the lstm_units to a proper string representation for the config file
+        lstm_units_str = str([best_params.get("lstm_units_first", 128)] + 
+                            [best_params.get("lstm_units_first", 128) // 2] * (best_params.get("lstm_layers", 2) - 1))
+        
+        # Create pattern to find and replace the relevant timeframe section inside LSTM_OPTIMIZED_PARAMS
+        pattern = rf'"{timeframe}":\s*\{{[^}}]*\}}'
+        
+        # Create the replacement text
+        replacement = f'"{timeframe}": {{\n'
+        replacement += f'        "lstm_units": {lstm_units_str},\n'
+        replacement += f'        "dropout_rate": {best_params.get("dropout_rate", 0.3)},\n'
+        replacement += f'        "learning_rate": {best_params.get("learning_rate", 0.001)},\n'
+        replacement += f'        "batch_size": {best_params.get("batch_size", 64)},\n'
+        replacement += f'        "sequence_length": {best_params.get("sequence_length", 60)},\n'
+        replacement += f'        "l1_regularization": {best_params.get("l1_reg", 0.0001)},\n'
+        replacement += f'        "l2_regularization": {best_params.get("l2_reg", 0.0001)},\n'
+        replacement += f'        "use_attention": True,\n'
+        replacement += f'        "use_residual": True,\n'
+        replacement += f'        "last_optimized": "{timestamp}",\n'
+        replacement += f'        "f1_score": {f1_score}\n'
+        replacement += f'    }}'
+        
+        # Update the LSTM_OPTIMIZED_PARAMS section
+        updated_content = re.sub(pattern, replacement, content)
+        
+        # Also update the "Last optimization" comment
+        updated_content = re.sub(r'# Last optimization: .*', f'# Last optimization: {timestamp} (timeframe: {timeframe}, F1: {f1_score:.4f})', updated_content)
+        
+        # Also update the default params as before
+        default_pattern = r'LSTM_DEFAULT_PARAMS\s*=\s*\{[^}]*\}'
+        new_params_str = "LSTM_DEFAULT_PARAMS = {\n"
+        for key, value in new_params.items():
+            if isinstance(value, str):
+                new_params_str += f'    "{key}": "{value}",\n'
+            else:
+                new_params_str += f'    "{key}": {value},\n'
+        new_params_str += "    # Other parameters preserved\n"
+        new_params_str += '    "use_attention": True,\n'
+        new_params_str += '    "use_residual": True,\n'
+        new_params_str += '    "epochs": 100,\n'
+        new_params_str += '    "early_stopping_patience": 15,\n'
+        new_params_str += '    "reduce_lr_patience": 7\n'
+        new_params_str += "}"
+        
+        updated_content = re.sub(default_pattern, new_params_str, updated_content, flags=re.DOTALL)
+        
+        # Write the updated content back to the file
+        with open(params_file, 'w') as file:
+            file.write(updated_content)
+        
+        logger.info(f"Parameters in {params_file} updated successfully with F1 score: {f1_score:.4f}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error updating model parameters file: {str(e)}")
+        return False
+
+class BestModelCallback:
+    """
+    Callback for Optuna to update model_params.py when a new best trial is found
+    """
+    def __init__(self, timeframe):
+        self.best_value = -float('inf')
+        self.best_params = None
+        self.timeframe = timeframe
+    
+    def __call__(self, study, trial):
+        # Check if we found a new best trial
+        if study.best_value > self.best_value:
+            self.best_value = study.best_value
+            self.best_params = study.best_params
+            
+            logger.info(f"New best trial found! Trial {trial.number}: F1={study.best_value:.4f}")
+            
+            # Update the model_params.py file with the new best parameters
+            update_model_params_file(self.best_params, self.timeframe, self.best_value)
 
 class LSTMHyperparameterOptimizer:
     """
@@ -86,10 +206,22 @@ class LSTMHyperparameterOptimizer:
             for i in range(1, lstm_layers):
                 lstm_units.append(lstm_units[-1] // 2)
             
-            # Paramètres du modèle
+            # Process a small batch of data to determine the actual feature dimension
+            X_sample, _ = self.feature_engineering.create_multi_horizon_data(
+                self.normalized_train.iloc[:100],  # Use a small sample
+                sequence_length=60,  # Default value
+                horizons=[4],  # For 1h prediction with 15m data
+                is_training=True
+            )
+            
+            # Get the actual feature dimension from the processed data
+            actual_feature_dim = X_sample.shape[2]
+            logger.info(f"Detected actual feature dimension: {actual_feature_dim}")
+            
+            # Paramètres du modèle with dynamic feature dimension
             model_params = {
                 "input_length": trial.suggest_categorical("sequence_length", [30, 60, 90]),
-                "feature_dim": self.normalized_train.shape[1] if hasattr(self.normalized_train, "shape") else 30,
+                "feature_dim": actual_feature_dim,  # Use actual dimension
                 "lstm_units": lstm_units,
                 "dropout_rate": dropout_rate,
                 "learning_rate": learning_rate,
@@ -97,7 +229,7 @@ class LSTMHyperparameterOptimizer:
                 "l2_reg": trial.suggest_float("l2_reg", 1e-6, 1e-3, log=True),
                 "use_attention": False,  # Simplifier pour l'optimisation
                 "use_residual": False,   # Simplifier pour l'optimisation
-                "prediction_horizons": [12, 24, 96]  # Horizons standards
+                "prediction_horizons": [4]  # Single horizon for 1h with 15m data
             }
             
             logger.info(f"Essai {trial.number}: {json.dumps(model_params, indent=2)}")
@@ -206,13 +338,14 @@ class LSTMHyperparameterOptimizer:
         except Exception as e:
             logger.error(f"Erreur lors de la sauvegarde de l'historique: {str(e)}")
     
-    def run_optimization(self, n_trials=50, timeout=None):
+    def run_optimization(self, n_trials=50, timeout=None, callbacks=None):
         """
         Lance l'optimisation des hyperparamètres
         
         Args:
             n_trials: Nombre d'essais
             timeout: Temps maximum en secondes
+            callbacks: Liste de callbacks Optuna
             
         Returns:
             Les meilleurs hyperparamètres trouvés
@@ -226,8 +359,13 @@ class LSTMHyperparameterOptimizer:
             pruner=optuna.pruners.MedianPruner()
         )
         
+        # Préparer les callbacks
+        optuna_callbacks = []
+        if callbacks:
+            optuna_callbacks.extend(callbacks)
+        
         # Lancer l'optimisation
-        study.optimize(self.objective, n_trials=n_trials, timeout=timeout)
+        study.optimize(self.objective, n_trials=n_trials, timeout=timeout, callbacks=optuna_callbacks)
         
         # Obtenir les meilleurs hyperparamètres
         best_params = study.best_params
@@ -249,6 +387,10 @@ class LSTMHyperparameterOptimizer:
                     "timestamp": datetime.now().isoformat()
                 }, f, indent=2)
             logger.info(f"Meilleurs hyperparamètres sauvegardés: {best_params_path}")
+            
+            # Update the model_params.py file with the best parameters
+            update_model_params_file(best_params, self.timeframe, best_value)
+            
         except Exception as e:
             logger.error(f"Erreur lors de la sauvegarde des meilleurs hyperparamètres: {str(e)}")
         
@@ -292,6 +434,42 @@ class LSTMHyperparameterOptimizer:
         except Exception as e:
             logger.error(f"Erreur lors de la visualisation de l'importance des hyperparamètres: {str(e)}")
 
+def download_data_if_needed(symbol, timeframe, start_date, end_date):
+    """
+    Check if data file exists and return True if it does
+    
+    Args:
+        symbol: Trading pair symbol
+        timeframe: Time interval
+        start_date: Start date for data
+        end_date: End date for data
+        
+    Returns:
+        True if data is available, False otherwise
+    """
+    from config.config import MARKET_DATA_DIR
+    import os
+    
+    # Expected file path
+    file_path = os.path.join(MARKET_DATA_DIR, f"{symbol}_{timeframe}.csv")
+    
+    # Check if file exists
+    if os.path.exists(file_path):
+        logger.info(f"Data file found: {file_path}")
+        return True
+    
+    # Alternatively, look for files matching symbol and timeframe
+    matching_files = [
+        f for f in os.listdir(MARKET_DATA_DIR)
+        if f.endswith('.csv') and symbol in f and timeframe in f
+    ]
+    
+    if matching_files:
+        logger.info(f"Found matching data file: {matching_files[0]}")
+        return True
+        
+    logger.error(f"No data file found for {symbol}_{timeframe}. Please download the data first.")
+    return False
 
 def main():
     """Point d'entrée principal"""
@@ -300,24 +478,43 @@ def main():
     # Arguments pour les données
     parser.add_argument("--symbol", type=str, default="BTCUSDT", help="Paire de trading")
     parser.add_argument("--timeframe", type=str, default="15m", help="Intervalle de temps")
-    parser.add_argument("--start-date", type=str, required=True, help="Date de début (YYYY-MM-DD)")
-    parser.add_argument("--end-date", type=str, required=True, help="Date de fin (YYYY-MM-DD)")
+    
+    # Support flexible argument naming (both hyphen and underscore)
+    parser.add_argument("--start-date", "--start_date", "--start", type=str, required=True, 
+                      help="Date de début (YYYY-MM-DD)")
+    parser.add_argument("--end-date", "--end_date", "--end", type=str, required=True, 
+                      help="Date de fin (YYYY-MM-DD)")
+    parser.add_argument("--data_path", "--data-path", type=str, default="data/market_data/", 
+                      help="Répertoire des données de marché")
     
     # Arguments pour l'optimisation
-    parser.add_argument("--n-trials", type=int, default=50, help="Nombre d'essais")
-    parser.add_argument("--timeout", type=int, default=None, help="Temps maximum en secondes")
-    parser.add_argument("--train-ratio", type=float, default=0.7, help="Ratio des données d'entraînement")
-    parser.add_argument("--val-ratio", type=float, default=0.15, help="Ratio des données de validation")
+    parser.add_argument("--n-trials", "--n_trials", type=int, default=50, 
+                      help="Nombre d'essais")
+    parser.add_argument("--timeout", type=int, default=None, 
+                      help="Temps maximum en secondes")
+    parser.add_argument("--train-ratio", "--train_ratio", type=float, default=0.7, 
+                      help="Ratio des données d'entraînement")
+    parser.add_argument("--val-ratio", "--val_ratio", type=float, default=0.15, 
+                      help="Ratio des données de validation")
     
     args = parser.parse_args()
     
-    # Télécharger les données si nécessaire
+    # Check for data availability
     if not download_data_if_needed(args.symbol, args.timeframe, args.start_date, args.end_date):
         logger.error("Impossible de continuer sans données")
         return
     
-    # Charger les données
-    data = load_data(args.symbol, args.timeframe, args.start_date, args.end_date)
+    # Charger les données avec les bons paramètres
+    # load_data prend data_path, symbol et timeframe comme paramètres
+    data_path = os.path.join(DATA_DIR, "market_data") if args.data_path == "data/market_data/" else args.data_path
+    data = load_data(data_path, args.symbol, args.timeframe)
+    
+    # Filtrer les données selon les dates si spécifiées
+    if args.start_date and args.end_date:
+        start_date = pd.to_datetime(args.start_date)
+        end_date = pd.to_datetime(args.end_date)
+        logger.info(f"Filtrage des données entre {start_date} et {end_date}")
+        data = data[(data.index >= start_date) & (data.index <= end_date)]
     
     if data.empty:
         logger.error("Données vides, impossible de continuer")
@@ -332,6 +529,9 @@ def main():
     
     logger.info(f"Données divisées: {len(train_data)} lignes pour l'entraînement, {len(val_data)} lignes pour la validation")
     
+    # Create the best model callback with proper timeframe
+    best_model_callback = BestModelCallback(args.timeframe)
+    
     # Créer l'optimiseur
     optimizer = LSTMHyperparameterOptimizer(
         train_data=train_data,
@@ -340,10 +540,11 @@ def main():
         timeframe=args.timeframe
     )
     
-    # Lancer l'optimisation
+    # Lancer l'optimisation with the callback explicitly passed
     best_params = optimizer.run_optimization(
         n_trials=args.n_trials,
-        timeout=args.timeout
+        timeout=args.timeout,
+        callbacks=[best_model_callback]  # Make sure callback is passed here
     )
     
     # Afficher un résumé

@@ -17,9 +17,60 @@ from ai.models.feature_engineering import FeatureEngineering
 
 logger = setup_logger("train_model")
 
+def load_best_params(symbol="BTCUSDT", timeframe="15m"):
+    """
+    Load best parameters from hyperparameter optimization results
+    
+    Args:
+        symbol: Trading pair symbol
+        timeframe: Timeframe for the model
+        
+    Returns:
+        Dictionary with best parameters or None if not found
+    """
+    # Try to find the most recent best_params file
+    optimization_dir = os.path.join(DATA_DIR, "models", "optimization")
+    if not os.path.exists(optimization_dir):
+        logger.warning(f"Optimization directory not found: {optimization_dir}")
+        return None
+    
+    # Get all best_params files
+    param_files = [f for f in os.listdir(optimization_dir) if f.startswith("best_params_") and f.endswith(".json")]
+    if not param_files:
+        logger.warning("No best_params files found in optimization directory")
+        return None
+    
+    # Sort by date (newest first)
+    param_files.sort(reverse=True)
+    best_params_file = os.path.join(optimization_dir, param_files[0])
+    
+    try:
+        with open(best_params_file, 'r') as f:
+            params_data = json.load(f)
+            
+        logger.info(f"Loaded best parameters from {best_params_file}")
+        return params_data.get("best_params", None)
+    except Exception as e:
+        logger.error(f"Error loading best parameters: {str(e)}")
+        return None
+
+# Import model parameters
+from config.model_params import LSTM_DEFAULT_PARAMS, LSTM_OPTIMIZED_PARAMS
+
 def parse_args():
     """Parse les arguments de ligne de commande"""
     parser = argparse.ArgumentParser(description="Entraînement et évaluation du modèle LSTM")
+    
+    # Load best parameters to use as defaults - first from optimized params, then from files
+    best_params = None
+    args_timeframe = "15m"  # Default timeframe for loading params
+    
+    # Check if we have optimized params for this timeframe
+    if args_timeframe in LSTM_OPTIMIZED_PARAMS and LSTM_OPTIMIZED_PARAMS[args_timeframe]["last_optimized"] is not None:
+        best_params = LSTM_OPTIMIZED_PARAMS[args_timeframe]
+        logger.info(f"Using optimized parameters from config for {args_timeframe}")
+    else:
+        best_params = load_best_params()
     
     # Arguments pour les données
     parser.add_argument("--symbol", type=str, default="BTCUSDT", 
@@ -29,21 +80,37 @@ def parse_args():
     parser.add_argument("--data_path", type=str, required=True,
                       help="Répertoire des données de marché")
     
-    # Arguments pour le modèle
+    # Arguments pour le modèle - use best_params values as defaults if available
     parser.add_argument("--output", type=str, default=None,
                       help="Chemin où sauvegarder le modèle (défaut: data/models/<symbol>_<timeframe>.keras)")
-    parser.add_argument("--lstm_units", type=str, default="128,64,32",
+    
+    # Use optimized parameters as defaults if available
+    default_lstm_units = f"{best_params.get('lstm_units_first', 128)}"
+    if best_params and "lstm_layers" in best_params and best_params["lstm_layers"] > 1:
+        for i in range(1, best_params["lstm_layers"]):
+            default_lstm_units += f",{best_params.get('lstm_units_first', 128) // (2**i)}"
+    else:
+        default_lstm_units = "128,64,32"  # Default if no best params
+    
+    parser.add_argument("--lstm_units", type=str, default=default_lstm_units,
                       help="Unités LSTM par couche (séparées par virgules)")
-    parser.add_argument("--dropout", type=float, default=0.3,
+    
+    parser.add_argument("--dropout", type=float, 
+                      default=best_params.get("dropout_rate", 0.3) if best_params else 0.3,
                       help="Taux de dropout")
-    parser.add_argument("--learning_rate", type=float, default=0.001,
+    
+    parser.add_argument("--learning_rate", type=float, 
+                      default=best_params.get("learning_rate", 0.001) if best_params else 0.001,
                       help="Taux d'apprentissage")
     
     # Arguments pour l'entraînement
     parser.add_argument("--epochs", type=int, default=100,
                       help="Nombre d'époques d'entraînement")
-    parser.add_argument("--batch_size", type=int, default=64,
+    
+    parser.add_argument("--batch_size", type=int, 
+                      default=best_params.get("batch_size", 64) if best_params else 64,
                       help="Taille des batchs d'entraînement")
+    
     parser.add_argument("--validation_split", type=float, default=0.2,
                       help="Proportion des données pour la validation")
     
@@ -59,7 +126,29 @@ def parse_args():
     parser.add_argument("--evaluate_after", type=bool, default=True,
                       help="Évaluer le modèle après l'entraînement")
     
-    return parser.parse_args()
+    # Regularization parameters
+    parser.add_argument("--l1_reg", type=float,
+                      default=best_params.get("l1_reg", 0.0001) if best_params else 0.0001,
+                      help="Régularisation L1")
+    
+    parser.add_argument("--l2_reg", type=float,
+                      default=best_params.get("l2_reg", 0.0001) if best_params else 0.0001,
+                      help="Régularisation L2")
+    
+    # Sequence length parameter
+    parser.add_argument("--sequence_length", type=int,
+                      default=best_params.get("sequence_length", 60) if best_params else 60,
+                      help="Longueur des séquences d'entrée")
+    
+    args = parser.parse_args()
+    
+    # Log which parameters were loaded from optimization
+    if best_params:
+        logger.info("Using optimized parameters as defaults:")
+        for param, value in best_params.items():
+            logger.info(f"  - {param}: {value}")
+    
+    return args
 
 def load_data(data_path, symbol, timeframe):
     """
@@ -155,18 +244,59 @@ def train_model(args):
     logger.info(f"Division des données: {len(train_data)} échantillons d'entraînement, {len(val_data)} échantillons de validation")
     
     # 3. Créer les séquences et les cibles
-    # Extraire les horizons de prédiction typiques (3h, 6h, 24h pour des bougies de 15min)
-    horizons = [12, 24, 96]
-    if args.timeframe == '1h':
-        horizons = [3, 6, 24]
+    # Utiliser un seul horizon de prédiction (1h)
+    if args.timeframe == '15m':
+        horizons = [4]  # 4 périodes de 15 minutes = 1 heure
+    elif args.timeframe == '1h':
+        horizons = [1]  # 1 période de 1 heure = 1 heure
+    elif args.timeframe == '5m':
+        horizons = [12]  # 12 périodes de 5 minutes = 1 heure
     elif args.timeframe == '4h':
-        horizons = [1, 3, 6]
+        horizons = [6]  # 6 périodes de 4 heures = 24 heures
+    else:
+        # Valeur par défaut si le timeframe n'est pas reconnu
+        horizons = [1]  # Prédire la période suivante
+        
+    logger.info(f"Utilisation d'un unique horizon de prédiction: {horizons[0]} périodes")
+    
+    # Determine which parameters to use based on priority:
+    # 1. Command line args
+    # 2. Optimized params from config
+    # 3. Default params from config
+    
+    # Check if we have optimized parameters for this timeframe
+    optimized_params = None
+    if args.timeframe in LSTM_OPTIMIZED_PARAMS and LSTM_OPTIMIZED_PARAMS[args.timeframe]["last_optimized"] is not None:
+        optimized_params = LSTM_OPTIMIZED_PARAMS[args.timeframe]
+        logger.info(f"Using optimized parameters for {args.timeframe} from config")
+        logger.info(f"Last optimization: {optimized_params['last_optimized']} with F1 score: {optimized_params['f1_score']:.4f}")
+    
+    # Start with default parameters
+    params_source = LSTM_DEFAULT_PARAMS
+    
+    # Override with optimized params if available
+    if optimized_params:
+        params_source = optimized_params
+    
+    # Override with command line args if provided
+    lstm_units = [int(u) for u in args.lstm_units.split(',')] if args.lstm_units else params_source["lstm_units"]
+    dropout_rate = args.dropout if args.dropout is not None else params_source["dropout_rate"]
+    learning_rate = args.learning_rate if args.learning_rate is not None else params_source["learning_rate"]
+    sequence_length = args.sequence_length if args.sequence_length is not None else params_source["sequence_length"]
+    l1_reg = args.l1_reg if args.l1_reg is not None else params_source["l1_regularization"]
+    l2_reg = args.l2_reg if args.l2_reg is not None else params_source["l2_regularization"]
+    batch_size = args.batch_size if args.batch_size is not None else params_source["batch_size"]
+    
+    # Log the parameters being used
+    logger.info(f"Training with parameters: lstm_units={lstm_units}, dropout={dropout_rate}, "
+               f"learning_rate={learning_rate}, sequence_length={sequence_length}, "
+               f"batch_size={batch_size}, l1_reg={l1_reg}, l2_reg={l2_reg}")
     
     # Créer les séquences d'entrée et les cibles
     logger.info("Création des séquences pour l'entraînement...")
     X_train, y_train = feature_engineering.create_multi_horizon_data(
         train_data, 
-        sequence_length=60,  # 60 périodes d'historique
+        sequence_length=sequence_length,  # Use the sequence length from params
         horizons=horizons,
         is_training=True
     )
@@ -174,24 +304,35 @@ def train_model(args):
     logger.info("Création des séquences pour la validation...")
     X_val, y_val = feature_engineering.create_multi_horizon_data(
         val_data, 
-        sequence_length=60,  # 60 périodes d'historique
+        sequence_length=sequence_length,  # Use the sequence length from params here too
         horizons=horizons,
         is_training=True
     )
     
+    # Add dimension check - ensure X_train and X_val are 3D
+    logger.info(f"Vérification des dimensions: X_train = {X_train.shape}, X_val = {X_val.shape}")
+    
+    if len(X_train.shape) != 3:
+        raise ValueError(f"Les données d'entraînement doivent avoir 3 dimensions (trouvé: {len(X_train.shape)})")
+    
+    if len(X_val.shape) != 3:
+        raise ValueError(f"Les données de validation doivent avoir 3 dimensions (trouvé: {len(X_val.shape)})")
+    
     # 4. Convertir les string d'unités LSTM en liste d'entiers
     lstm_units = [int(u) for u in args.lstm_units.split(',')]
     
-    # 5. Créer et compiler le modèle
+    # 5. Créer et compiler le modèle with parameters from config/args
     logger.info(f"Création du modèle LSTM avec unités: {lstm_units}")
     model = LSTMModel(
-        input_length=60,
+        input_length=sequence_length,  # Use the sequence length from params
         feature_dim=X_train.shape[2],
         lstm_units=lstm_units,
-        dropout_rate=args.dropout,
-        learning_rate=args.learning_rate,
+        dropout_rate=dropout_rate,
+        learning_rate=learning_rate,
         use_attention=args.use_attention,
-        prediction_horizons=horizons
+        prediction_horizons=horizons,
+        l1_reg=l1_reg,
+        l2_reg=l2_reg
     )
     
     # 6. Préparer les callbacks
@@ -245,13 +386,13 @@ def train_model(args):
         )
     )
     
-    # 7. Entraîner le modèle
-    logger.info(f"Début de l'entraînement pour {args.epochs} époques avec batch_size={args.batch_size}...")
+    # 7. Entraîner le modèle with batch_size from params
+    logger.info(f"Début de l'entraînement pour {args.epochs} époques avec batch_size={batch_size}...")
     history = model.model.fit(
         x=X_train,
         y=y_train,
         epochs=args.epochs,
-        batch_size=args.batch_size,
+        batch_size=batch_size,
         validation_data=(X_val, y_val),
         callbacks=callbacks,
         verbose=args.verbose
@@ -296,17 +437,14 @@ def evaluate_model(model, X_val, y_val, symbol, timeframe, model_path):
     # Générer des prédictions
     predictions = model.model.predict(X_val)
     
-    # Calculer les métriques de direction (précision de la prédiction de direction)
-    direction_accuracy = {}
+    # Avec un seul horizon, pas besoin de boucle ou d'index
+    # Les prédictions concernent directement l'horizon choisi (1h)
+    y_true = y_val.flatten() if isinstance(y_val, np.ndarray) else y_val[0].flatten()
+    y_pred = (predictions.flatten() > 0.5).astype(int) if isinstance(predictions, np.ndarray) else (predictions[0].flatten() > 0.5).astype(int)
     
-    for i, horizon_idx in enumerate(range(0, len(predictions))):
-        # Obtenir les prédictions de direction
-        y_true = y_val[horizon_idx].flatten()
-        y_pred = (predictions[horizon_idx].flatten() > 0.5).astype(int)
-        
-        # Calculer la précision
-        accuracy = np.mean(y_true == y_pred)
-        direction_accuracy[f"horizon_{i+1}"] = accuracy
+    # Calculer la précision
+    accuracy = np.mean(y_true == y_pred)
+    direction_accuracy = {"horizon_1h": accuracy}
     
     # Sauvegarder les métriques d'évaluation
     metrics_path = os.path.join(os.path.dirname(model_path), f"metrics_{symbol}_{timeframe}.json")
@@ -407,3 +545,55 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+def create_model(input_shape, lstm_units):
+    """
+    Creates a model with the specified input shape and LSTM units
+    
+    Args:
+        input_shape: Shape of input data
+        lstm_units: Number of units in LSTM layers
+        
+    Returns:
+        Compiled Keras model
+    """
+    from tensorflow.keras.layers import Input, Bidirectional, LSTM, Dropout, Dense
+    from tensorflow.keras.models import Model
+    from tensorflow.keras.optimizers import Adam
+    # Start with input shape
+    inputs = Input(shape=input_shape)
+    x = inputs
+    
+    # Add LSTM layers
+    for i, units in enumerate(lstm_units):
+        return_sequences = i < len(lstm_units) - 1
+        x = Bidirectional(LSTM(units, return_sequences=return_sequences))(x)
+        x = Dropout(0.3)(x)
+    
+    # Dense layers
+    x = Dense(64, activation='relu')(x)
+    x = Dropout(0.2)(x)
+    
+    # Output layers
+    outputs = []
+    for horizon in range(3):  # for 3 different prediction horizons
+        name = f'direction_{horizon+1}'
+        outputs.append(Dense(1, activation='sigmoid', name=name)(x))
+    
+    # Create the model
+    model = Model(inputs=inputs, outputs=outputs)
+    
+    # Compile with proper loss and metrics
+    loss_functions = ['binary_crossentropy'] * len(outputs)
+    
+    # Create optimizer
+    optimizer = Adam(learning_rate=0.001)
+    
+    # Use a list of metrics for each output
+    model.compile(
+        optimizer=optimizer,
+        loss=loss_functions,
+        metrics=[['accuracy'] for _ in range(len(outputs))]  # Correct format for multiple outputs
+    )
+    
+    return model

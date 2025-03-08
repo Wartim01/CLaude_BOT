@@ -1,182 +1,122 @@
 """
-Script pour télécharger des données historiques depuis Binance
+Script to download historical cryptocurrency market data from Binance API
 """
 import os
-import sys
 import argparse
 import pandas as pd
-from datetime import datetime
-import time
+from datetime import datetime, timedelta
 from binance.client import Client
+import time
 
-# Ajouter le répertoire parent au PYTHONPATH pour les imports
+# Add the project directory to the Python path
+import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config.config import DATA_DIR, API_KEYS
-from utils.logger import setup_logger
 
-logger = setup_logger("data_downloader")
-
-def parse_args():
-    """Parse les arguments de ligne de commande"""
-    parser = argparse.ArgumentParser(description="Téléchargement de données historiques Binance")
-    
-    parser.add_argument("--symbol", type=str, required=True,
-                      help="Symbole de trading (ex: BTCUSDT)")
-    parser.add_argument("--interval", type=str, required=True,
-                      help="Intervalle de temps (ex: 15m, 4h, 1d)")
-    parser.add_argument("--start", type=str, required=True,
-                      help="Date de début (YYYY-MM-DD)")
-    parser.add_argument("--end", type=str, required=True,
-                      help="Date de fin (YYYY-MM-DD)")
-    parser.add_argument("--output", type=str,
-                      help="Chemin du fichier de sortie")
-    parser.add_argument("--use_testnet", action="store_true",
-                      help="Utiliser le testnet Binance")
-    
-    return parser.parse_args()
-
-def init_client(use_testnet=False):
-    """Initialise le client Binance"""
-    api_key = API_KEYS.get("BINANCE", {}).get("key", "")
-    api_secret = API_KEYS.get("BINANCE", {}).get("secret", "")
-    
-    if not api_key or not api_secret:
-        logger.warning("Clés API Binance non configurées, utilisation du client sans authentification")
-        return Client("", "")  # Client sans clés API (limité aux données publiques)
-    
-    try:
-        client = Client(api_key, api_secret, testnet=use_testnet)
-        logger.info("Client Binance initialisé avec succès")
-        return client
-    except Exception as e:
-        logger.error(f"Erreur lors de l'initialisation du client Binance: {str(e)}")
-        logger.info("Initialisation du client Binance sans authentification")
-        return Client("", "")  # Client sans clés API (limité aux données publiques)
-
-def interval_to_milliseconds(interval):
-    """Convertit un intervalle en millisecondes"""
-    seconds_per_unit = {
-        "m": 60,
-        "h": 60 * 60,
-        "d": 24 * 60 * 60,
-        "w": 7 * 24 * 60 * 60
-    }
-    
-    try:
-        unit = interval[-1]
-        if unit not in seconds_per_unit:
-            return None
-        
-        value = int(interval[:-1])
-        return value * seconds_per_unit[unit] * 1000
-    except:
-        return None
-
-def download_historical_data(client, symbol, interval, start_date, end_date, output_file=None):
+def download_historical_data(symbol, interval, start_date, end_date=None, output_dir=None):
     """
-    Télécharge les données historiques de Binance
+    Download historical market data from Binance
     
     Args:
-        client: Client Binance
-        symbol: Symbole de trading (ex: 'BTCUSDT')
-        interval: Intervalle de temps (ex: '15m', '4h', '1d')
-        start_date: Date de début (YYYY-MM-DD)
-        end_date: Date de fin (YYYY-MM-DD)
-        output_file: Chemin de fichier de sortie
-        
+        symbol: Trading pair symbol (e.g., 'BTCUSDT')
+        interval: Timeframe interval (e.g., '1h', '15m')
+        start_date: Start date in 'YYYY-MM-DD' format
+        end_date: End date in 'YYYY-MM-DD' format (default: current date)
+        output_dir: Directory to save the data (default: DATA_DIR/market_data)
+    
     Returns:
-        Le DataFrame avec les données et le chemin du fichier
+        Path to the saved data file
     """
-    # Convertir les dates en timestamps
-    start_ts = int(datetime.strptime(start_date, "%Y-%m-%d").timestamp() * 1000)
-    end_ts = int(datetime.strptime(end_date, "%Y-%m-%d").timestamp() * 1000)
+    # Initialize Binance client
+    client = Client(
+        api_key=API_KEYS["binance"]["testnet"]["API_KEY"],
+        api_secret=API_KEYS["binance"]["testnet"]["API_SECRET"]
+    )
     
-    logger.info(f"Téléchargement des données {symbol} {interval} du {start_date} au {end_date}")
+    # Set up output directory
+    if output_dir is None:
+        output_dir = os.path.join(DATA_DIR, "market_data")
     
-    # Générer le nom du fichier si non spécifié
-    if not output_file:
-        os.makedirs(os.path.join(DATA_DIR, "market_data"), exist_ok=True)
-        output_file = os.path.join(
-            DATA_DIR, 
-            "market_data", 
-            f"{symbol}_{interval}_{start_date}_to_{end_date}.csv"
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Parse dates
+    start_date = datetime.strptime(start_date, "%Y-%m-%d")
+    if end_date is None:
+        end_date = datetime.now()
+    else:
+        end_date = datetime.strptime(end_date, "%Y-%m-%d")
+    
+    # Download data in chunks to avoid API limitations
+    chunk_size = timedelta(days=90)
+    current_start = start_date
+    all_candles = []
+    
+    print(f"Downloading {symbol} {interval} data from {start_date} to {end_date}")
+    
+    while current_start < end_date:
+        current_end = min(current_start + chunk_size, end_date)
+        
+        print(f"  Fetching chunk: {current_start} to {current_end}")
+        
+        # Convert dates to milliseconds for the Binance API
+        start_ms = int(current_start.timestamp() * 1000)
+        end_ms = int(current_end.timestamp() * 1000)
+        
+        # Get candlestick data from Binance
+        candles = client.get_historical_klines(
+            symbol=symbol,
+            interval=interval,
+            start_str=start_ms,
+            end_str=end_ms
         )
+        
+        all_candles.extend(candles)
+        
+        # Move to next chunk
+        current_start = current_end
+        
+        # Add a small delay to avoid hitting API rate limits
+        time.sleep(1)
     
-    # Assurer que le répertoire de sortie existe
-    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    # Create DataFrame
+    columns = ['timestamp', 'open', 'high', 'low', 'close', 'volume', 
+               'close_time', 'quote_asset_volume', 'number_of_trades',
+               'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume', 'ignore']
     
-    try:
-        # Télécharger les données par tranches pour éviter les limitations de l'API
-        all_klines = []
-        current_start = start_ts
-        
-        while current_start < end_ts:
-            # Calculer la date de fin pour cette tranche (pas plus de 1000 bougies)
-            chunk_end = min(current_start + (1000 * interval_to_milliseconds(interval)), end_ts)
-            
-            # Télécharger cette tranche
-            klines = client.get_historical_klines(
-                symbol=symbol,
-                interval=interval,
-                start_str=current_start,
-                end_str=chunk_end
-            )
-            
-            if not klines:
-                logger.warning(f"Aucune donnée trouvée pour {symbol} entre {datetime.fromtimestamp(current_start/1000)} et {datetime.fromtimestamp(chunk_end/1000)}")
-                break
-            
-            all_klines.extend(klines)
-            current_start = chunk_end
-            
-            # Attendre un peu pour éviter de surcharger l'API
-            time.sleep(0.5)
-            
-            logger.info(f"Téléchargé {len(all_klines)} bougies jusqu'à {datetime.fromtimestamp(current_start/1000)}")
-        
-        # Convertir en DataFrame
-        df = pd.DataFrame(all_klines, columns=[
-            'timestamp', 'open', 'high', 'low', 'close', 'volume',
-            'close_time', 'quote_volume', 'trades', 'taker_buy_base',
-            'taker_buy_quote', 'ignored'
-        ])
-        
-        # Convertir les types
-        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-        for col in ['open', 'high', 'low', 'close', 'volume']:
-            df[col] = df[col].astype(float)
-        
-        # Sauvegarder en CSV
-        df.to_csv(output_file, index=False)
-        logger.info(f"Données sauvegardées: {output_file} ({len(df)} lignes)")
-        
-        return df, output_file
-        
-    except Exception as e:
-        logger.error(f"Erreur lors du téléchargement des données: {str(e)}")
-        return None, None
+    df = pd.DataFrame(all_candles, columns=columns)
+    
+    # Convert timestamp to datetime
+    df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+    
+    # Convert numeric columns to float
+    for col in ['open', 'high', 'low', 'close', 'volume', 'quote_asset_volume',
+                'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume']:
+        df[col] = df[col].astype(float)
+    
+    # Save to CSV
+    output_file = os.path.join(output_dir, f"{symbol}_{interval}.csv")
+    df.to_csv(output_file, index=False)
+    
+    print(f"Downloaded {len(df)} candles")
+    print(f"Data saved to {output_file}")
+    
+    return output_file
 
-def main():
-    """Fonction principale"""
-    # Parser les arguments
-    args = parse_args()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Download historical crypto data from Binance')
+    parser.add_argument('--symbol', type=str, required=True, help='Trading pair symbol (e.g., BTCUSDT)')
+    parser.add_argument('--interval', type=str, required=True, help='Timeframe interval (e.g., 1h, 15m)')
+    parser.add_argument('--start', type=str, required=True, help='Start date (YYYY-MM-DD)')
+    parser.add_argument('--end', type=str, help='End date (YYYY-MM-DD)')
+    parser.add_argument('--output', type=str, help='Output directory')
     
-    # Initialiser le client Binance
-    client = init_client(args.use_testnet)
+    args = parser.parse_args()
     
-    # Télécharger les données
-    df, output_file = download_historical_data(
-        client=client,
+    download_historical_data(
         symbol=args.symbol,
         interval=args.interval,
         start_date=args.start,
         end_date=args.end,
-        output_file=args.output
+        output_dir=args.output
     )
-    
-    if df is not None:
-        print(f"Téléchargement terminé. {len(df)} lignes sauvegardées dans {output_file}")
-
-if __name__ == "__main__":
-    main()
