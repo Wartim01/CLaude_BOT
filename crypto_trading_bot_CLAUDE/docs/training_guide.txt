@@ -1,15 +1,15 @@
-📊 Guide pas à pas: De l'entraînement au backtesting avec votre bot de trading crypto
+ğŸ“Š Guide pas Ã  pas: De l'entraÃ®nement au backtesting avec votre bot de trading crypto
 
 ==============================================
-GUIDE ADAPTÉ AU BOT DE TRADING CRYPTO
+GUIDE ADAPTÃ‰ AU BOT DE TRADING CRYPTO
 ==============================================
 
-Ce guide détaille les étapes spécifiques pour utiliser les fonctionnalités de votre bot, de l'entraînement au backtesting.
+Ce guide dÃ©taille les Ã©tapes spÃ©cifiques pour utiliser les fonctionnalitÃ©s de votre bot, de l'entraÃ®nement au backtesting.
 
 --------------------------------------------------
-1. TÉLÉCHARGEMENT DES DONNÉES HISTORIQUES
+1. TÃ‰LÃ‰CHARGEMENT DES DONNÃ‰ES HISTORIQUES
 --------------------------------------------------
-Utilisez le script data_loader.py pour télécharger les données depuis Binance:
+Utilisez le script data_loader.py pour tÃ©lÃ©charger les donnÃ©es depuis Binance:
 
 Exemple concret:
   python download_data.py --symbol BTCUSDT --interval 15m --start 2023-01-01 --end 2023-12-31 --output data/market_data/BTCUSDT_15m.csv
@@ -17,16 +17,16 @@ Exemple concret:
 Options disponibles:
   --symbol       : Symbole de la paire (ex: BTCUSDT)
   --interval     : Intervalle de temps (1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, etc.)
-  --start        : Date de début au format YYYY-MM-DD
+  --start        : Date de dÃ©but au format YYYY-MM-DD
   --end          : Date de fin au format YYYY-MM-DD
-  --output       : Chemin de sortie des données (optionnel)
+  --output       : Chemin de sortie des donnÃ©es (optionnel)
   --use_testnet  : Utiliser l'API testnet (True/False)
 
 
 --------------------------------------------------
-3. ENTRAÎNEMENT DU MODÈLE LSTM
+3. ENTRAÃ�NEMENT DU MODÃˆLE LSTM
 --------------------------------------------------
-Utilisez le script train_model.py pour entraîner votre modèle:
+Utilisez le script train_model.py pour entraÃ®ner votre modÃ¨le:
 
 Exemple concret:
   python train_model.py --symbol BTCUSDT --timeframe 15m --data_path data/market_data/ --epochs 100 --batch_size 64 --lstm_units "128,64,32"
@@ -34,35 +34,35 @@ Exemple concret:
 Options principales:
   --symbol       : Symbole de la paire
   --timeframe    : Intervalle de temps
-  --data_path    : Chemin des données préparées
-  --epochs       : Nombre d'époques d'entraînement
+  --data_path    : Chemin des donnÃ©es prÃ©parÃ©es
+  --epochs       : Nombre d'Ã©poques d'entraÃ®nement
   --batch_size   : Taille des batchs
-  --lstm_units   : Architecture du réseau (unités par couche LSTM)
-  --dropout      : Taux de dropout pour la régularisation (0.0-1.0)
-  --learning_rate: Taux d'apprentissage (défaut: 0.001)
-  --use_attention: Utiliser un mécanisme d'attention (True/False)
+  --lstm_units   : Architecture du rÃ©seau (unitÃ©s par couche LSTM)
+  --dropout      : Taux de dropout pour la rÃ©gularisation (0.0-1.0)
+  --learning_rate: Taux d'apprentissage (dÃ©faut: 0.001)
+  --use_attention: Utiliser un mÃ©canisme d'attention (True/False)
 
 
 --------------------------------------------------
-4. VALIDATION DU MODÈLE
+4. VALIDATION DU MODÃˆLE
 --------------------------------------------------
-Utilisez validate_model.py pour évaluer votre modèle:
+Utilisez validate_model.py pour Ã©valuer votre modÃ¨le:
 
 Exemple concret:
   python ai/models/model_validator.py --model_path data/models/lstm_BTCUSDT_15m.h5 --data_path data/processed/BTCUSDT_15m_val.csv --report_path reports/
 
 Options principales:
-  --model_path   : Chemin du modèle entraîné
-  --data_path    : Chemin des données de validation
-  --report_path  : Répertoire de sortie des rapports
-  --detailed     : Générer un rapport détaillé (True/False)
-  --visualize    : Créer des visualisations (True/False)
+  --model_path   : Chemin du modÃ¨le entraÃ®nÃ©
+  --data_path    : Chemin des donnÃ©es de validation
+  --report_path  : RÃ©pertoire de sortie des rapports
+  --detailed     : GÃ©nÃ©rer un rapport dÃ©taillÃ© (True/False)
+  --visualize    : CrÃ©er des visualisations (True/False)
 
 
 --------------------------------------------------
-5. OPTIMISATION DES PARAMÈTRES DE TRADING
+5. OPTIMISATION DES PARAMÃˆTRES DE TRADING
 --------------------------------------------------
-Utilisez optimize_strategy.py pour trouver les meilleurs paramètres:
+Utilisez optimize_strategy.py pour trouver les meilleurs paramÃ¨tres:
 
 Exemple concret:
   python strategies/optimize_strategy.py --symbol BTCUSDT --timeframe 15m --start_date 2023-06-01 --end_date 2023-12-31 --strategy technical_bounce --model_path data/models/lstm_BTCUSDT_15m.h5
@@ -70,19 +70,19 @@ Exemple concret:
 Options principales:
   --symbol       : Symbole de la paire
   --timeframe    : Intervalle de temps
-  --start_date   : Date de début pour l'optimisation
+  --start_date   : Date de dÃ©but pour l'optimisation
   --end_date     : Date de fin pour l'optimisation
-  --strategy     : Stratégie à optimiser ("technical_bounce" ou autre)
-  --model_path   : Chemin du modèle LSTM (si option use_model=True)
-  --method       : Méthode d'optimisation (grid, bayesian, genetic)
-  --max_evals    : Nombre maximum d'évaluations
-  --output       : Fichier de sortie des paramètres optimisés
+  --strategy     : StratÃ©gie Ã  optimiser ("technical_bounce" ou autre)
+  --model_path   : Chemin du modÃ¨le LSTM (si option use_model=True)
+  --method       : MÃ©thode d'optimisation (grid, bayesian, genetic)
+  --max_evals    : Nombre maximum d'Ã©valuations
+  --output       : Fichier de sortie des paramÃ¨tres optimisÃ©s
 
 
 --------------------------------------------------
 6. BACKTESTING
 --------------------------------------------------
-Utilisez backtest.py pour tester votre stratégie:
+Utilisez backtest.py pour tester votre stratÃ©gie:
 
 Exemple concret:
   python backtesting/backtest.py --symbol BTCUSDT --timeframe 15m --start 2024-01-01 --end 2024-06-30 --strategy technical_bounce --capital 1000 --params_file data/strategy_params/technical_bounce_BTCUSDT_15m.json
@@ -90,79 +90,79 @@ Exemple concret:
 Options principales:
   --symbol       : Symbole de la paire
   --timeframe    : Intervalle de temps
-  --start        : Date de début du backtest
+  --start        : Date de dÃ©but du backtest
   --end          : Date de fin du backtest
   --capital      : Capital initial en USDT
-  --strategy     : Stratégie à tester ("technical_bounce" par défaut)
-  --use_model    : Utiliser le modèle LSTM (True/False)
-  --model_path   : Chemin du modèle (optionnel)
-  --params_file  : Fichier de paramètres optimisés (optionnel)
-  --output       : Fichier de sortie des résultats
-  --risk_per_trade: Pourcentage du capital risqué par trade
+  --strategy     : StratÃ©gie Ã  tester ("technical_bounce" par dÃ©faut)
+  --use_model    : Utiliser le modÃ¨le LSTM (True/False)
+  --model_path   : Chemin du modÃ¨le (optionnel)
+  --params_file  : Fichier de paramÃ¨tres optimisÃ©s (optionnel)
+  --output       : Fichier de sortie des rÃ©sultats
+  --risk_per_trade: Pourcentage du capital risquÃ© par trade
   --stop_loss    : Pourcentage de stop-loss
   --take_profit  : Pourcentage de take-profit
-  --visualize    : Générer des visualisations (True/False)
+  --visualize    : GÃ©nÃ©rer des visualisations (True/False)
 
 
 --------------------------------------------------
-7. ANALYSE DES RÉSULTATS DE BACKTEST
+7. ANALYSE DES RÃ‰SULTATS DE BACKTEST
 --------------------------------------------------
-Utilisez analyze_backtest.py pour évaluer les performances:
+Utilisez analyze_backtest.py pour Ã©valuer les performances:
 
 Exemple concret:
   python backtesting/analyze_backtest.py --result_file data/backtest_results/backtest_BTCUSDT_15m_2024-01-01_2024-06-30.json --output_dir reports/backtest_analysis/
 
 Options principales:
-  --result_file  : Fichier JSON des résultats du backtest
-  --output_dir   : Répertoire de sortie pour les rapports
+  --result_file  : Fichier JSON des rÃ©sultats du backtest
+  --output_dir   : RÃ©pertoire de sortie pour les rapports
   --format       : Format des rapports (html, pdf, json)
   --compare_with : Autres fichiers de backtest pour comparaison (optionnel)
 
 
 --------------------------------------------------
-8. SIMULATION EN TEMPS RÉEL (PAPER TRADING)
+8. SIMULATION EN TEMPS RÃ‰EL (PAPER TRADING)
 --------------------------------------------------
-Testez votre stratégie en temps réel sans risquer d'argent:
+Testez votre stratÃ©gie en temps rÃ©el sans risquer d'argent:
 
 Exemple concret:
   python main.py --mode paper_trading --symbols BTCUSDT --timeframe 15m --strategy technical_bounce --use_model True --model_path data/models/lstm_BTCUSDT_15m.h5 --capital 1000
 
 Options principales:
   --mode         : Mode de fonctionnement ("paper_trading")
-  --symbols      : Symboles à trader, séparés par des virgules
+  --symbols      : Symboles Ã  trader, sÃ©parÃ©s par des virgules
   --timeframe    : Intervalle de temps
-  --strategy     : Stratégie à utiliser
-  --use_model    : Utiliser le modèle LSTM (True/False)
-  --model_path   : Chemin du modèle (si use_model=True)
+  --strategy     : StratÃ©gie Ã  utiliser
+  --use_model    : Utiliser le modÃ¨le LSTM (True/False)
+  --model_path   : Chemin du modÃ¨le (si use_model=True)
   --capital      : Capital virtuel pour la simulation
-  --duration     : Durée de la simulation en heures (0 = sans limite)
+  --duration     : DurÃ©e de la simulation en heures (0 = sans limite)
 
 
 --------------------------------------------------
-9. TRADING EN CONDITIONS RÉELLES
+9. TRADING EN CONDITIONS RÃ‰ELLES
 --------------------------------------------------
-Une fois satisfait des performances en simulation, passez en mode réel:
+Une fois satisfait des performances en simulation, passez en mode rÃ©el:
 
 Exemple concret:
   python main.py --mode production --symbols BTCUSDT,ETHUSDT --timeframe 15m --strategy technical_bounce --use_model True --risk_per_trade 1 --use_testnet True
 
 Options principales:
   --mode         : Mode de fonctionnement ("production")
-  --symbols      : Symboles à trader, séparés par des virgules
+  --symbols      : Symboles Ã  trader, sÃ©parÃ©s par des virgules
   --timeframe    : Intervalle de temps
-  --strategy     : Stratégie à utiliser
-  --use_model    : Utiliser le modèle LSTM
-  --risk_per_trade: Pourcentage du capital risqué par trade
+  --strategy     : StratÃ©gie Ã  utiliser
+  --use_model    : Utiliser le modÃ¨le LSTM
+  --risk_per_trade: Pourcentage du capital risquÃ© par trade
   --stop_loss    : Pourcentage de stop-loss
   --take_profit  : Pourcentage de take-profit
   --use_testnet  : Utiliser l'API testnet Binance (True/False)
-  --max_positions: Nombre maximum de positions simultanées
+  --max_positions: Nombre maximum de positions simultanÃ©es
 
 
 --------------------------------------------------
-10. RÉENTRAÎNEMENT PÉRIODIQUE DU MODÈLE
+10. RÃ‰ENTRAÃ�NEMENT PÃ‰RIODIQUE DU MODÃˆLE
 --------------------------------------------------
-Pour maintenir la performance, réentraînez régulièrement votre modèle:
+Pour maintenir la performance, rÃ©entraÃ®nez rÃ©guliÃ¨rement votre modÃ¨le:
 
 Exemple concret:
   python ai/continuous_learning.py --symbol BTCUSDT --timeframe 15m --model_path data/models/lstm_BTCUSDT_15m.h5 --days 30 --transfer_learning True
@@ -170,37 +170,37 @@ Exemple concret:
 Options principales:
   --symbol       : Symbole de la paire
   --timeframe    : Intervalle de temps
-  --model_path   : Chemin du modèle à mettre à jour
-  --days         : Nombre de jours de données récentes à utiliser
+  --model_path   : Chemin du modÃ¨le Ã  mettre Ã  jour
+  --days         : Nombre de jours de donnÃ©es rÃ©centes Ã  utiliser
   --transfer_learning: Utiliser l'apprentissage par transfert
-  --epochs       : Nombre d'époques pour le réentraînement
-  --evaluate     : Évaluer le nouveau modèle avant de remplacer l'ancien
+  --epochs       : Nombre d'Ã©poques pour le rÃ©entraÃ®nement
+  --evaluate     : Ã‰valuer le nouveau modÃ¨le avant de remplacer l'ancien
 
 
 --------------------------------------------------
-CONSEILS SPÉCIFIQUES
+CONSEILS SPÃ‰CIFIQUES
 --------------------------------------------------
 1. Architecture du bot:
-   - Les modèles sont stockés dans data/models/
-   - Les données de marché sont dans data/market_data/
-   - Les paramètres optimisés sont dans data/strategy_params/
-   - Les résultats de backtest sont dans data/backtest_results/
+   - Les modÃ¨les sont stockÃ©s dans data/models/
+   - Les donnÃ©es de marchÃ© sont dans data/market_data/
+   - Les paramÃ¨tres optimisÃ©s sont dans data/strategy_params/
+   - Les rÃ©sultats de backtest sont dans data/backtest_results/
 
-2. Meilleure pratique pour l'entraînement:
-   - Utilisez au moins 6 mois de données pour l'entraînement
-   - La stratégie technical_bounce fonctionne mieux avec des données 15m ou 1h
-   - Un dropout de 0.3 et le mécanisme d'attention améliorent généralement les performances
+2. Meilleure pratique pour l'entraÃ®nement:
+   - Utilisez au moins 6 mois de donnÃ©es pour l'entraÃ®nement
+   - La stratÃ©gie technical_bounce fonctionne mieux avec des donnÃ©es 15m ou 1h
+   - Un dropout de 0.3 et le mÃ©canisme d'attention amÃ©liorent gÃ©nÃ©ralement les performances
    - Maintenez un ratio validation/training de 0.2
 
-3. Workflow complet recommandé:
-   1. Téléchargez les données (1 an minimum)
-   2. Préparez-les et entraînez le modèle
-   3. Optimisez les paramètres avec une période récente (3-6 mois)
-   4. Effectuez un backtest sur une période différente
+3. Workflow complet recommandÃ©:
+   1. TÃ©lÃ©chargez les donnÃ©es (1 an minimum)
+   2. PrÃ©parez-les et entraÃ®nez le modÃ¨le
+   3. Optimisez les paramÃ¨tres avec une pÃ©riode rÃ©cente (3-6 mois)
+   4. Effectuez un backtest sur une pÃ©riode diffÃ©rente
    5. Testez en paper trading avant de passer en production
 
 4. Surveillance du bot en production:
-   - Utilisez les logs dans le répertoire logs/
+   - Utilisez les logs dans le rÃ©pertoire logs/
    - Configurez des alertes via Discord ou email
-   - Vérifiez quotidiennement les performances
-   - Réentraînez le modèle lorsque le win rate commence à baisser
+   - VÃ©rifiez quotidiennement les performances
+   - RÃ©entraÃ®nez le modÃ¨le lorsque le win rate commence Ã  baisser

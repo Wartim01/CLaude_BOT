@@ -25,7 +25,7 @@ logger = setup_logger("notification_service")
 
 class NotificationService:
     """
-    Gère l'envoi de notifications par différents canaux
+    GÃ¨re l'envoi de notifications par diffÃ©rents canaux
     """
     def __init__(self):
         self.enabled = ENABLE_NOTIFICATIONS
@@ -37,20 +37,20 @@ class NotificationService:
         Envoie une notification par tous les canaux disponibles
         
         Args:
-            message: Message à envoyer
+            message: Message Ã  envoyer
             level: Niveau de la notification (info, warning, critical)
             
         Returns:
-            True si au moins une notification a été envoyée, False sinon
+            True si au moins une notification a Ã©tÃ© envoyÃ©e, False sinon
         """
         if not self.enabled:
-            logger.debug(f"Notifications désactivées, message ignoré: {message}")
+            logger.debug(f"Notifications dÃ©sactivÃ©es, message ignorÃ©: {message}")
             return False
         
         # Formater le message
         formatted_message = self._format_message(message, level)
         
-        # Flag pour suivre si au moins une notification a été envoyée
+        # Flag pour suivre si au moins une notification a Ã©tÃ© envoyÃ©e
         notification_sent = False
         
         # Email
@@ -72,16 +72,16 @@ class NotificationService:
         Formate un message de notification
         
         Args:
-            message: Message à formater
+            message: Message Ã  formater
             level: Niveau de la notification
             
         Returns:
-            Message formaté
+            Message formatÃ©
         """
         prefix = {
             "info": "INFO",
-            "warning": "⚠️ AVERTISSEMENT",
-            "critical": "🚨 ALERTE CRITIQUE"
+            "warning": "âš ï¸� AVERTISSEMENT",
+            "critical": "ğŸš¨ ALERTE CRITIQUE"
         }.get(level, "INFO")
         
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -90,13 +90,13 @@ class NotificationService:
     
     def _can_send_notification(self, channel: str) -> bool:
         """
-        Vérifie si une notification peut être envoyée sur un canal
+        VÃ©rifie si une notification peut Ãªtre envoyÃ©e sur un canal
         
         Args:
             channel: Canal de notification
             
         Returns:
-            True si une notification peut être envoyée, False sinon
+            True si une notification peut Ãªtre envoyÃ©e, False sinon
         """
         if channel not in self.last_notification_time:
             return True
@@ -110,14 +110,14 @@ class NotificationService:
         
         Args:
             recipient: Adresse email du destinataire
-            message: Message à envoyer
+            message: Message Ã  envoyer
             level: Niveau de la notification
             
         Returns:
-            True si l'email a été envoyé, False sinon
+            True si l'email a Ã©tÃ© envoyÃ©, False sinon
         """
         if not (SMTP_SERVER and SMTP_PORT and SMTP_USER and SMTP_PASSWORD):
-            logger.error("Configuration SMTP incomplète, impossible d'envoyer l'email")
+            logger.error("Configuration SMTP incomplÃ¨te, impossible d'envoyer l'email")
             return False
         
         try:
@@ -137,7 +137,7 @@ class NotificationService:
                 server.login(SMTP_USER, SMTP_PASSWORD)
                 server.send_message(msg)
             
-            logger.info(f"Email envoyé à {recipient}")
+            logger.info(f"Email envoyÃ© Ã  {recipient}")
             return True
             
         except Exception as e:
@@ -149,13 +149,13 @@ class NotificationService:
         Envoie une notification par Telegram
         
         Args:
-            message: Message à envoyer
+            message: Message Ã  envoyer
             
         Returns:
-            True si le message a été envoyé, False sinon
+            True si le message a Ã©tÃ© envoyÃ©, False sinon
         """
         if not (TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID):
-            logger.error("Configuration Telegram incomplète")
+            logger.error("Configuration Telegram incomplÃ¨te")
             return False
         
         try:
@@ -169,7 +169,7 @@ class NotificationService:
             response = requests.post(url, data=data, timeout=10)
             
             if response.status_code == 200:
-                logger.info("Message Telegram envoyé")
+                logger.info("Message Telegram envoyÃ©")
                 return True
             else:
                 logger.error(f"Erreur lors de l'envoi du message Telegram: {response.text}")

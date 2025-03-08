@@ -195,7 +195,7 @@ class MainDashboard:
             # Footer
             html.Div([
                 html.Hr(),
-                html.P("Crypto Trading Bot Dashboard - © 2023", style={"textAlign": "center"})
+                html.P("Crypto Trading Bot Dashboard - Â© 2023", style={"textAlign": "center"})
             ]),
             
             # Interval component for periodic refresh

@@ -214,7 +214,7 @@ class TradingBot:
         
         # Send shutdown notification
         self.notification.send_message(
-            "📴 Trading bot shutdown",
+            "ğŸ“´ Trading bot shutdown",
             f"Bot has been shut down at {datetime.now()}"
         )
         
@@ -226,7 +226,7 @@ class TradingBot:
         self.logger.info("Trading bot paused")
         
         self.notification.send_message(
-            "⏸️ Trading bot paused",
+            "â�¸ï¸� Trading bot paused",
             "Bot has been paused. No new trades will be opened, but existing positions will be managed."
         )
     
@@ -236,7 +236,7 @@ class TradingBot:
         self.logger.info("Trading bot resumed")
         
         self.notification.send_message(
-            "▶️ Trading bot resumed",
+            "â–¶ï¸� Trading bot resumed",
             "Bot has been resumed and will continue normal operation."
         )
     
@@ -272,7 +272,7 @@ class TradingBot:
                 
                 # Notify about the error
                 self.notification.send_message(
-                    "❌ Trading bot error",
+                    "â�Œ Trading bot error",
                     f"Error in main loop: {str(e)}\nBot will continue running."
                 )
                 
@@ -710,7 +710,7 @@ class TradingBot:
         account_info = self._get_account_info()
         
         message = (
-            f"🤖 Trading Bot Started\n\n"
+            f"ğŸ¤– Trading Bot Started\n\n"
             f"Time: {datetime.now()}\n"
             f"Balance: {account_info.get('balance', 0):.2f} USDT\n"
             f"Trading pairs: {', '.join(self.trading_pairs)}\n"
@@ -718,7 +718,7 @@ class TradingBot:
             f"AI enabled: {'Yes' if self.model_workflow else 'No'}"
         )
         
-        self.notification.send_message("🚀 Bot Startup", message)
+        self.notification.send_message("ğŸš€ Bot Startup", message)
     
     def _send_trade_notification(self, trade_id: str, pair: str, direction: str,
                               entry_price: float, stop_loss: float, position_size: float,
@@ -729,9 +729,9 @@ class TradingBot:
         risk_percentage = (risk_amount / account_info.get("balance", 1)) * 100
         
         message = (
-            f"🔄 New Trade Executed\n\n"
+            f"ğŸ”„ New Trade Executed\n\n"
             f"Pair: {pair}\n"
-            f"Direction: {'🟢 BUY' if direction == 'BUY' else '🔴 SELL'}\n"
+            f"Direction: {'ğŸŸ¢ BUY' if direction == 'BUY' else 'ğŸ”´ SELL'}\n"
             f"Timeframe: {timeframe}\n"
             f"Entry price: {entry_price}\n"
             f"Stop loss: {stop_loss}\n"
@@ -741,7 +741,7 @@ class TradingBot:
         )
         
         self.notification.send_message(
-            "🔄 New Trade",
+            "ğŸ”„ New Trade",
             message
         )
     
