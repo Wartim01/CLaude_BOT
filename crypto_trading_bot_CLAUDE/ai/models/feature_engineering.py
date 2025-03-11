@@ -36,6 +36,8 @@ class FeatureEngineering:
         self.save_scalers = save_scalers
         self.scalers = {}
         self.scalers_path = os.path.join(DATA_DIR, "models", "scalers")
+        self.feature_columns = None  # Store feature columns for consistency
+        self.fixed_features = None   # Store the set of features to use consistently
         
         # Créer le répertoire pour les scalers si nécessaire
         if save_scalers and not os.path.exists(self.scalers_path):
@@ -43,7 +45,8 @@ class FeatureEngineering:
     
     def create_features(self, data: pd.DataFrame, 
                      include_time_features: bool = True,
-                     include_price_patterns: bool = True) -> pd.DataFrame:
+                     include_price_patterns: bool = True,
+                     enforce_consistency: bool = True) -> pd.DataFrame:
         """
         Crée des caractéristiques avancées à partir des données OHLCV
         
@@ -51,6 +54,7 @@ class FeatureEngineering:
             data: DataFrame avec au moins les colonnes OHLCV (open, high, low, close, volume)
             include_time_features: Inclure les caractéristiques temporelles
             include_price_patterns: Inclure la détection des patterns de prix
+            enforce_consistency: Assurer la cohérence des caractéristiques entre les appels
             
         Returns:
             DataFrame enrichi avec les caractéristiques créées
@@ -237,6 +241,20 @@ class FeatureEngineering:
         # Remplir les NaN restants avec des valeurs appropriées
         df.fillna(method='ffill', inplace=True)  # Forward fill
         df.fillna(0, inplace=True)  # Remplacer les NaN restants par 0
+        
+        # Store feature columns for consistency
+        self.feature_columns = df.columns.tolist()
+        
+        # Enforce consistency in features
+        if enforce_consistency:
+            if self.fixed_features is None:
+                self.fixed_features = set(df.columns)
+            else:
+                missing_features = self.fixed_features - set(df.columns)
+                for feature in missing_features:
+                    df[feature] = 0  # Add missing features with default value 0
+                extra_features = set(df.columns) - self.fixed_features
+                df.drop(columns=extra_features, inplace=True)
         
         return df
     

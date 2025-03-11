@@ -39,8 +39,8 @@ def update_model_params_file(best_params, timeframe, f1_score):
         f1_score: F1 score achieved by the best parameters
     """
     # Path to the model_params.py file
-    params_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
-                             'config', 'model_params.py')
+    params_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config', 'model_params.py')
+
     
     if not os.path.exists(params_file):
         logger.error(f"Configuration file not found: {params_file}")

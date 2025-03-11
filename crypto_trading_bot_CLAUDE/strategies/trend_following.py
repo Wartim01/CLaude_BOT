@@ -276,4 +276,139 @@ class Strategy:
         # Check for RSI divergence
         rsi_now = current_data.get('rsi', 50)
         
-        if direction ==
+        if direction == "BUY":
+            # For long positions, check for overbought conditions
+            if rsi_now > self.rsi_overbought:
+                exit_reasons.append("RSI_OVERBOUGHT_EXIT")
+        else:
+            # For short positions, check for oversold conditions
+            if rsi_now < self.rsi_oversold:
+                exit_reasons.append("RSI_OVERSOLD_EXIT")
+                
+        # Check for MACD reversal
+        macd_now = current_data.get('macd', 0)
+        macd_signal_now = current_data.get('macd_signal', 0)
+        macd_prev = prior_data.get('macd', 0)
+        macd_signal_prev = prior_data.get('macd_signal', 0)
+        
+        if direction == "BUY":
+            # For long positions, check for bearish MACD crossover
+            if macd_prev > macd_signal_prev and macd_now < macd_signal_now:
+                exit_reasons.append("MACD_CROSSOVER_EXIT")
+        else:
+            # For short positions, check for bullish MACD crossover
+            if macd_prev < macd_signal_prev and macd_now > macd_signal_now:
+                exit_reasons.append("MACD_CROSSOVER_EXIT")
+        
+        # Check trailing stop if applicable
+        if "entry_price" in position and "stop_loss" in position:
+            entry_price = position["entry_price"]
+            stop_loss = position["stop_loss"]
+            
+            # For long positions
+            if direction == "BUY":
+                # Check if price is below stop loss
+                if current_price <= stop_loss:
+                    exit_reasons.append("STOP_LOSS_TRIGGERED")
+            # For short positions
+            else:
+                # Check if price is above stop loss
+                if current_price >= stop_loss:
+                    exit_reasons.append("STOP_LOSS_TRIGGERED")
+        
+        # Check if we have any reason to exit
+        should_exit = len(exit_reasons) > 0
+        
+        # Create exit signal
+        exit_signal = {
+            "should_exit": should_exit,
+            "reasons": exit_reasons,
+            "timeframe": df.attrs.get("timeframe", "unknown"),
+            "price": current_price
+        }
+        
+        return exit_signal
+    
+    def _add_missing_indicators(self, df: pd.DataFrame) -> None:
+        """
+        Calculate any missing indicators required for the strategy
+        
+        Args:
+            df: DataFrame with OHLCV data
+        """
+        # Calculate EMAs if missing
+        ema_short_name = f'ema_{self.ema_short}'
+        if ema_short_name not in df.columns:
+            df[ema_short_name] = df['close'].ewm(span=self.ema_short, adjust=False).mean()
+            
+        ema_med_name = f'ema_{self.ema_medium}'
+        if ema_med_name not in df.columns:
+            df[ema_med_name] = df['close'].ewm(span=self.ema_medium, adjust=False).mean()
+            
+        ema_long_name = f'ema_{self.ema_long}'
+        if ema_long_name not in df.columns:
+            df[ema_long_name] = df['close'].ewm(span=self.ema_long, adjust=False).mean()
+        
+        # Calculate RSI if missing
+        if 'rsi' not in df.columns:
+            delta = df['close'].diff()
+            gain = delta.where(delta > 0, 0).rolling(window=self.rsi_period).mean()
+            loss = -delta.where(delta < 0, 0).rolling(window=self.rsi_period).mean()
+            rs = gain / loss
+            df['rsi'] = 100 - (100 / (1 + rs))
+        
+        # Calculate MACD if missing
+        if 'macd' not in df.columns or 'macd_signal' not in df.columns:
+            ema12 = df['close'].ewm(span=12, adjust=False).mean()
+            ema26 = df['close'].ewm(span=26, adjust=False).mean()
+            df['macd'] = ema12 - ema26
+            df['macd_signal'] = df['macd'].ewm(span=9, adjust=False).mean()
+        
+        # Calculate ATR if missing
+        if 'atr' not in df.columns:
+            high_low = df['high'] - df['low']
+            high_close = (df['high'] - df['close'].shift()).abs()
+            low_close = (df['low'] - df['close'].shift()).abs()
+            tr = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
+            df['atr'] = tr.rolling(window=self.atr_period).mean()
+    
+    def update_stop_loss(self, df: pd.DataFrame, position: Dict) -> float:
+        """
+        Update stop loss level for trailing stops
+        
+        Args:
+            df: DataFrame with OHLCV data and indicators
+            position: Current position information
+            
+        Returns:
+            Updated stop loss level
+        """
+        # Get current price and direction
+        current_price = df.iloc[-1]['close']
+        direction = position.get("direction", "NEUTRAL")
+        
+        # Get current stop loss
+        current_stop = position.get("stop_loss")
+        if current_stop is None:
+            return None
+            
+        # Get ATR value if available
+        atr_value = df.iloc[-1].get('atr')
+        if atr_value is None:
+            return current_stop  # No update if ATR is not available
+        
+        # Calculate new stop loss
+        new_stop = current_stop
+        
+        if direction == "BUY":
+            # For long positions, move stop up if price rises
+            trailing_stop = current_price - (atr_value * self.atr_multiplier)
+            if trailing_stop > current_stop:
+                new_stop = trailing_stop
+        else:
+            # For short positions, move stop down if price falls
+            trailing_stop = current_price + (atr_value * self.atr_multiplier)
+            if trailing_stop < current_stop:
+                new_stop = trailing_stop
+        
+        return new_stop

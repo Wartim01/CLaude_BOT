@@ -6,63 +6,38 @@ This file centralizes hyperparameters for different models to ensure consistency
 
 # LSTM model parameters
 LSTM_DEFAULT_PARAMS = {
-    "lstm_units": [128, 64, 32],
-    "dropout_rate": 0.3,
-    "learning_rate": 0.001,
+    "lstm_units": [136, 68, 68],
+    "dropout_rate": 0.39279757672456206,
+    "learning_rate": 0.0006251373574521745,
     "batch_size": 64,
-    "epochs": 100,
-    "sequence_length": 60,
+    "sequence_length": 30,
+    "l1_regularization": 0.0003967605077052988,
+    "l2_regularization": 6.358358856676247e-05,
+    # Other parameters preserved
     "use_attention": True,
     "use_residual": True,
-    "l1_regularization": 0.0001,
-    "l2_regularization": 0.0001,
+    "epochs": 100,
     "early_stopping_patience": 15,
     "reduce_lr_patience": 7
 }
 
 # [AUTO-UPDATE SECTION] - DO NOT EDIT MANUALLY
 # This section is automatically updated by hyperparameter_search.py
-# Last optimization: None
+# Last optimization: 2025-03-08 10:03:55 (timeframe: 15m, F1: 0.6837)
 LSTM_OPTIMIZED_PARAMS = {
     "15m": {
-        "lstm_units": [128, 64, 32],
-        "dropout_rate": 0.3,
-        "learning_rate": 0.001,
+        "lstm_units": [136, 68, 68],
+        "dropout_rate": 0.39279757672456206,
+        "learning_rate": 0.0006251373574521745,
         "batch_size": 64,
-        "sequence_length": 60,
-        "l1_regularization": 0.0001,
-        "l2_regularization": 0.0001,
+        "sequence_length": 30,
+        "l1_regularization": 0.0003967605077052988,
+        "l2_regularization": 6.358358856676247e-05,
         "use_attention": True,
         "use_residual": True,
-        "last_optimized": None,
-        "f1_score": 0.0
+        "last_optimized": "2025-03-08 10:03:55",
+        "f1_score": 0.6836915297092289
     },
-    "1h": {
-        "lstm_units": [128, 64, 32],
-        "dropout_rate": 0.3,
-        "learning_rate": 0.001,
-        "batch_size": 64,
-        "sequence_length": 60,
-        "l1_regularization": 0.0001,
-        "l2_regularization": 0.0001,
-        "use_attention": True,
-        "use_residual": True,
-        "last_optimized": None,
-        "f1_score": 0.0
-    },
-    "4h": {
-        "lstm_units": [128, 64, 32],
-        "dropout_rate": 0.3,
-        "learning_rate": 0.001,
-        "batch_size": 64,
-        "sequence_length": 60,
-        "l1_regularization": 0.0001,
-        "l2_regularization": 0.0001,
-        "use_attention": True,
-        "use_residual": True,
-        "last_optimized": None,
-        "f1_score": 0.0
-    }
 }
 
 # Transformer model parameters
@@ -82,16 +57,19 @@ TRANSFORMER_DEFAULT_PARAMS = {
 
 # CNN-LSTM hybrid model parameters
 CNN_LSTM_DEFAULT_PARAMS = {
-    "cnn_filters": [32, 64, 128],
-    "cnn_kernel_sizes": [3, 3, 3],
-    "lstm_units": [64, 32],
-    "dropout_rate": 0.3,
-    "learning_rate": 0.001,
+    "lstm_units": [136, 68, 68],
+    "dropout_rate": 0.39279757672456206,
+    "learning_rate": 0.0006251373574521745,
     "batch_size": 64,
+    "sequence_length": 30,
+    "l1_regularization": 0.0003967605077052988,
+    "l2_regularization": 6.358358856676247e-05,
+    # Other parameters preserved
+    "use_attention": True,
+    "use_residual": True,
     "epochs": 100,
-    "sequence_length": 60,
-    "early_stopping_patience": 12,
-    "reduce_lr_patience": 6
+    "early_stopping_patience": 15,
+    "reduce_lr_patience": 7
 }
 
 # Feature selection settings 

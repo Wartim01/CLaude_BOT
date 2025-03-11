@@ -292,10 +292,12 @@ class LSTMModel:
             outputs.append(direction)
         
         self.model = Model(inputs=inputs, outputs=outputs)
+        
+        # Fix: Use a list for metrics instead of a string
         self.model.compile(
             optimizer=Adam(learning_rate=self.learning_rate),
             loss=['binary_crossentropy' for _ in outputs],
-            metrics=[['accuracy'], ['accuracy'], ['accuracy']]  # Fixed syntax for metrics
+            metrics=['accuracy']  # Use a list instead of a string
         )
         return self.model
 
@@ -347,10 +349,11 @@ class LSTMModel:
         
         # Créer et compiler le modèle
         single_model = Model(inputs=inputs, outputs=output)
+        # Fix: Use a list for metrics here too
         single_model.compile(
             optimizer=Adam(learning_rate=self.learning_rate),
             loss='binary_crossentropy',
-            metrics=['accuracy']
+            metrics=['accuracy']  # Use a list instead of a string
         )
         
         return single_model

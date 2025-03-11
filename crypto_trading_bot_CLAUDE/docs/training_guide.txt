@@ -44,6 +44,24 @@ Options principales:
 
 
 --------------------------------------------------
+3bis. PRÉPARATION DES DONNÉES DE VALIDATION
+--------------------------------------------------
+Utilisez le script prepare_validation_data.py pour créer un ensemble de données de validation:
+
+Exemple concret:
+  python utils/prepare_validation_data.py --symbol BTCUSDT --timeframe 15m --validation_size 0.2 --add_features
+
+Options principales:
+  --symbol         : Symbole de la paire (ex: BTCUSDT)
+  --timeframe      : Intervalle de temps (15m, 1h, etc.)
+  --validation_size: Proportion des données à utiliser (0.2 = 20%)
+  --start_date     : Date de début pour la validation (optionnel)
+  --end_date       : Date de fin pour la validation (optionnel)
+  --add_features   : Ajouter les indicateurs techniques
+  --output_dir     : Répertoire de sortie (défaut: data/processed/)
+
+
+--------------------------------------------------
 4. VALIDATION DU MODÃˆLE
 --------------------------------------------------
 Utilisez validate_model.py pour Ã©valuer votre modÃ¨le:
@@ -183,21 +201,25 @@ CONSEILS SPÃ‰CIFIQUES
 1. Architecture du bot:
    - Les modÃ¨les sont stockÃ©s dans data/models/
    - Les donnÃ©es de marchÃ© sont dans data/market_data/
+   - Les données préparées pour validation sont dans data/processed/
    - Les paramÃ¨tres optimisÃ©s sont dans data/strategy_params/
    - Les rÃ©sultats de backtest sont dans data/backtest_results/
 
 2. Meilleure pratique pour l'entraÃ®nement:
    - Utilisez au moins 6 mois de donnÃ©es pour l'entraÃ®nement
+   - Préparez un ensemble de validation distinct (20% des données récentes)
    - La stratÃ©gie technical_bounce fonctionne mieux avec des donnÃ©es 15m ou 1h
    - Un dropout de 0.3 et le mÃ©canisme d'attention amÃ©liorent gÃ©nÃ©ralement les performances
    - Maintenez un ratio validation/training de 0.2
 
 3. Workflow complet recommandÃ©:
    1. TÃ©lÃ©chargez les donnÃ©es (1 an minimum)
-   2. PrÃ©parez-les et entraÃ®nez le modÃ¨le
-   3. Optimisez les paramÃ¨tres avec une pÃ©riode rÃ©cente (3-6 mois)
-   4. Effectuez un backtest sur une pÃ©riode diffÃ©rente
-   5. Testez en paper trading avant de passer en production
+   2. Entraînez le modèle sur 80% des données
+   3. Préparez un ensemble de validation avec les 20% restants
+   4. Validez et évaluez le modèle avec cet ensemble
+   5. Optimisez les paramÃ¨tres de trading
+   6. Effectuez un backtest sur une pÃ©riode diffÃ©rente
+   7. Testez en paper trading avant de passer en production
 
 4. Surveillance du bot en production:
    - Utilisez les logs dans le rÃ©pertoire logs/

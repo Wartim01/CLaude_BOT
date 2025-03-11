@@ -485,44 +485,94 @@ def create_evaluation_plots(model, X_val, y_val, predictions, symbol, timeframe,
     import seaborn as sns
     from sklearn.metrics import confusion_matrix
     
+    # Handle different data structures - y_val could be a single array or a list of arrays
+    # Convert both y_val and predictions to consistent formats
+    if isinstance(predictions, list) and len(predictions) > 0:
+        # Multiple output model (multi-horizon)
+        num_outputs = len(predictions)
+    else:
+        # Single output model or single horizon
+        num_outputs = 1
+        if not isinstance(predictions, list):
+            predictions = [predictions]  # Wrap in list for consistent handling
+        if not isinstance(y_val, list):
+            y_val = [y_val]  # Wrap in list for consistent handling
+            
+    # Ensure we don't exceed array bounds
+    num_outputs = min(num_outputs, len(y_val)) if isinstance(y_val, list) else 1
+    
+    if num_outputs == 0:
+        logger.warning("No outputs to evaluate. Skipping visualization generation.")
+        return
+        
     # 1. Direction prediction accuracy per horizon
     plt.figure(figsize=(10, 6))
     horizons = []
     accuracies = []
     
-    for i, horizon_idx in enumerate(range(len(predictions))):
-        y_true = y_val[horizon_idx].flatten()
-        y_pred = (predictions[horizon_idx].flatten() > 0.5).astype(int)
-        accuracy = np.mean(y_true == y_pred) * 100
+    # Safely iterate through outputs
+    for i in range(num_outputs):
+        if i < len(predictions) and (isinstance(y_val, list) and i < len(y_val)):
+            # Extract true values - handle both single array and list of arrays
+            if isinstance(y_val, list):
+                y_true = y_val[i].flatten() if hasattr(y_val[i], 'flatten') else np.array(y_val[i]).flatten()
+            else:
+                y_true = y_val.flatten() if hasattr(y_val, 'flatten') else np.array(y_val).flatten()
+                
+            # Extract predictions and convert to binary class
+            if isinstance(predictions[i], np.ndarray):
+                y_pred = (predictions[i].flatten() > 0.5).astype(int)
+            else:
+                # Handle other possible formats (e.g., list)
+                y_pred = (np.array(predictions[i]).flatten() > 0.5).astype(int)
+                
+            # Calculate accuracy
+            accuracy = np.mean(y_true == y_pred) * 100
+            
+            horizons.append(f"H{i+1}")
+            accuracies.append(accuracy)
+    
+    # Create bar chart if we have data
+    if horizons and accuracies:
+        plt.bar(horizons, accuracies, color='skyblue')
+        plt.axhline(y=50, color='r', linestyle='--', alpha=0.5)  # 50% line (random)
+        plt.ylim([0, 100])
+        plt.title(f'Précision de Prédiction de Direction par Horizon - {symbol} {timeframe}')
+        plt.ylabel('Précision (%)')
+        plt.xlabel('Horizon')
         
-        horizons.append(f"H{i+1}")
-        accuracies.append(accuracy)
+        for i, v in enumerate(accuracies):
+            plt.text(i, v + 1, f"{v:.1f}%", ha='center')
+        
+        plt.savefig(os.path.join(viz_dir, f"{symbol}_{timeframe}_direction_accuracy.png"))
+        plt.close()
     
-    plt.bar(horizons, accuracies, color='skyblue')
-    plt.axhline(y=50, color='r', linestyle='--', alpha=0.5)  # 50% line (random)
-    plt.ylim([0, 100])
-    plt.title(f'Précision de Prédiction de Direction par Horizon - {symbol} {timeframe}')
-    plt.ylabel('Précision (%)')
-    plt.xlabel('Horizon')
-    
-    for i, v in enumerate(accuracies):
-        plt.text(i, v + 1, f"{v:.1f}%", ha='center')
-    
-    plt.savefig(os.path.join(viz_dir, f"{symbol}_{timeframe}_direction_accuracy.png"))
-    plt.close()
-    
-    # 2. Confusion matrix for the first horizon
-    y_true = y_val[0].flatten()
-    y_pred = (predictions[0].flatten() > 0.5).astype(int)
-    cm = confusion_matrix(y_true, y_pred)
-    
-    plt.figure(figsize=(8, 6))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False)
-    plt.title(f'Matrice de Confusion - {symbol} {timeframe}')
-    plt.ylabel('Vrai')
-    plt.xlabel('Prédit')
-    plt.savefig(os.path.join(viz_dir, f"{symbol}_{timeframe}_confusion_matrix.png"))
-    plt.close()
+    # 2. Confusion matrix for the first horizon - only create if we have at least one output
+    if num_outputs > 0:
+        try:
+            # Get true values and predictions for the first horizon
+            if isinstance(y_val, list):
+                y_true = y_val[0].flatten() if hasattr(y_val[0], 'flatten') else np.array(y_val[0]).flatten()
+            else:
+                y_true = y_val.flatten() if hasattr(y_val, 'flatten') else np.array(y_val).flatten()
+                
+            if isinstance(predictions[0], np.ndarray):
+                y_pred = (predictions[0].flatten() > 0.5).astype(int)
+            else:
+                y_pred = (np.array(predictions[0]).flatten() > 0.5).astype(int)
+                
+            # Create confusion matrix
+            cm = confusion_matrix(y_true, y_pred)
+            
+            plt.figure(figsize=(8, 6))
+            sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False)
+            plt.title(f'Matrice de Confusion - {symbol} {timeframe}')
+            plt.ylabel('Vrai')
+            plt.xlabel('Prédit')
+            plt.savefig(os.path.join(viz_dir, f"{symbol}_{timeframe}_confusion_matrix.png"))
+            plt.close()
+        except Exception as e:
+            logger.warning(f"Error creating confusion matrix: {str(e)}")
     
     logger.info(f"Visualisations sauvegardées dans {viz_dir}")
 
@@ -589,11 +639,12 @@ def create_model(input_shape, lstm_units):
     # Create optimizer
     optimizer = Adam(learning_rate=0.001)
     
-    # Use a list of metrics for each output
+    # Fix the metrics format - use a simple string metric for all outputs
     model.compile(
         optimizer=optimizer,
         loss=loss_functions,
-        metrics=[['accuracy'] for _ in range(len(outputs))]  # Correct format for multiple outputs
+        metrics='accuracy'  # Apply accuracy to all outputs
     )
     
     return model
+
