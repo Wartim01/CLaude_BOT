@@ -15,3 +15,6 @@ def calculate_market_regime(df: pd.DataFrame, lookback: int = 50) -> Dict:
     }
     
     return regime
+
+# Added alias export for backward compatibility:
+calculate_market_metrics = calculate_market_regime

@@ -19,7 +19,6 @@ from ai.models.feature_engineering import FeatureEngineering
 from strategies.hybrid_strategy import HybridStrategy
 from strategies.technical_bounce import TechnicalBounceStrategy
 from strategies.market_state import MarketStateAnalyzer
-from ai.scoring_engine import ScoringEngine
 from core.adaptive_risk_manager import AdaptiveRiskManager
 from utils.backtest_engine import _simulate_trading
 from utils.logger import setup_logger
@@ -57,8 +56,6 @@ class ModelBacktester:
         # Initialiser le gestionnaire de risque adaptatif
         self.risk_manager = AdaptiveRiskManager()
         
-        # Initialiser le moteur de scoring
-        self.scoring_engine = ScoringEngine()
     
     def backtest_model(self, data: pd.DataFrame, symbol: str,
                      initial_capital: float = 200,

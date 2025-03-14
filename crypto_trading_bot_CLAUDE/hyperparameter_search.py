@@ -15,6 +15,8 @@ import json
 import matplotlib.pyplot as plt
 from sklearn.metrics import f1_score
 import re
+from tqdm import tqdm  # For progress indication
+import logging
 
 from ai.models.lstm_model import LSTMModel
 from ai.models.feature_engineering import FeatureEngineering
@@ -27,6 +29,7 @@ from config.model_params import LSTM_DEFAULT_PARAMS
 
 # Configuration du logger
 logger = setup_logger("hyperparameter_search")
+logger.setLevel(logging.INFO)
 
 def update_model_params_file(best_params, timeframe, f1_score):
     """
@@ -575,3 +578,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

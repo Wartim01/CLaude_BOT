@@ -13,6 +13,7 @@ import json
 import pickle
 from dataclasses import dataclass
 from threading import Lock
+import time
 
 from config.config import DATA_DIR
 from utils.logger import setup_logger
@@ -560,3 +561,48 @@ class CorrelationMatrix:
         except Exception as e:
             logger.error(f"Erreur lors du chargement des données en cache: {str(e)}")
             return False
+
+    def update(self, market_data: dict) -> None:
+        """
+        Update the correlation matrix from provided market data.
+        Args:
+            market_data: Dictionary mapping asset symbol to DataFrame with a 'close' column.
+        """
+        correlations = {}
+        symbols = list(market_data.keys())
+        for i in range(len(symbols)):
+            for j in range(i+1, len(symbols)):
+                sym1 = symbols[i]
+                sym2 = symbols[j]
+                df1 = market_data[sym1]
+                df2 = market_data[sym2]
+                # Align series using the most recent common period
+                min_length = min(len(df1), len(df2))
+                if min_length < 2:
+                    corr = np.nan
+                else:
+                    series1 = df1['close'].iloc[-min_length:]
+                    series2 = df2['close'].iloc[-min_length:]
+                    corr = np.corrcoef(series1, series2)[0, 1]
+                correlations[(sym1, sym2)] = corr
+                correlations[(sym2, sym1)] = corr
+        self.matrix = correlations
+        self.last_update = time.time()
+
+    def get_correlation(self, asset1: str, asset2: str, market_data: dict) -> float:
+        """
+        Get the correlation between two assets.
+        If the cache is expired, recalculates the correlation matrix.
+        
+        Args:
+            asset1: First asset symbol.
+            asset2: Second asset symbol.
+            market_data: Dictionary of market data (used for update if cache expired).
+        
+        Returns:
+            Correlation value (float) or np.nan if not available.
+        """
+        current_time = time.time()
+        if current_time - self.last_update > self.cache_duration:
+            self.update(market_data)
+        return self.matrix.get((asset1, asset2), np.nan)

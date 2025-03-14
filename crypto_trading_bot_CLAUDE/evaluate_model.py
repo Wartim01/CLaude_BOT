@@ -4,10 +4,14 @@ Script for evaluating trained models on historical or new market data
 Provides performance metrics, visualization, and backtesting capabilities
 """
 import os
+import json
 import argparse
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 from datetime import datetime, timedelta
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, classification_report
 
 from ai.models.lstm_model import LSTMModel, EnhancedLSTMModel
 from ai.models.transformer_model import TransformerModel
@@ -202,52 +206,75 @@ def evaluate_model(model, data, validator=None, backtest=False, capital=1000, pl
     
     return results
 
-def main():
-    """Parse command-line arguments and run model evaluation"""
-    parser = argparse.ArgumentParser(description="Evaluate a trained model on historical data")
-    parser.add_argument("--model_path", required=True, help="Path to the trained model")
-    parser.add_argument("--model_type", choices=["lstm", "enhanced_lstm", "transformer"], default="lstm", help="Type of model")
-    parser.add_argument("--data_path", help="Path to the data file (CSV)")
-    parser.add_argument("--symbol", help="Symbol to evaluate (e.g., BTCUSDT)")
-    parser.add_argument("--timeframe", help="Timeframe to evaluate (e.g., 1h)")
-    parser.add_argument("--start_date", help="Start date (YYYY-MM-DD)")
-    parser.add_argument("--end_date", help="End date (YYYY-MM-DD)")
-    parser.add_argument("--capital", type=float, default=1000, help="Initial capital for backtest")
-    parser.add_argument("--backtest", action="store_true", help="Run backtest simulation")
-    parser.add_argument("--plot", action="store_true", help="Generate performance plots")
-    parser.add_argument("--output_dir", help="Directory for saving outputs")
-    
-    args = parser.parse_args()
-    
-    # Load model
-    model = load_model(args.model_path, args.model_type)
-    if model is None:
-        logger.error("Failed to load model. Exiting.")
-        return
-    
-    # Load data
-    data = load_data(args.data_path, args.symbol, args.timeframe, args.start_date, args.end_date)
-    if data is None:
-        logger.error("Failed to load data. Exiting.")
-        return
-    
-    # Set output directory
-    output_dir = args.output_dir
-    if not output_dir:
-        output_dir = os.path.join(DATA_DIR, "evaluation")
-    
-    os.makedirs(output_dir, exist_ok=True)
-    
-    # Run evaluation
-    evaluate_model(
-        model=model,
-        data=data,
-        backtest=args.backtest,
-        capital=args.capital,
-        plot=args.plot,
-        output_dir=output_dir
-    )
+def parse_args():
+    parser = argparse.ArgumentParser(description="Évaluation d’un modèle ML sur un jeu de test")
+    parser.add_argument("--model_path", type=str, required=True, help="Chemin du modèle entraîné")
+    parser.add_argument("--test_data", type=str, required=True, help="Fichier CSV contenant les données de test")
+    parser.add_argument("--output", type=str, default=None, help="Chemin pour sauvegarder le rapport JSON et visualisations")
+    parser.add_argument("--visualize", action="store_true", help="Générer et sauvegarder des graphiques")
+    return parser.parse_args()
 
+def load_test_data(test_data_path):
+    df = pd.read_csv(test_data_path, parse_dates=['timestamp'])
+    df.set_index('timestamp', inplace=True)
+    # Assume the CSV has a column 'target' and features in all other columns
+    X = df.drop(columns=['target']).values
+    y = df['target'].values
+    return X, y
+
+def evaluate(model, X, y):
+    predictions = model.predict(X)
+    # Handle multi-output: assume single output for evaluation simplicity
+    if isinstance(predictions, list):
+        predictions = predictions[0]
+    y_pred = (predictions.flatten() > 0.5).astype(int)
+    metrics = {
+        "accuracy": accuracy_score(y, y_pred),
+        "precision": precision_score(y, y_pred, zero_division=0),
+        "recall": recall_score(y, y_pred, zero_division=0),
+        "f1_score": f1_score(y, y_pred, zero_division=0),
+        "classification_report": classification_report(y, y_pred, output_dict=True)
+    }
+    cm = confusion_matrix(y, y_pred)
+    return metrics, cm, y_pred
+
+def plot_confusion_matrix(cm, output_dir, symbol=""):
+    plt.figure(figsize=(8,6))
+    sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", cbar=False)
+    plt.title(f"Matrice de Confusion {symbol}")
+    plt.xlabel("Prédit")
+    plt.ylabel("Vrai")
+    cm_path = os.path.join(output_dir, "confusion_matrix.png")
+    plt.savefig(cm_path)
+    plt.close()
+    logger.info(f"Graphique de la matrice de confusion sauvegardé sous {cm_path}")
+
+def main():
+    args = parse_args()
+    model = load_model(args.model_path)
+    logger.info(f"Modèle chargé depuis {args.model_path}")
+    
+    X, y = load_test_data(args.test_data)
+    logger.info(f"Données de test chargées: {X.shape[0]} échantillons")
+    
+    metrics, cm, y_pred = evaluate(model, X, y)
+    logger.info("=== RÉSULTATS DE L'ÉVALUATION ===")
+    logger.info(f"Accuracy    : {metrics['accuracy']:.4f}")
+    logger.info(f"Precision   : {metrics['precision']:.4f}")
+    logger.info(f"Recall      : {metrics['recall']:.4f}")
+    logger.info(f"F1 Score    : {metrics['f1_score']:.4f}")
+    
+    # Sauvegarder les métriques dans un fichier JSON
+    output_dir = args.output or os.path.dirname(args.model_path)
+    report_path = os.path.join(output_dir, f"evaluation_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
+    with open(report_path, 'w') as f:
+        json.dump(metrics, f, indent=2)
+    logger.info(f"Rapport d'évaluation sauvegardé sous {report_path}")
+    
+    # Générer visualisations si demandé
+    if args.visualize:
+        plot_confusion_matrix(cm, output_dir)
+    
 if __name__ == "__main__":
     main()
 

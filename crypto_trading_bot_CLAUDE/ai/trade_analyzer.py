@@ -363,3 +363,95 @@ class TradeAnalyzer:
             logger.error(f"Erreur lors de la sauvegarde des recommandations: {str(e)}")
         
         return recommendations
+
+import os
+import json
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Union
+from utils.logger import setup_logger
+
+logger = setup_logger("trade_analyzer")
+
+class TradeAnalyzer:
+    def __init__(self, history_path: Optional[str] = None):
+        # Chemin vers l'historique des trades (par défaut dans data/trade_history.json)
+        self.history_path = history_path or os.path.join(os.path.dirname(__file__), "..", "data", "trade_history.json")
+        self.trade_history: List[Dict] = []
+        self._load_history()
+    
+    def _load_history(self) -> None:
+        if os.path.exists(self.history_path):
+            try:
+                with open(self.history_path, 'r') as f:
+                    self.trade_history = json.load(f)
+                logger.info(f"Trade history loaded: {len(self.trade_history)} trades")
+            except Exception as e:
+                logger.error(f"Error loading trade history: {str(e)}")
+                self.trade_history = []
+        else:
+            self.trade_history = []
+    
+    def _save_history(self) -> None:
+        try:
+            with open(self.history_path, 'w') as f:
+                json.dump(self.trade_history, f, indent=2)
+            logger.info("Trade history saved")
+        except Exception as e:
+            logger.error(f"Error saving trade history: {str(e)}")
+    
+    def record_trade(self, trade_info: Dict) -> None:
+        """
+        Enregistre un nouveau trade dans l'historique.
+        """
+        trade_info["timestamp"] = datetime.now().isoformat()
+        self.trade_history.append(trade_info)
+        self._save_history()
+    
+    def analyze_recent_trades(self, days: int = 30) -> Dict:
+        """
+        Analyse les trades récents pour en extraire des métriques.
+        Retourne succès, nombre total, win_rate, total_pnl et avg_pnl.
+        """
+        cutoff = datetime.now() - timedelta(days=days)
+        recent_trades = [t for t in self.trade_history if datetime.fromisoformat(t["timestamp"]) >= cutoff]
+        total_trades = len(recent_trades)
+        if total_trades == 0:
+            return {"success": False, "message": "No recent trades", "total_trades": 0}
+        win_trades = [t for t in recent_trades if t.get("pnl", 0) > 0]
+        win_rate = (len(win_trades) / total_trades) * 100
+        total_pnl = sum(t.get("pnl", 0) for t in recent_trades)
+        avg_pnl = total_pnl / total_trades
+        return {
+            "success": True,
+            "total_trades": total_trades,
+            "win_rate": win_rate,
+            "total_pnl": total_pnl,
+            "avg_pnl": avg_pnl
+        }
+    
+    def generate_recommendations(self) -> Dict:
+        """
+        Génère des recommandations de paramètres en se basant sur l'analyse des trades récents.
+        """
+        analysis = self.analyze_recent_trades(days=30)
+        recommendations = {"parameter_adjustments": []}
+        if not analysis.get("success", False):
+            recommendations["message"] = "Insufficient data for recommendations"
+            return recommendations
+        win_rate = analysis["win_rate"]
+        if win_rate < 40:
+            recommendations["parameter_adjustments"].append({
+                "parameter": "risk",
+                "recommendation": "Reduce risk exposure by tightening stop loss or reducing position size"
+            })
+        elif win_rate > 60:
+            recommendations["parameter_adjustments"].append({
+                "parameter": "risk",
+                "recommendation": "Increase risk exposure to capture more trades"
+            })
+        else:
+            recommendations["parameter_adjustments"].append({
+                "parameter": "exploration",
+                "recommendation": "Apply slight random adjustments to explore parameter space"
+            })
+        return recommendations

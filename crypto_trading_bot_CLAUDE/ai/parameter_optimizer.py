@@ -572,3 +572,59 @@ class ParameterOptimizer:
                 # Ramener le paramètre dans ses bornes
                 params[param] = max(min_val, min(params[param], max_val))
                 logger.warning(f"Paramètre {param} ramené dans ses bornes: {params[param]}")
+
+import numpy as np
+import random
+
+class ParameterOptimizer:
+    def __init__(self, initial_params: dict):
+        # Initialise les paramètres à optimiser (par ex. "stop_loss_percent" et "position_size")
+        self.params = initial_params  # e.g., {"stop_loss_percent": 2.0, "position_size": 1.0}
+    
+    def optimize_parameters(self, performance_metrics: dict) -> dict:
+        """
+        Ajuste les paramètres de stratégie en se basant sur les métriques de performance récentes.
+        
+        Args:
+            performance_metrics: Dictionnaire contenant au moins "win_rate" et "total_pnl"
+        
+        Retourne:
+            Les nouveaux paramètres optimisés.
+        """
+        new_params = self.params.copy()
+        win_rate = performance_metrics.get("win_rate", 50.0)
+        
+        # Heuristique simple: si win_rate inférieur à 40%, réduire la taille de position et augmenter le stop-loss%
+        if win_rate < 40:
+            new_params["position_size"] = max(new_params.get("position_size", 1.0) * 0.9, 0.1)
+            new_params["stop_loss_percent"] = min(new_params.get("stop_loss_percent", 2.0) * 1.1, 10.0)
+        # Si win_rate supérieur à 60%, augmenter la taille de position et réduire le stop-loss%
+        elif win_rate > 60:
+            new_params["position_size"] = new_params.get("position_size", 1.0) * 1.05
+            new_params["stop_loss_percent"] = max(new_params.get("stop_loss_percent", 2.0) * 0.95, 0.5)
+        else:
+            # Pour win_rate moyen, appliquer une petite modification aléatoire pour explorer
+            adjustment = random.uniform(-0.05, 0.05)
+            new_params["position_size"] *= (1 + adjustment)
+            adjustment_loss = random.uniform(-0.05, 0.05)
+            new_params["stop_loss_percent"] *= (1 + adjustment_loss)
+        
+        self.params = new_params
+        return new_params
+    
+    def update_parameters(self, feedback: dict) -> dict:
+        """
+        L'interface pour appliquer un feedback loop. Elle reçoit des métriques de performance récentes
+        et renvoie les paramètres mis à jour.
+        
+        Args:
+            feedback: Dictionnaire comprenant au moins "win_rate" et "total_pnl"
+        
+        Returns:
+            Paramètres mis à jour.
+        """
+        return self.optimize_parameters(feedback)
+    
+    def get_parameters(self) -> dict:
+        """Retourne les paramètres actuels."""
+        return self.params

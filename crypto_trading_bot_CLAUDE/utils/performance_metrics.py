@@ -17,7 +17,7 @@ class PerformanceTracker:
     """
     Tracks and analyzes trading performance metrics
     """
-    def __init__(self):
+    def __init__(self, exchange, trade_history_file: str = None, performance_file: str = None):
         """Initialize the performance tracker"""
         # Performance history
         self.balance_history = []
@@ -55,6 +55,8 @@ class PerformanceTracker:
         
         # Load previous data if available
         self._load_history()
+        
+        self.exchange = exchange
     
     def update(self, current_balance: float, 
              open_positions: List[Dict] = None, 
@@ -67,60 +69,70 @@ class PerformanceTracker:
             open_positions: List of currently open positions
             closed_trades: List of recently closed trades
         """
-        # Initialize balance on first update
-        if not self.balance_history:
-            self.initial_balance = current_balance
-            self.peak_balance = current_balance
-        
-        # Update current balance
-        self.current_balance = current_balance
-        
-        # Update balance history
-        timestamp = datetime.now().isoformat()
-        self.balance_history.append({
-            "timestamp": timestamp,
-            "balance": current_balance,
-            "open_positions": len(open_positions) if open_positions else 0
-        })
-        
-        # Limit history size
-        max_history = 10000
-        if len(self.balance_history) > max_history:
-            self.balance_history = self.balance_history[-max_history:]
-        
-        # Update peak balance
-        if current_balance > self.peak_balance:
-            self.peak_balance = current_balance
-        
-        # Update drawdown
-        if self.peak_balance > 0:
-            self.current_drawdown = (self.peak_balance - current_balance) / self.peak_balance * 100
-            self.max_drawdown = max(self.max_drawdown, self.current_drawdown)
-        
-        # Process closed trades
-        if closed_trades:
-            # Find new trades (not already in our history)
-            known_trade_ids = {t.get("id") for t in self.trade_history if "id" in t}
+        try:
+            # Use get_open_positions if available; otherwise fallback to empty list.
+            if hasattr(self.exchange, "get_open_positions"):
+                open_positions = self.exchange.get_open_positions()
+            else:
+                open_positions = []
             
-            new_trades = [
-                trade for trade in closed_trades 
-                if trade.get("id") not in known_trade_ids and "exit_time" in trade
-            ]
+            # Initialize balance on first update
+            if not self.balance_history:
+                self.initial_balance = current_balance
+                self.peak_balance = current_balance
             
-            # Add new trades to history
-            for trade in new_trades:
-                self.trade_history.append(trade)
-                self._process_trade(trade)
+            # Update current balance
+            self.current_balance = current_balance
+            
+            # Update balance history
+            timestamp = datetime.now().isoformat()
+            self.balance_history.append({
+                "timestamp": timestamp,
+                "balance": current_balance,
+                "open_positions": len(open_positions) if open_positions else 0
+            })
+            
+            # Limit history size
+            max_history = 10000
+            if len(self.balance_history) > max_history:
+                self.balance_history = self.balance_history[-max_history:]
+            
+            # Update peak balance
+            if current_balance > self.peak_balance:
+                self.peak_balance = current_balance
+            
+            # Update drawdown
+            if self.peak_balance > 0:
+                self.current_drawdown = (self.peak_balance - current_balance) / self.peak_balance * 100
+                self.max_drawdown = max(self.max_drawdown, self.current_drawdown)
+            
+            # Process closed trades
+            if closed_trades:
+                # Find new trades (not already in our history)
+                known_trade_ids = {t.get("id") for t in self.trade_history if "id" in t}
+                
+                new_trades = [
+                    trade for trade in closed_trades 
+                    if trade.get("id") not in known_trade_ids and "exit_time" in trade
+                ]
+                
+                # Add new trades to history
+                for trade in new_trades:
+                    self.trade_history.append(trade)
+                    self._process_trade(trade)
+            
+            # Calculate total metrics
+            self._calculate_total_metrics()
+            
+            # Calculate time-based metrics
+            self._calculate_time_metrics()
+            
+            # Save periodically (e.g., every 100 updates)
+            if len(self.balance_history) % 100 == 0:
+                self._save_history()
         
-        # Calculate total metrics
-        self._calculate_total_metrics()
-        
-        # Calculate time-based metrics
-        self._calculate_time_metrics()
-        
-        # Save periodically (e.g., every 100 updates)
-        if len(self.balance_history) % 100 == 0:
-            self._save_history()
+        except Exception as e:
+            logger.error(f"Error updating performance metrics: {str(e)}")
     
     def _process_trade(self, trade: Dict) -> None:
         """

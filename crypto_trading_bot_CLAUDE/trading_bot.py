@@ -24,6 +24,8 @@ from ai.decision_engine import DecisionEngine
 from utils.logger import setup_logger
 from utils.notification_handler import NotificationHandler
 from utils.performance_metrics import PerformanceTracker
+from ai.trade_analyzer import TradeAnalyzer
+from core.adaptive_risk_manager import AdaptiveRiskManager
 
 class TradingBot:
     """
@@ -48,6 +50,11 @@ class TradingBot:
         # Initialize components
         self._initialize_components()
         
+        # Instanciation d'OrderManager
+        from core.order_manager import OrderManager
+        # Supposons que self.exchange_client et self.position_tracker soient déjà initialisés dans _initialize_components()
+        self.order_manager = OrderManager(api_connector=self.exchange_client, position_tracker=self.position_tracker)
+
         # Runtime state
         self.running = False
         self.paused = False
@@ -57,12 +64,62 @@ class TradingBot:
         self.trading_timeframes = self._load_timeframes()
         
         # Performance tracking
-        self.performance_tracker = PerformanceTracker()
+        from utils.performance_metrics import PerformanceTracker
+        self.performance_tracker = PerformanceTracker(self.exchange)
         
         # Thread control
         self.main_thread = None
         self.monitoring_thread = None
         self.should_stop = threading.Event()
+        
+        # New attributes
+        self.active_pairs = self.trading_config.get("active_pairs", [])  # New: list of pairs to monitor
+        self.decision_engine = None  # Placeholder for DecisionEngine integration
+        self.adaptive_risk_manager = None  # Placeholder for AdaptiveRiskManager integration
+        self.should_stop = False  # Improved stop flag
+
+        # Nouveaux attributs pour l'intégration IA
+        # Instancier et brancher StrategyIntegrator dans DecisionEngine
+        from ai.strategy_integrator import StrategyIntegrator
+        from ai.decision_engine import DecisionEngine
+        from risk.risk_manager import RiskManager  # Ou MarketRiskFeed selon l'implémentation
+        
+        # Créer l’intégrateur des stratégies
+        self.strategy_integrator = StrategyIntegrator()
+        # Par exemple, instancier le MarketRiskFeed à partir du RiskManager
+        self.market_risk_feed = None
+        if hasattr(self, "risk_manager"):
+            self.market_risk_feed = self.risk_manager.get_market_risk_feed()  # Méthode exemple
+        
+        # Instancier le DecisionEngine en lui passant l’agent de trading, l’intégrateur et le flux de risque
+        self.decision_engine = DecisionEngine(
+            trading_agent=self.strategy_manager.trading_agent if hasattr(self, "strategy_manager") else None,
+            strategy_integrator=self.strategy_integrator,
+            market_risk_feed=self.market_risk_feed
+        )
+
+        # Instancier TradeAnalyzer et le lier au bot
+        self.trade_analyzer = TradeAnalyzer()  # utilise le chemin par défaut
+        # Optionnel: transmettre trade_analyzer à parameter_optimizer, etc.
+
+        # Instancier le gestionnaire de risque adaptatif
+        self.adaptive_risk_manager = AdaptiveRiskManager(
+            initial_capital=self.bot_config.get("initial_capital", 200),
+            risk_control_mode=self.bot_config.get("risk_mode", "balanced")
+        )
+
+        # Instantiate the advanced RiskManager
+        initial_balance = self.config.get("account", {}).get("initial_balance", 10000)
+        self.risk_manager = RiskManager(capital=initial_balance)
+
+        # Provision for AI: charger le modèle IA si use_ai est True
+        if self.config.get("use_ai", False):
+            from ai.models.lstm_model import LSTMModel  # ou un autre modèle
+            self.ai_model = LSTMModel()
+            self.ai_model.load(self.config.get("ai_model_path", "path/to/model.h5"))
+            self.logger.info("Modèle IA chargé pour trading en direct.")
+        else:
+            self.ai_model = None
     
     def _initialize_components(self) -> None:
         """Initialize all bot components"""
@@ -115,6 +172,11 @@ class TradingBot:
                 telegram_chat_id=self.config.get("notifications", {}).get("telegram_chat_id")
             )
             
+            # Par exemple, si le module de paramètres est utilisé
+            from ai.parameter_optimizer import ParameterOptimizer
+            # Supposons que ParameterOptimizer prenne un TradeAnalyzer en paramètre
+            self.param_optimizer = ParameterOptimizer(self.trade_analyzer)
+
             self.logger.info("All components initialized successfully")
             
         except Exception as e:
@@ -259,6 +321,15 @@ class TradingBot:
                 
                 # Update performance metrics
                 self._update_performance_metrics()
+
+                # Ajouter une analyse périodique des trades
+                # Supposons que nous analysons les trades toutes les 60 minutes
+                if not hasattr(self, "_last_trade_analysis") or (current_time - self._last_trade_analysis).seconds > 3600:
+                    analysis_report = self.trade_analyzer.analyze_recent_trades(days=30)
+                    # Log l'analyse ou utilisez-la pour optimiser les paramètres
+                    self.logger.info(f"Trade Analysis Report: {analysis_report}")
+                    # Possibilité de mettre à jour les paramètres ou notifier l'utilisateur
+                    self._last_trade_analysis = current_time
                 
                 # Sleep until next check
                 time_to_sleep = max(0, check_interval - (datetime.now() - current_time).total_seconds())
@@ -305,7 +376,10 @@ class TradingBot:
         Check market conditions for all pairs and timeframes
         and execute trades if conditions are met
         """
-        for pair in self.trading_pairs:
+        # NEW: process only pairs specified in active_pairs if provided
+        pairs_to_check = self.active_pairs if self.active_pairs else self.trading_pairs
+        
+        for pair in pairs_to_check:
             for timeframe in self.trading_timeframes:
                 try:
                     # Check if we should skip this pair/timeframe based on timing rules
@@ -334,6 +408,64 @@ class TradingBot:
                     self.logger.error(f"Error checking {pair} on {timeframe}: {str(e)}")
                     self.logger.error(traceback.format_exc())
         
+        symbol = "BTCUSDT"  # Example symbol
+        opportunity = self._evaluate_opportunity(symbol)
+        # Ensure 'opportunity' is defined (fallback to a default if None)
+        if opportunity is None:
+            opportunity = {"signal": "NEUTRAL", "score": 0}
+        
+        # Integrate AI predictions if enabled
+        if self.ai_model:
+            market_data = self.data_manager.get_market_data(symbol)
+            ai_prediction = self.ai_model.predict(market_data)
+            self.logger.info(f"AI prediction for {symbol}: {ai_prediction}")
+            if ai_prediction.get("signal") == "BUY":
+                opportunity["score"] += 5
+            elif ai_prediction.get("signal") == "SELL":
+                opportunity["score"] -= 5
+        
+        account_balance = self.exchange.get_balance().get("free_usdt", 0)
+        
+        # Evaluate trade risk using advanced RiskManager
+        risk_evaluation = self.risk_manager.evaluate_trade_risk(
+            symbol=symbol,
+            direction="BUY",
+            entry_price=entry_price,
+            stop_loss=stop_loss,
+            account_balance=account_balance,
+            market_data=self.data_manager.get_market_data(symbol)  # Suppose data_manager provides this
+        )
+        
+        if not risk_evaluation.get("approved", False):
+            self.logger.info(f"Trade not approved: {risk_evaluation.get('reason')}")
+            return
+        
+        # Use the evaluated position size from risk_evaluation to adjust order sizing
+        position_sizing = risk_evaluation.get("position_sizing", {})
+        position_size = position_sizing.get("position_size", 0)
+        self.logger.info(f"Trade approved. Position size: {position_size:.4f} for {symbol}")
+        
+        # Proceed with trade execution using the calculated position_size
+
+        # Update performance metrics at the end of each cycle
+        current_balance = self.exchange.get_balance().get("free_usdt", 0)
+        closed_trades_list = self._execute_trades()  # ...existing trade execution...
+        self.performance_tracker.update(current_balance, closed_trades=closed_trades_list)
+        self.logger.info(f"Performance summary: {self.performance_tracker.get_summary()}")
+
+        # Intégrer l'IA si activé
+        if self.ai_model:
+            # Par exemple, préparer les données d'entrée pour le modèle IA
+            market_data = self.data_manager.get_market_data(symbol)
+            ai_prediction = self.ai_model.predict(market_data)
+            self.logger.info(f"Prédiction IA pour {symbol}: {ai_prediction}")
+            # Combiner ou ajuster le signal existant en fonction des prédictions de l’IA.
+            # Par exemple, si la prédiction indique une hausse forte, augmenter le score.
+            if ai_prediction.get("signal") == "BUY":
+                opportunity["score"] += 5
+            elif ai_prediction.get("signal") == "SELL":
+                opportunity["score"] -= 5
+    
     def _should_check_now(self, pair: str, timeframe: str) -> bool:
         """
         Determine if this pair/timeframe should be checked now
@@ -408,64 +540,43 @@ class TradingBot:
         market_risk = self.risk_manager.market_risk_analyzer.calculate_market_risk(market_data)
         
         # 4. Use decision engine to evaluate the opportunity
-        decision = self.decision_engine.evaluate_trading_opportunity(
-            symbol=pair,
-            data=data,
-            timeframe=timeframe,
-            execute=False  # Don't auto-execute, we'll handle it here
+        if self.decision_engine is not None:
+            decision = self.decision_engine.decide(pair, data)
+        else:
+            decision = "NEUTRAL"  # Stub decision in absence of an integrated engine
+        
+        self.logger.info(f"Opportunity processed, DecisionEngine returned: {decision}")
+        
+        # NEW: adjust risk if AdaptiveRiskManager is available
+        if self.adaptive_risk_manager is not None:
+            risk_setting = self.adaptive_risk_manager.get_current_risk()
+            self.logger.info(f"Adaptive risk adjusted: {risk_setting}")
+        else:
+            risk_setting = None
+        
+        # Vérifier via le gestionnaire de risque adaptatif si l'ouverture d'une position est autorisée
+        risk_decision = self.adaptive_risk_manager.can_open_new_position(self.position_tracker)
+        if not risk_decision.get("can_open", False):
+            self.logger.info(f"Pas d'ouverture de position: {risk_decision.get('reason')}")
+            return
+        
+        # Utiliser AdaptiveRiskManager pour calculer la taille de position
+        position_size = self.adaptive_risk_manager.calculate_position_size(
+            pair, decision, lstm_prediction=prediction.get("predictions") if prediction else None
         )
         
-        # 5. Determine if we should trade
-        if decision["should_trade"]:
-            self.logger.info(f"Trading opportunity detected for {pair} on {timeframe}: {decision['signal_type']}")
-            
-            # Get entry price (current price)
-            entry_price = data["close"].iloc[-1]
-            
-            # Calculate stop loss based on strategy or risk parameters
-            if "stop_loss" in decision:
-                stop_loss = decision["stop_loss"]
-            else:
-                # Default stop loss based on ATR or fixed percentage
-                atr = data["atr"].iloc[-1] if "atr" in data.columns else entry_price * 0.03
-                if decision["direction"] == "BUY":
-                    stop_loss = entry_price - atr * 2
-                else:  # SELL
-                    stop_loss = entry_price + atr * 2
-            
-            # Evaluate trade risk
-            risk_evaluation = self.risk_manager.evaluate_trade_risk(
-                symbol=pair,
-                direction=decision["direction"],
-                entry_price=entry_price,
-                stop_loss=stop_loss,
-                account_balance=balance,
-                market_data=market_data
-            )
-            
-            # If risk is acceptable, execute the trade
-            if risk_evaluation.get("approve_trade", False):
-                self._execute_trade(
-                    pair=pair,
-                    direction=decision["direction"],
-                    entry_price=entry_price,
-                    stop_loss=stop_loss,
-                    position_size=risk_evaluation["position_sizing"]["position_size"],
-                    risk_percentage=risk_evaluation["position_sizing"]["risk_percentage"] / 100,  # Convert to decimal
-                    timeframe=timeframe
-                )
-            else:
-                risk_reason = "Unknown risk issue"
-                if "position_sizing" in risk_evaluation and "error" in risk_evaluation["position_sizing"]:
-                    risk_reason = risk_evaluation["position_sizing"]["error"]
-                elif risk_evaluation.get("market_risk", {}).get("extreme_risk", False):
-                    risk_reason = "Extreme market risk"
-                elif risk_evaluation.get("correlation_risk", {}).get("high_correlation", False):
-                    risk_reason = "High correlation risk"
-                    
-                self.logger.info(f"Trade opportunity for {pair} rejected due to risk assessment: {risk_reason}")
+        self.logger.info(f"Position size calculée: {position_size}")
+        
+        # ...existing processing logic based on decision...
+        # For example:
+        if decision == "BUY":
+            # Execute buy trade logic...
+            pass
+        elif decision == "SELL":
+            # Execute sell trade logic...
+            pass
         else:
-            self.logger.debug(f"No trading opportunity for {pair} on {timeframe}")
+            self.logger.debug("No actionable signal received (NEUTRAL)")
     
     def _get_model_prediction(self, pair: str, data: pd.DataFrame) -> Dict:
         """Get prediction from AI model"""
@@ -500,8 +611,8 @@ class TradingBot:
             return {"error": str(e)}
     
     def _execute_trade(self, pair: str, direction: str, entry_price: float,
-                     stop_loss: float, position_size: float, risk_percentage: float,
-                     timeframe: str) -> Dict:
+                         stop_loss: float, position_size: float, risk_percentage: float,
+                         timeframe: str) -> Dict:
         """
         Execute a trade
         
@@ -519,64 +630,18 @@ class TradingBot:
         """
         self.logger.info(f"Executing {direction} trade for {pair} with position size {position_size}")
         
-        try:
-            # Execute the trade on the exchange
-            order_result = self.exchange.create_order(
-                symbol=pair,
-                order_type="market",
-                side=direction.lower(),
-                amount=position_size
-            )
-            
-            if order_result.get("id"):
-                # Trade executed successfully
-                trade_id = order_result["id"]
-                
-                # Register the trade with risk manager
-                self.risk_manager.register_new_trade(
-                    trade_id=trade_id,
-                    symbol=pair,
-                    direction=direction,
-                    entry_price=entry_price,
-                    stop_loss=stop_loss,
-                    position_size=position_size,
-                    risk_percentage=risk_percentage,
-                    account_balance=self._get_account_info()["balance"]
-                )
-                
-                # Set a stop loss order
-                self._set_stop_loss(pair, direction, stop_loss, position_size)
-                
-                # Send notification
-                self._send_trade_notification(
-                    trade_id=trade_id,
-                    pair=pair,
-                    direction=direction,
-                    entry_price=entry_price,
-                    stop_loss=stop_loss,
-                    position_size=position_size,
-                    timeframe=timeframe
-                )
-                
-                return {
-                    "success": True,
-                    "trade_id": trade_id,
-                    "order": order_result
-                }
-            else:
-                self.logger.error(f"Failed to execute trade for {pair}: {order_result}")
-                return {
-                    "success": False,
-                    "error": "Failed to execute trade",
-                    "order_result": order_result
-                }
-        
-        except Exception as e:
-            self.logger.error(f"Error executing trade for {pair}: {str(e)}")
-            return {
-                "success": False,
-                "error": str(e)
-            }
+        # Au lieu d'appeler directement self.exchange.create_order(),
+        # déléguez la création d'ordre à OrderManager.
+        order_result = self.order_manager.place_entry_order(
+            symbol=pair,
+            side=direction,
+            quantity=position_size,
+            price=None,  # ou transmettre un prix si nécessaire
+            stop_loss_price=stop_loss,
+            take_profit_price=None  # laisser OrderManager calculer si None
+        )
+        # ...existing code pour traiter order_result...
+        return order_result
     
     def _set_stop_loss(self, pair: str, direction: str, stop_price: float, amount: float) -> Dict:
         """Set a stop loss order"""

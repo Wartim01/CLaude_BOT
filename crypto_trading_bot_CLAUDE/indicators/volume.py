@@ -251,3 +251,23 @@ def detect_volume_divergence(df: pd.DataFrame, periods: int = 14) -> Dict:
             'volume_trend': 'up' if recent_volume_trend else 'down'
         }
     }
+
+def calculate_volume_oscillator(df: pd.DataFrame, short_window: int = 5, long_window: int = 10) -> pd.Series:
+    """
+    Calculate the volume oscillator, defined as the percentage difference between 
+    the short-term and long-term moving averages of the volume.
+    
+    Args:
+        df: DataFrame with a 'volume' column.
+        short_window: Period for the short-term moving average.
+        long_window: Period for the long-term moving average.
+        
+    Returns:
+        pandas Series representing the volume oscillator as a percentage.
+    """
+    short_ma = df['volume'].rolling(window=short_window, min_periods=1).mean()
+    long_ma = df['volume'].rolling(window=long_window, min_periods=1).mean()
+    # Prevent division by zero by replacing zeros with NaN
+    long_ma = long_ma.replace(0, np.nan)
+    oscillator = (short_ma - long_ma) / long_ma * 100
+    return oscillator

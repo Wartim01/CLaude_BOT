@@ -15,6 +15,7 @@ from collections import deque
 
 from config.config import DATA_DIR, API_KEYS
 from utils.logger import setup_logger
+from risk.market_risk_analyzer import MarketRiskAnalyzer  # Added import
 
 logger = setup_logger("market_risk_feed")
 
@@ -23,14 +24,18 @@ class MarketRiskFeed:
     Surveille et évalue les facteurs de risque du marché des cryptomonnaies
     pour aider à la prise de décision de trading
     """
-    def __init__(self, refresh_interval: int = 3600):
+    def __init__(self, market_data_source: Any, refresh_interval: int = 3600):
         """
         Initialise le flux de risque du marché
         
         Args:
+            market_data_source: Source de données de marché
             refresh_interval: Intervalle de rafraîchissement des données en secondes
         """
         self.refresh_interval = refresh_interval
+        self.market_data_source = market_data_source
+        self.analyzer = MarketRiskAnalyzer()
+        self.last_risk_metrics: Dict[str, Any] = {}
         
         # Répertoire de données
         self.data_dir = os.path.join(DATA_DIR, "market_risk")
@@ -219,42 +224,31 @@ class MarketRiskFeed:
         except Exception as e:
             logger.error(f"Erreur lors de la sauvegarde des données en cache: {str(e)}")
     
-    def get_market_risk(self, symbol: str = None) -> Dict:
+    def get_market_risk(self, symbol: Optional[str] = None) -> Dict:
         """
-        Récupère les données de risque du marché
+        Return current risk metrics. If a symbol is provided, attempt to filter the results.
         
         Args:
-            symbol: Symbole pour lequel obtenir le risque spécifique (optionnel)
+            symbol: Optional symbol to filter risk metrics
             
         Returns:
-            Données de risque du marché
+            Dictionary of risk metrics.
         """
-        # Vérifier si nous avons besoin de mettre à jour les données
-        if not self.risk_data or "last_update" not in self.risk_data:
-            self.update_market_risk()
-        elif "last_update" in self.risk_data:
-            last_update = datetime.fromisoformat(self.risk_data["last_update"])
-            if (datetime.now() - last_update) > timedelta(hours=1):
-                self.update_market_risk()
-        
-        # Si un symbole est spécifié, ajuster le risque en fonction des spécificités du symbole
-        if symbol:
-            return self._adjust_risk_for_symbol(symbol)
-        
-        # Sinon, retourner le risque global
-        return {
-            "level": self.risk_data.get("global_risk_level", "medium"),
-            "risk_score": self.risk_data.get("global_risk_score", 50.0),
-            "btc_volatility": np.mean(self.recent_btc_volatility) if self.recent_btc_volatility else None,
-            "market_cap_trend": "stable",
-            "risk_factors": self._get_risk_factors(),
-            "last_update": self.risk_data.get("last_update", datetime.now().isoformat()),
-            "market_conditions": {
-                "trend": self.risk_data.get("market_trend", "neutral"),
-                "liquidity": self.risk_data.get("liquidity", "normal"),
-                "sentiment": self.risk_data.get("sentiment", "neutral")
-            }
-        }
+        # Update metrics before returning
+        self.update_risk()
+        if symbol and symbol in self.last_risk_metrics:
+            return {symbol: self.last_risk_metrics[symbol]}
+        return self.last_risk_metrics
+    
+    def update_risk(self) -> None:
+        """
+        Update and store the latest market risk metrics.
+        """
+        # Retrieve market data from the provided data source
+        market_data = self.market_data_source.get_data()  # ...existing code...
+        # Calculate risk using the analyzer
+        self.last_risk_metrics = self.analyzer.calculate_market_risk(market_data)
+        logger.info("Market risk metrics updated.")
     
     def _adjust_risk_for_symbol(self, symbol: str) -> Dict:
         """

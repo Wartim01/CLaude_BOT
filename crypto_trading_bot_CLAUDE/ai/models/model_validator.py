@@ -1,19 +1,8 @@
-"""
-Model validation and evaluation tools
-Provides comprehensive model evaluation and backtesting capabilities
-"""
 import os
 import sys
-
-# Get the absolute path of the project's root directory
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-
-# Add the project root to the Python path if it's not already there
-if (project_root not in sys.path):
-    sys.path.insert(0, project_root)
-
-# Now we can import from config without issues
-from config.config import DATA_DIR
+# Update sys.path to insert the project root at the beginning so that "config" can be imported
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, project_root)
 
 import numpy as np
 import pandas as pd
@@ -30,6 +19,7 @@ import tensorflow as tf
 from datetime import datetime
 import json
 
+from config.config import DATA_DIR
 from utils.logger import setup_logger
 from ai.models.feature_engineering import FeatureEngineering
 
@@ -70,58 +60,16 @@ class ModelValidator:
         if self.model is None:
             raise ValueError("Model not set. Please provide a model in constructor or set it with set_model()")
         
-        # Check if test_data contains target column, if not, warn and create it
-        if 'target' not in test_data.columns:
-            logger.warning("Validation data does not contain target labels. Please regenerate validation data with labels.")
-            logger.info("Attempting to generate target labels with default horizon...")
-            
-            # Determine horizon based on timeframe if available in column names
-            timeframe = None
-            for col in test_data.columns:
-                if '15m' in col:
-                    timeframe = '15m'
-                    break
-                elif '1h' in col:
-                    timeframe = '1h'
-                    break
-            
-            horizon = 4  # Default to 4 periods (if 15m, this is 1 hour)
-            if timeframe == '1h':
-                horizon = 1
-            
-            # Generate target
-            test_data['future_close'] = test_data['close'].shift(-horizon)
-            test_data['target'] = (test_data['future_close'] > test_data['close']).astype(int)
-            test_data.dropna(subset=['target'], inplace=True)
-            
-            logger.info(f"Generated target labels with horizon {horizon}")
-        
-        # Make a copy to avoid modifying the original data
-        test_data_copy = test_data.copy()
-        
-        # Check for and remove future_close column if it exists
-        if 'future_close' in test_data_copy.columns:
-            logger.info("Removing 'future_close' column before feature engineering")
-            test_data_copy = test_data_copy.drop(columns=['future_close'])
-        
         # Preprocess the test data
         featured_data = self.feature_engineering.create_features(
-            test_data_copy,
+            test_data,
             include_time_features=True,
             include_price_patterns=True
         )
         
-        # Get the target column before normalization
-        y_data = featured_data['target'].values
-        
-        # Normalize the data (excluding target and any other non-feature columns)
-        cols_to_normalize = [c for c in featured_data.columns if c != 'target' and c != 'future_close']
-        
-        # Check if there are any columns in featured_data that weren't in training
-        logger.info(f"Normalizing features: {len(cols_to_normalize)} columns")
-        
+        # Normalize the data
         normalized_data = self.feature_engineering.scale_features(
-            featured_data[cols_to_normalize],
+            featured_data,
             is_training=False,
             method='standard',
             feature_group='lstm'
@@ -138,151 +86,15 @@ class ModelValidator:
             horizons = [12, 24, 96]
             
         # Prepare sequences
-        logger.info(f"Creating multi-horizon data with sequence_length={sequence_length}, horizons={horizons}")
-        
-        # Manual sequence creation if feature engineering doesn't return labels
-        X_sequences = []
-        y_sequences = []
-        
-        # Create rolling window sequences
-        for i in range(len(normalized_data) - sequence_length - max(horizons)):
-            # X sequence
-            X_sequences.append(normalized_data.iloc[i:i+sequence_length].values)
-            
-            # Y sequences for each horizon
-            y_for_horizons = []
-            for h in horizons:
-                target_idx = i + sequence_length + h - 1
-                if target_idx < len(y_data):
-                    y_for_horizons.append(y_data[target_idx])
-                else:
-                    # Skip this sequence if target is out of bounds
-                    continue
-            
-            if len(y_for_horizons) == len(horizons):
-                y_sequences.append(y_for_horizons)
-            
-        X_test = np.array(X_sequences)
-        
-        # Transpose y_sequences to get [horizon][sample] instead of [sample][horizon]
-        y_test = []
-        for h in range(len(horizons)):
-            y_test.append(np.array([seq[h] for seq in y_sequences]))
-        
-        # Log shapes
-        logger.info(f"X_test shape: {X_test.shape}")
-        for i, y in enumerate(y_test):
-            logger.info(f"y_test[{i}] shape: {y.shape}")
-        
-        # Data validation and sanitization to prevent TensorFlow errors
-        logger.info("Validating and sanitizing input data before prediction...")
-        
-        # First check if the array is all numeric types
-        try:
-            # First log data type information for debugging
-            logger.info(f"X_test dtype: {X_test.dtype}")
-            
-            # Check if there are any non-numeric values
-            if X_test.dtype == np.object_ or 'str' in str(X_test.dtype):
-                logger.warning("X_test contains non-numeric data. Attempting to convert to float32.")
-                # Try to convert to float manually (without 'errors' argument)
-                X_test = np.array([[[float(val) if val is not None else 0.0 for val in row] for row in sample] for sample in X_test], dtype=np.float32)
-            
-            # Check for NaN or inf values only if the array has a numeric dtype
-            if np.issubdtype(X_test.dtype, np.number):
-                # Check for and replace any NaN or inf values
-                mask_nan = np.isnan(X_test)
-                mask_inf = np.isinf(X_test)
-                
-                if mask_nan.any() or mask_inf.any():
-                    logger.warning(f"Found {mask_nan.sum()} NaN values and {mask_inf.sum()} inf values in X_test, replacing with zeros")
-                    X_test = np.where(mask_nan | mask_inf, 0.0, X_test)
-            else:
-                logger.warning(f"X_test has non-numeric dtype: {X_test.dtype}. Unable to check for NaN/inf values.")
-                
-            # Force conversion to float32
-            X_test = X_test.astype(np.float32)
-                
-        except Exception as e:
-            logger.error(f"Error during data validation: {str(e)}")
-            logger.info("Performing alternative data cleaning...")
-            
-            # Alternative approach: iterate through the array and convert problematic values
-            X_test_cleaned = np.zeros(X_test.shape, dtype=np.float32)
-            for i in range(X_test.shape[0]):
-                for j in range(X_test.shape[1]):
-                    for k in range(X_test.shape[2]):
-                        try:
-                            val = X_test[i, j, k]
-                            if isinstance(val, (int, float)) and (pd.isna(val) or np.isinf(val)):
-                                X_test_cleaned[i, j, k] = 0.0
-                            else:
-                                X_test_cleaned[i, j, k] = float(val) if val is not None else 0.0
-                        except (ValueError, TypeError):
-                            X_test_cleaned[i, j, k] = 0.0
-            
-            X_test = X_test_cleaned
-        
-        # Ensure consistent data type (float32 is generally safest for TensorFlow)
-        X_test = X_test.astype(np.float32)
-        
-        # Check for feature dimension mismatch by inspecting model's input shape
-        expected_feature_dim = None
-        if hasattr(self.model.model, 'input_shape'):
-            expected_feature_dim = self.model.model.input_shape[-1]
-        elif hasattr(self.model.model, 'inputs') and hasattr(self.model.model.inputs[0], 'shape'):
-            expected_feature_dim = self.model.model.inputs[0].shape[-1]
-        
-        actual_feature_dim = X_test.shape[-1]
-        
-        if expected_feature_dim is not None and expected_feature_dim != actual_feature_dim:
-            logger.warning(f"Feature dimension mismatch! Model expects {expected_feature_dim} features, but input has {actual_feature_dim} features.")
-            
-            if actual_feature_dim > expected_feature_dim:
-                logger.info(f"Trimming input features from {actual_feature_dim} to {expected_feature_dim}")
-                # Only keep the first expected_feature_dim features
-                X_test = X_test[:, :, :expected_feature_dim]
-            else:
-                # If we have fewer features than expected, we can't proceed
-                logger.error(f"Input has too few features ({actual_feature_dim}) for the model (requires {expected_feature_dim})")
-                raise ValueError(f"Input has too few features ({actual_feature_dim}) for the model (requires {expected_feature_dim})")
-        
-        # Additional validation
-        logger.info(f"Final X_test shape: {X_test.shape}")
-        logger.info(f"Final X_test dtype: {X_test.dtype}")
-        
-        try:
-            logger.info(f"X_test min: {np.min(X_test)}, max: {np.max(X_test)}")
-            logger.info(f"Sample of X_test shape: {X_test[0].shape}")
-        except Exception as e:
-            logger.warning(f"Could not compute stats on X_test: {str(e)}")
+        X_test, y_test = self.feature_engineering.create_multi_horizon_data(
+            normalized_data,
+            sequence_length=sequence_length,
+            horizons=horizons,
+            is_training=False
+        )
         
         # Get predictions
-        try:
-            logger.info("Running model predictions...")
-            predictions = self.model.model.predict(X_test)
-        except Exception as e:
-            logger.error(f"Error in model prediction: {str(e)}")
-            # Try getting information about the problematic tensor
-            try:
-                # Additional debugging - check first few elements to identify issues
-                logger.info("Examining problematic input data...")
-                for i in range(min(3, len(X_test))):
-                    sample = X_test[i]
-                    logger.info(f"Sample {i} shape: {sample.shape}, dtype: {sample.dtype}")
-                    logger.info(f"Sample {i} contains NaN: {np.isnan(sample).any()}")
-                    logger.info(f"Sample {i} contains inf: {np.isinf(sample).any()}")
-                    logger.info(f"Sample {i} min: {np.min(sample)}, max: {np.max(sample)}")
-                    
-                # Try with a smaller batch as a test
-                small_batch = X_test[:10].copy()
-                logger.info("Trying prediction with a small batch...")
-                test_pred = self.model.model.predict(small_batch)
-                logger.info(f"Small batch prediction succeeded with shape: {test_pred.shape}")
-            except Exception as inner_e:
-                logger.error(f"Error during debugging: {str(inner_e)}")
-            
-            raise ValueError(f"Model prediction failed: {str(e)}")
+        predictions = self.model.model.predict(X_test)
         
         # Ensure predictions is a list for multi-output models
         if not isinstance(predictions, list):
@@ -521,20 +333,12 @@ class ModelValidator:
                         normalized_window = normalized_data.iloc[:i+1]
                         
                         # Create sequence for prediction
-                        result = self.feature_engineering.create_multi_horizon_data(
+                        X, _ = self.feature_engineering.create_multi_horizon_data(
                             normalized_window,
                             sequence_length=sequence_length,
                             horizons=horizons,
                             is_training=False
                         )
-                        
-                        # Handle different return value formats
-                        if isinstance(result, tuple) and len(result) >= 2:
-                            X = result[0]
-                            # We don't need y here for prediction
-                        else:
-                            logger.error("Unexpected return format from create_multi_horizon_data")
-                            continue
                         
                         # Make prediction (take only the most recent sample)
                         X_latest = X[-1:] if len(X) > 0 else X
@@ -587,20 +391,12 @@ class ModelValidator:
                     normalized_window = normalized_data.iloc[:i+1]
                     
                     # Create sequence for prediction
-                    result = self.feature_engineering.create_multi_horizon_data(
+                    X, _ = self.feature_engineering.create_multi_horizon_data(
                         normalized_window,
                         sequence_length=sequence_length,
                         horizons=horizons,
                         is_training=False
                     )
-                    
-                    # Handle different return value formats
-                    if isinstance(result, tuple) and len(result) >= 2:
-                        X = result[0]
-                        # We don't need y here for prediction
-                    else:
-                        logger.error("Unexpected return format from create_multi_horizon_data")
-                        continue
                     
                     # Make prediction (take only the most recent sample)
                     X_latest = X[-1:] if len(X) > 0 else X
@@ -802,21 +598,13 @@ class ModelValidator:
         else:
             horizons = [12, 24, 96]
         
-        # Create sequences - Fix: Handle additional return values
-        result = self.feature_engineering.create_multi_horizon_data(
+        # Create sequences
+        X, y = self.feature_engineering.create_multi_horizon_data(
             normalized_data,
             sequence_length=sequence_length,
             horizons=horizons,
             is_training=False
         )
-        
-        # Handle different return value formats
-        if isinstance(result, tuple) and len(result) >= 2:
-            X = result[0]
-            y = result[1]
-        else:
-            logger.error("Unexpected return format from create_multi_horizon_data")
-            raise ValueError("Feature engineering function returned unexpected format")
         
         # Limit data for visualization
         if start_idx is None:
@@ -1062,169 +850,3 @@ class ModelValidator:
         logger.info(f"Results saved to {filepath}")
         
         return filepath
-
-if __name__ == "__main__":
-    import argparse
-    import os
-    import tensorflow as tf
-    from ai.models.lstm_model import LSTMModel
-    from ai.models.feature_engineering import FeatureEngineering
-    
-    # Parse command-line arguments
-    parser = argparse.ArgumentParser(description="Validate and evaluate a trained model")
-    parser.add_argument("--model_path", type=str, required=True, help="Path to the trained model file")
-    parser.add_argument("--data_path", type=str, required=True, help="Path to validation data CSV file")
-    parser.add_argument("--report_path", type=str, default="reports", help="Directory to save evaluation reports")
-    parser.add_argument("--detailed", action="store_true", help="Generate detailed evaluation report")
-    parser.add_argument("--visualize", action="store_true", help="Generate performance visualizations")
-    parser.add_argument("--backtest", action="store_true", help="Run backtest simulation")
-    parser.add_argument("--initial_capital", type=float, default=1000.0, help="Initial capital for backtest")
-    
-    args = parser.parse_args()
-    
-    # Log the execution
-    logger.info(f"Starting model validation with model: {args.model_path}")
-    logger.info(f"Using validation data: {args.data_path}")
-    
-    try:
-        # Create report directory if doesn't exist
-        os.makedirs(args.report_path, exist_ok=True)
-        
-        # Find the model file with correct extension
-        def find_model_file(model_path):
-            """Find model file by trying different extensions"""
-            if os.path.exists(model_path):
-                return model_path
-                
-            # Try different extensions
-            base_path = os.path.splitext(model_path)[0]
-            extensions = ['.keras', '.h5', '.tf']
-            
-            for ext in extensions:
-                potential_path = base_path + ext
-                if os.path.exists(potential_path):
-                    logger.info(f"Found model at {potential_path} instead of {model_path}")
-                    return potential_path
-            
-            # Check in models directory with different extensions
-            model_name = os.path.basename(base_path)
-            models_dir = os.path.join(DATA_DIR, "models")
-            
-            if os.path.exists(models_dir):
-                for file in os.listdir(models_dir):
-                    if file.startswith(model_name) and any(file.endswith(ext) for ext in extensions):
-                        full_path = os.path.join(models_dir, file)
-                        logger.info(f"Found model at {full_path} instead of {model_path}")
-                        return full_path
-            
-            return model_path  # Return original path if nothing found
-        
-        # Find the actual model file
-        actual_model_path = find_model_file(args.model_path)
-        
-        if not os.path.exists(actual_model_path):
-            logger.error(f"Model file not found: {args.model_path}")
-            logger.error(f"Tried looking for: {actual_model_path}")
-            logger.error("Please check if the model exists and specify the correct path")
-            sys.exit(1)
-        
-        # Load the model
-        logger.info(f"Loading model from {actual_model_path}...")
-        model = tf.keras.models.load_model(actual_model_path)
-        
-        # Create a feature engineering instance
-        feature_eng = FeatureEngineering()
-        
-        # Create LSTM model wrapper (needed to access properties like input_length)
-        # We're assuming it's an LSTM model here
-        lstm_model = LSTMModel()
-        lstm_model.model = model
-        
-        # Load validation data
-        logger.info("Loading validation data...")
-        if os.path.exists(args.data_path):
-            validation_data = pd.read_csv(args.data_path)
-            
-            # Convert timestamp to datetime and set as index if it exists
-            if 'timestamp' in validation_data.columns:
-                validation_data['timestamp'] = pd.to_datetime(validation_data['timestamp'])
-                validation_data.set_index('timestamp', inplace=True)
-            elif 'date' in validation_data.columns:
-                validation_data['timestamp'] = pd.to_datetime(validation_data['date'])
-                validation_data.set_index('timestamp', inplace=True)
-        else:
-            logger.error(f"Validation data file not found: {args.data_path}")
-            sys.exit(1)
-            
-        # Create model validator
-        validator = ModelValidator(model=lstm_model, feature_engineering=feature_eng)
-        validator.output_dir = args.report_path
-        
-        # Run evaluation
-        logger.info("Evaluating model performance...")
-        eval_results = validator.evaluate_on_test_set(validation_data)
-        
-        # Save evaluation results
-        eval_report_path = validator.save_results(eval_results, f"evaluation_{os.path.basename(args.model_path).split('.')[0]}")
-        logger.info(f"Evaluation report saved to: {eval_report_path}")
-        
-        # Print summary metrics
-        logger.info("Performance Summary:")
-        logger.info(f"  Accuracy: {eval_results['metrics']['accuracy']:.4f}")
-        logger.info(f"  F1 Score: {eval_results['metrics']['f1_score']:.4f}")
-        logger.info(f"  Precision: {eval_results['metrics']['precision']:.4f}")
-        logger.info(f"  Recall: {eval_results['metrics']['recall']:.4f}")
-        
-        # Generate visualizations if requested
-        if args.visualize:
-            logger.info("Generating prediction visualizations...")
-            viz_path = os.path.join(args.report_path, f"prediction_viz_{os.path.basename(args.model_path).split('.')[0]}.png")
-            validator.visualize_predictions(
-                validation_data,
-                save_path=viz_path
-            )
-            logger.info(f"Visualization saved to: {viz_path}")
-        
-        # Run backtest if requested
-        if args.backtest:
-            logger.info(f"Running backtest simulation with initial capital: ${args.initial_capital}...")
-            backtest_results = validator.backtest_model(
-                validation_data,
-                initial_capital=args.initial_capital
-            )
-            
-            # Save backtest results
-            backtest_report_path = validator.save_results(
-                backtest_results, 
-                f"backtest_{os.path.basename(args.model_path).split('.')[0]}"
-            )
-            logger.info(f"Backtest report saved to: {backtest_report_path}")
-            
-            # Print backtest summary
-            logger.info("Backtest Summary:")
-            logger.info(f"  Total Return: {backtest_results['total_return_pct']:.2f}%")
-            logger.info(f"  Win Rate: {backtest_results['win_rate']:.2f}%")
-            logger.info(f"  Profit Factor: {backtest_results['profit_factor']:.2f}")
-            logger.info(f"  Max Drawdown: {backtest_results['max_drawdown_pct']:.2f}%")
-            logger.info(f"  Sharpe Ratio: {backtest_results['sharpe_ratio']:.2f}")
-            
-            # Generate performance visualization
-            if args.visualize:
-                perf_viz_path = os.path.join(args.report_path, f"backtest_viz_{os.path.basename(args.model_path).split('.')[0]}.png")
-                validator.visualize_performance(backtest_results, save_path=perf_viz_path)
-                logger.info(f"Backtest visualization saved to: {perf_viz_path}")
-                
-            # Compare with baseline
-            comparison = validator.compare_with_baseline(validation_data, args.initial_capital)
-            logger.info("Model vs Buy-and-Hold Comparison:")
-            logger.info(f"  Model Return: {comparison['model_return_pct']:.2f}%")
-            logger.info(f"  Buy & Hold Return: {comparison['buy_and_hold_return_pct']:.2f}%")
-            logger.info(f"  Outperformance: {comparison['outperformance_pct']:.2f}%")
-        
-        logger.info("Model validation completed successfully.")
-        
-    except Exception as e:
-        logger.error(f"Error during model validation: {str(e)}")
-        import traceback
-        logger.error(traceback.format_exc())
-        sys.exit(1)

@@ -21,7 +21,7 @@ class BinanceClient(ExchangeClient):
     """
     Implementation of the exchange client interface for Binance
     """
-    def __init__(self, api_key: str = None, api_secret: str = None, testnet: bool = True, **kwargs):
+    def __init__(self, api_key: str, secret_key: str, testnet: bool = False):
         """
         Initialize Binance client
         
@@ -32,7 +32,7 @@ class BinanceClient(ExchangeClient):
             **kwargs: Additional parameters
         """
         self.api_key = api_key
-        self.api_secret = api_secret
+        self.api_secret = secret_key
         self.testnet = testnet
         
         # API URLs
@@ -65,7 +65,7 @@ class BinanceClient(ExchangeClient):
     def test_connection(self) -> bool:
         """Test connection to Binance API"""
         try:
-            response = self._public_request("GET", f"{self.api_version}/ping")
+            self.client.ping()  # Assuming the client provides a ping method
             return True
         except Exception as e:
             logger.error(f"Failed to connect to Binance API: {str(e)}")
@@ -172,36 +172,25 @@ class BinanceClient(ExchangeClient):
     def create_order(self, symbol: str, order_type: str, side: str, amount: float, price: float = None) -> Dict:
         """Create a new order"""
         try:
-            # Prepare order parameters
-            params = {
-                "symbol": symbol,
-                "side": side.upper(),  # Ensure uppercase
-                "type": order_type.upper(),  # Ensure uppercase
-                "quantity": amount,
-                "timestamp": int(time.time() * 1000)
-            }
-            
-            # Add price for limit orders
-            if order_type.upper() == "LIMIT" and price is not None:
-                params["price"] = price
-                params["timeInForce"] = "GTC"  # Good Till Canceled
-            
-            # Send order request
-            response = self._private_request("POST", f"{self.api_version}/order", params)
-            
-            return {
-                "success": True,
-                "order_id": response.get("orderId"),
-                "client_order_id": response.get("clientOrderId"),
-                "symbol": response.get("symbol"),
-                "price": float(response.get("price", 0)),
-                "amount": float(response.get("origQty", 0)),
-                "side": response.get("side", "").lower(),
-                "status": response.get("status", ""),
-                "type": response.get("type", "").lower(),
-                "timestamp": response.get("transactTime", 0)
-            }
-            
+            if order_type.lower() == "market":
+                order = self.client.create_order(
+                    symbol=symbol,
+                    side=side,
+                    type="MARKET",
+                    quantity=amount
+                )
+            elif order_type.lower() == "limit":
+                order = self.client.create_order(
+                    symbol=symbol,
+                    side=side,
+                    type="LIMIT",
+                    quantity=amount,
+                    price=price,
+                    timeInForce="GTC"
+                )
+            else:
+                raise ValueError(f"Unsupported order type: {order_type}")
+            return order
         except Exception as e:
             logger.error(f"Failed to create {order_type} {side} order for {symbol}: {str(e)}")
             return {
@@ -491,3 +480,6 @@ class BinanceClient(ExchangeClient):
         """Convert a timeframe string to Binance interval format"""
         # Binance intervals: 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M
         return timeframe.lower()
+    
+    def check_connection(self) -> bool:
+        return self.test_connection()

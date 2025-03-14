@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 """
-Script d'entraînement du modèle LSTM pour la prédiction des mouvements de marché
+Script d’entraînement du modèle de prédiction.
+Ce script permet de choisir le type de modèle (LSTM ou Transformer) via un argument de ligne de commande
+et d’entraîner le modèle en utilisant les hyperparamètres fournis ou par défaut.
 """
+
 import os
 import argparse
 import pandas as pd
@@ -58,97 +61,25 @@ def load_best_params(symbol="BTCUSDT", timeframe="15m"):
 from config.model_params import LSTM_DEFAULT_PARAMS, LSTM_OPTIMIZED_PARAMS
 
 def parse_args():
-    """Parse les arguments de ligne de commande"""
-    parser = argparse.ArgumentParser(description="Entraînement et évaluation du modèle LSTM")
-    
-    # Load best parameters to use as defaults - first from optimized params, then from files
-    best_params = None
-    args_timeframe = "15m"  # Default timeframe for loading params
-    
-    # Check if we have optimized params for this timeframe
-    if args_timeframe in LSTM_OPTIMIZED_PARAMS and LSTM_OPTIMIZED_PARAMS[args_timeframe]["last_optimized"] is not None:
-        best_params = LSTM_OPTIMIZED_PARAMS[args_timeframe]
-        logger.info(f"Using optimized parameters from config for {args_timeframe}")
-    else:
-        best_params = load_best_params()
-    
-    # Arguments pour les données
-    parser.add_argument("--symbol", type=str, default="BTCUSDT", 
-                      help="Paire de trading (ex: BTCUSDT)")
-    parser.add_argument("--timeframe", type=str, default="15m",
-                      help="Intervalle de temps (ex: 15m, 1h)")
-    parser.add_argument("--data_path", type=str, required=True,
-                      help="Répertoire des données de marché")
-    
-    # Arguments pour le modèle - use best_params values as defaults if available
-    parser.add_argument("--output", type=str, default=None,
-                      help="Chemin où sauvegarder le modèle (défaut: data/models/<symbol>_<timeframe>.keras)")
-    
-    # Use optimized parameters as defaults if available
-    default_lstm_units = f"{best_params.get('lstm_units_first', 128)}"
-    if best_params and "lstm_layers" in best_params and best_params["lstm_layers"] > 1:
-        for i in range(1, best_params["lstm_layers"]):
-            default_lstm_units += f",{best_params.get('lstm_units_first', 128) // (2**i)}"
-    else:
-        default_lstm_units = "128,64,32"  # Default if no best params
-    
-    parser.add_argument("--lstm_units", type=str, default=default_lstm_units,
-                      help="Unités LSTM par couche (séparées par virgules)")
-    
-    parser.add_argument("--dropout", type=float, 
-                      default=best_params.get("dropout_rate", 0.3) if best_params else 0.3,
-                      help="Taux de dropout")
-    
-    parser.add_argument("--learning_rate", type=float, 
-                      default=best_params.get("learning_rate", 0.001) if best_params else 0.001,
-                      help="Taux d'apprentissage")
-    
-    # Arguments pour l'entraînement
-    parser.add_argument("--epochs", type=int, default=100,
-                      help="Nombre d'époques d'entraînement")
-    
-    parser.add_argument("--batch_size", type=int, 
-                      default=best_params.get("batch_size", 64) if best_params else 64,
-                      help="Taille des batchs d'entraînement")
-    
-    parser.add_argument("--validation_split", type=float, default=0.2,
-                      help="Proportion des données pour la validation")
-    
-    # Options avancées
-    parser.add_argument("--use_attention", type=bool, default=True,
-                      help="Utiliser le mécanisme d'attention")
-    parser.add_argument("--use_early_stopping", type=bool, default=True,
-                      help="Utiliser l'arrêt précoce")
-    parser.add_argument("--patience", type=int, default=15,
-                      help="Patience pour l'arrêt précoce")
-    parser.add_argument("--verbose", type=int, default=1,
-                      help="Niveau de verbosité (0=silencieux, 1=progrès, 2=détaillé)")
-    parser.add_argument("--evaluate_after", type=bool, default=True,
-                      help="Évaluer le modèle après l'entraînement")
-    
-    # Regularization parameters
-    parser.add_argument("--l1_reg", type=float,
-                      default=best_params.get("l1_reg", 0.0001) if best_params else 0.0001,
-                      help="Régularisation L1")
-    
-    parser.add_argument("--l2_reg", type=float,
-                      default=best_params.get("l2_reg", 0.0001) if best_params else 0.0001,
-                      help="Régularisation L2")
-    
-    # Sequence length parameter
-    parser.add_argument("--sequence_length", type=int,
-                      default=best_params.get("sequence_length", 60) if best_params else 60,
-                      help="Longueur des séquences d'entrée")
-    
-    args = parser.parse_args()
-    
-    # Log which parameters were loaded from optimization
-    if best_params:
-        logger.info("Using optimized parameters as defaults:")
-        for param, value in best_params.items():
-            logger.info(f"  - {param}: {value}")
-    
-    return args
+    parser = argparse.ArgumentParser(description="Entraînement et évaluation du modèle de prédiction")
+    parser.add_argument("--symbol", type=str, required=True, help="Paire de trading (ex: BTCUSDT)")
+    parser.add_argument("--timeframe", type=str, required=True, help="Intervalle de temps (ex: 15m, 1h)")
+    parser.add_argument("--data_path", type=str, required=True, help="Répertoire des données de marché")
+    # Ajout d'un argument pour sélectionner le type de modèle
+    parser.add_argument("--model_type", type=str, default="lstm", choices=["lstm", "transformer"],
+                        help="Type de modèle à entraîner ('lstm' ou 'transformer')")
+    parser.add_argument("--validation_split", type=float, default=0.2, help="Fraction of data to use as validation split")
+    # New arguments:
+    parser.add_argument("--epochs", type=int, default=100, help="Number of training epochs")
+    parser.add_argument("--batch_size", type=int, default=64, help="Batch size for training")
+    parser.add_argument("--lstm_units", type=lambda s: [int(item) for item in s.split(',')], default=[128,64,32],
+                        help="Comma-separated list of LSTM units (e.g., 128,64,32)")
+    parser.add_argument("--dropout", type=float, default=0.5, help="Dropout rate for training")
+    # Add the missing learning rate argument:
+    parser.add_argument("--learning_rate", type=float, default=None, help="Learning rate for training")
+    # New argument for patience
+    parser.add_argument("--patience", type=int, default=10, help="Patience for early stopping and learning rate reduction")
+    return parser.parse_args()
 
 def load_data(data_path, symbol, timeframe):
     """
@@ -279,12 +210,12 @@ def train_model(args):
         params_source = optimized_params
     
     # Override with command line args if provided
-    lstm_units = [int(u) for u in args.lstm_units.split(',')] if args.lstm_units else params_source["lstm_units"]
-    dropout_rate = args.dropout if args.dropout is not None else params_source["dropout_rate"]
-    learning_rate = args.learning_rate if args.learning_rate is not None else params_source["learning_rate"]
-    sequence_length = args.sequence_length if args.sequence_length is not None else params_source["sequence_length"]
-    l1_reg = args.l1_reg if args.l1_reg is not None else params_source["l1_regularization"]
-    l2_reg = args.l2_reg if args.l2_reg is not None else params_source["l2_regularization"]
+    lstm_units = args.lstm_units if args.lstm_units else params_source["lstm_units"]
+    dropout_rate = getattr(args, "dropout", None) if getattr(args, "dropout", None) is not None else params_source["dropout_rate"]
+    learning_rate = getattr(args, "learning_rate", None) if getattr(args, "learning_rate", None) is not None else params_source["learning_rate"]
+    sequence_length = getattr(args, "sequence_length", None) if getattr(args, "sequence_length", None) is not None else params_source["sequence_length"]
+    l1_reg = getattr(args, "l1_reg", None) if getattr(args, "l1_reg", None) is not None else params_source["l1_regularization"]
+    l2_reg = getattr(args, "l2_reg", None) if getattr(args, "l2_reg", None) is not None else params_source["l2_regularization"]
     batch_size = args.batch_size if args.batch_size is not None else params_source["batch_size"]
     
     # Log the parameters being used
@@ -318,9 +249,6 @@ def train_model(args):
     if len(X_val.shape) != 3:
         raise ValueError(f"Les données de validation doivent avoir 3 dimensions (trouvé: {len(X_val.shape)})")
     
-    # 4. Convertir les string d'unités LSTM en liste d'entiers
-    lstm_units = [int(u) for u in args.lstm_units.split(',')]
-    
     # 5. Créer et compiler le modèle with parameters from config/args
     logger.info(f"Création du modèle LSTM avec unités: {lstm_units}")
     model = LSTMModel(
@@ -329,7 +257,7 @@ def train_model(args):
         lstm_units=lstm_units,
         dropout_rate=dropout_rate,
         learning_rate=learning_rate,
-        use_attention=args.use_attention,
+        use_attention=getattr(args, "use_attention", False),
         prediction_horizons=horizons,
         l1_reg=l1_reg,
         l2_reg=l2_reg
@@ -342,7 +270,7 @@ def train_model(args):
     os.makedirs(MODEL_CHECKPOINTS_DIR, exist_ok=True)
     
     # Chemin pour sauvegarder le modèle
-    if args.output:
+    if hasattr(args, "output"):
         model_path = args.output
     else:
         model_path = os.path.join(DATA_DIR, "models", f"lstm_{args.symbol}_{args.timeframe}.keras")
@@ -365,11 +293,11 @@ def train_model(args):
     )
     
     # Early stopping
-    if args.use_early_stopping:
+    if getattr(args, "use_early_stopping", False):
         callbacks.append(
             EarlyStopping(
                 monitor='val_loss',
-                patience=args.patience,
+                patience=getattr(args, "patience", 10),
                 restore_best_weights=True,
                 verbose=1
             )
@@ -395,7 +323,7 @@ def train_model(args):
         batch_size=batch_size,
         validation_data=(X_val, y_val),
         callbacks=callbacks,
-        verbose=args.verbose
+        verbose=getattr(args, "verbose", 1)
     )
     
     # 8. Sauvegarder le modèle
@@ -413,7 +341,7 @@ def train_model(args):
         json.dump(history_dict, f, indent=2)
     
     # 10. Évaluation du modèle
-    if args.evaluate_after:
+    if getattr(args, "evaluate_after", False):
         logger.info("Évaluation du modèle sur les données de validation...")
         evaluate_model(model, X_val, y_val, args.symbol, args.timeframe, model_path)
     

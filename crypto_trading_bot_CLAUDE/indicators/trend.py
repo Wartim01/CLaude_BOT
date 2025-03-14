@@ -4,6 +4,7 @@ Indicateurs de tendance
 """
 import pandas as pd
 import numpy as np
+import talib
 from typing import Dict, List, Optional, Union
 
 def calculate_ema(df: pd.DataFrame, periods: List[int] = [9, 21, 50, 200]) -> Dict[str, pd.Series]:
@@ -248,3 +249,16 @@ def detect_trend(df: pd.DataFrame, ema_periods: List[int] = [9, 21, 50]) -> Dict
         'strength': trend_strength,
         'details': details
     }
+
+def calculate_moving_average(series: pd.Series, window: int = 20) -> pd.Series:
+    """
+    Calculate the simple moving average from a price series.
+    
+    Args:
+        series: pandas Series of prices.
+        window: Period for the rolling mean.
+        
+    Returns:
+        pandas Series representing the moving average.
+    """
+    return series.rolling(window=window).mean()

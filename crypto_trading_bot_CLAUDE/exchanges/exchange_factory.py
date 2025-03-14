@@ -1,7 +1,9 @@
 """
 Factory for creating exchange clients
 """
-from typing import Optional
+import os
+from typing import Any, Optional
+from config.config import load_config, CONFIG_PATH
 from utils.logger import setup_logger
 from exchanges.exchange_client import ExchangeClient
 from exchanges.binance_client import BinanceClient
@@ -9,27 +11,20 @@ from exchanges.paper_trading import PaperTradingClient
 
 logger = setup_logger("exchange_factory")
 
-def create_exchange(name: str, api_key: str = None, api_secret: str = None, 
-                   testnet: bool = True, **kwargs) -> Optional[ExchangeClient]:
+def create_exchange(name: str, **kwargs) -> Any:
     """
-    Create an exchange client instance
+    Fabrique un client d'échange selon le nom fourni.
     
     Args:
-        name: Exchange name (binance, paper, etc.)
-        api_key: API key
-        api_secret: API secret
-        testnet: Use testnet (for real exchanges)
-        **kwargs: Additional exchange-specific parameters
-        
-    Returns:
-        Exchange client instance
-    """
-    name = name.lower()
+        name: Nom de l'échange ("binance", "paper", etc.)
+        **kwargs: Paramètres spécifiques à passer au client
     
-    if name == "binance":
-        return BinanceClient(api_key=api_key, api_secret=api_secret, testnet=testnet, **kwargs)
-    elif name == "paper":
+    Returns:
+        Instance d'un ExchangeClient adapté
+    """
+    if name.lower() == "binance":
+        return BinanceClient(**kwargs)
+    elif name.lower() == "paper":
         return PaperTradingClient(**kwargs)
     else:
-        logger.error(f"Unsupported exchange: {name}")
-        return None
+        raise ValueError(f"Client d'échange pour '{name}' non supporté.")

@@ -9,7 +9,6 @@ from datetime import datetime, timedelta
 import talib
 
 from utils.logger import setup_logger
-from utils.technical_analysis import TechnicalAnalysis
 
 logger = setup_logger("market_indicators")
 

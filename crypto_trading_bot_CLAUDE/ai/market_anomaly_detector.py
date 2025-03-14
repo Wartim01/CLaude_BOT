@@ -767,7 +767,53 @@ class MarketAnomalyDetector:
         """
         return self.anomaly_history[-limit:]
 
+    def detect_volatility_anomaly(self, price_series):
+        # Calculate standard deviation of percentage changes as volatility
+        pct_changes = price_series.pct_change().dropna()
+        volatility = pct_changes.std()
+        anomaly = volatility > self.volatility_threshold
+        # ...existing code or logging...
+        return {"volatility": volatility, "anomaly": anomaly}
 
-# Exemple d'intégration dans le gestionnaire de risque adaptatif:
-# 
-# Dans adaptive_risk_manager.py, remplacer la méthode _detect_extreme_market_conditions 
+    def detect_gap_anomaly(self, price_series):
+        # Compute consecutive price gaps (absolute difference divided by previous price)
+        gaps = price_series.diff().abs() / price_series.shift(1)
+        max_gap = gaps.max()
+        anomaly = max_gap > self.gap_threshold
+        return {"max_gap": max_gap, "anomaly": anomaly}
+
+    def detect_volume_anomaly(self, volume_series):
+        # Calculate rolling average of volume (window of 20 periods)
+        rolling_avg = volume_series.rolling(window=20).mean()
+        latest_volume = volume_series.iloc[-1]
+        anomaly = False
+        if not rolling_avg.empty and rolling_avg.iloc[-1] is not None:
+            anomaly = latest_volume > self.volume_multiplier * rolling_avg.iloc[-1]
+        return {"latest_volume": latest_volume, "rolling_avg": rolling_avg.iloc[-1] if not rolling_avg.empty else None, "anomaly": anomaly}
+
+    def get_anomaly_score(self, price_series, volume_series):
+        """
+        Compute individual anomaly scores and combine them into a normalized score.
+        Returns a dictionary with details and a flag 'is_anomalous' indicating whether the market is abnormal.
+        """
+        vol_result = self.detect_volatility_anomaly(price_series)
+        gap_result = self.detect_gap_anomaly(price_series)
+        volume_result = self.detect_volume_anomaly(volume_series)
+        
+        # Simple scoring: 1 point for each anomaly detected
+        score = 0
+        score += 1 if vol_result["anomaly"] else 0
+        score += 1 if gap_result["anomaly"] else 0
+        score += 1 if volume_result["anomaly"] else 0
+        
+        # Normalize score to [0,1]
+        normalized_score = score / 3.0
+        
+        return {
+            "volatility": vol_result,
+            "gap": gap_result,
+            "volume": volume_result,
+            "raw_score": score,
+            "normalized_score": normalized_score,
+            "is_anomalous": normalized_score >= 0.5  # Flag anomaly if score is at least 0.5
+        }

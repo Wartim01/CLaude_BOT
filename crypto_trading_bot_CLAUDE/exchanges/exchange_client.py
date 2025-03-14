@@ -125,3 +125,13 @@ class ExchangeClient(abc.ABC):
             Ticker information
         """
         pass
+
+    @abc.abstractmethod
+    def check_connection(self) -> bool:
+        """
+        Check connection to the exchange using a ping or test API call
+        
+        Returns:
+            Boolean indicating success
+        """
+        pass

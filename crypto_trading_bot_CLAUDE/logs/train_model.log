@@ -51,157 +51,304 @@ of length 1 whereas the model has 3 outputs.
 2025-03-08 08:04:12,252 â€” train_model â€” INFO â€” DonnÃ©es chargÃ©es: 34941 lignes de 2022-12-31 23:00:00 Ã  2023-12-30 23:00:00
 2025-03-08 08:43:53,534 â€” train_model â€” INFO â€” Chargement des donnÃ©es depuis C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv...
 2025-03-08 08:43:53,632 â€” train_model â€” INFO â€” DonnÃ©es chargÃ©es: 34941 lignes de 2022-12-31 23:00:00 Ã  2023-12-30 23:00:00
-2025-03-08 09:20:08,190 — train_model — INFO — Chargement des données depuis C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv...
-2025-03-08 09:20:08,284 — train_model — INFO — Données chargées: 34941 lignes de 2022-12-31 23:00:00 à 2023-12-30 23:00:00
-2025-03-08 09:58:42,422 — train_model — INFO — Chargement des données depuis C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv...
-2025-03-08 09:58:42,518 — train_model — INFO — Données chargées: 34941 lignes de 2022-12-31 23:00:00 à 2023-12-30 23:00:00
-2025-03-08 10:28:23,871 — train_model — INFO — Using optimized parameters from config for 15m
-2025-03-08 10:28:23,874 — train_model — INFO — Using optimized parameters as defaults:
-2025-03-08 10:28:23,874 — train_model — INFO —   - lstm_units: [136, 68, 68]
-2025-03-08 10:28:23,875 — train_model — INFO —   - dropout_rate: 0.39279757672456206
-2025-03-08 10:28:23,875 — train_model — INFO —   - learning_rate: 0.0006251373574521745
-2025-03-08 10:28:23,875 — train_model — INFO —   - batch_size: 64
-2025-03-08 10:28:23,876 — train_model — INFO —   - sequence_length: 30
-2025-03-08 10:28:23,876 — train_model — INFO —   - l1_regularization: 0.0003967605077052988
-2025-03-08 10:28:23,876 — train_model — INFO —   - l2_regularization: 6.358358856676247e-05
-2025-03-08 10:28:23,876 — train_model — INFO —   - use_attention: True
-2025-03-08 10:28:23,877 — train_model — INFO —   - use_residual: True
-2025-03-08 10:28:23,877 — train_model — INFO —   - last_optimized: 2025-03-08 10:03:55
-2025-03-08 10:28:23,877 — train_model — INFO —   - f1_score: 0.6836915297092289
-2025-03-08 10:28:23,878 — train_model — INFO — Chargement des données depuis data/market_data/BTCUSDT_15m.csv...
-2025-03-08 10:28:23,978 — train_model — INFO — Données chargées: 34941 lignes de 2022-12-31 23:00:00 à 2023-12-30 23:00:00
-2025-03-08 10:28:23,978 — train_model — INFO — Création des caractéristiques...
-2025-03-08 10:28:25,940 — train_model — INFO — Normalisation des données...
-2025-03-08 10:28:26,029 — train_model — INFO — Division des données: 27952 échantillons d'entraînement, 6989 échantillons de validation
-2025-03-08 10:28:26,029 — train_model — INFO — Utilisation d'un unique horizon de prédiction: 4 périodes
-2025-03-08 10:28:26,030 — train_model — INFO — Using optimized parameters for 15m from config
-2025-03-08 10:28:26,030 — train_model — INFO — Last optimization: 2025-03-08 10:03:55 with F1 score: 0.6837
-2025-03-08 10:28:26,030 — train_model — INFO — Training with parameters: lstm_units=[128, 64, 32], dropout=0.39279757672456206, learning_rate=0.0006251373574521745, sequence_length=30, batch_size=64, l1_reg=0.0001, l2_reg=0.0001
-2025-03-08 10:28:26,031 — train_model — INFO — Création des séquences pour l'entraînement...
-2025-03-08 10:31:05,160 — train_model — INFO — Création des séquences pour la validation...
-2025-03-08 10:31:23,495 — train_model — INFO — Vérification des dimensions: X_train = (27918, 30, 66), X_val = (6955, 30, 66)
-2025-03-08 10:31:23,496 — train_model — INFO — Création du modèle LSTM avec unités: [128, 64, 32]
-2025-03-08 10:31:23,641 — train_model — INFO — Début de l'entraînement pour 100 époques avec batch_size=64...
-2025-03-08 10:31:26,079 — train_model — ERROR — Erreur lors de l'entraînement: Expected all entries in the `metrics` list to be metric objects. Received instead:
+2025-03-08 09:20:08,190 ï¿½ train_model ï¿½ INFO ï¿½ Chargement des donnï¿½es depuis C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv...
+2025-03-08 09:20:08,284 ï¿½ train_model ï¿½ INFO ï¿½ Donnï¿½es chargï¿½es: 34941 lignes de 2022-12-31 23:00:00 ï¿½ 2023-12-30 23:00:00
+2025-03-08 09:58:42,422 ï¿½ train_model ï¿½ INFO ï¿½ Chargement des donnï¿½es depuis C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv...
+2025-03-08 09:58:42,518 ï¿½ train_model ï¿½ INFO ï¿½ Donnï¿½es chargï¿½es: 34941 lignes de 2022-12-31 23:00:00 ï¿½ 2023-12-30 23:00:00
+2025-03-08 10:28:23,871 ï¿½ train_model ï¿½ INFO ï¿½ Using optimized parameters from config for 15m
+2025-03-08 10:28:23,874 ï¿½ train_model ï¿½ INFO ï¿½ Using optimized parameters as defaults:
+2025-03-08 10:28:23,874 ï¿½ train_model ï¿½ INFO ï¿½   - lstm_units: [136, 68, 68]
+2025-03-08 10:28:23,875 ï¿½ train_model ï¿½ INFO ï¿½   - dropout_rate: 0.39279757672456206
+2025-03-08 10:28:23,875 ï¿½ train_model ï¿½ INFO ï¿½   - learning_rate: 0.0006251373574521745
+2025-03-08 10:28:23,875 ï¿½ train_model ï¿½ INFO ï¿½   - batch_size: 64
+2025-03-08 10:28:23,876 ï¿½ train_model ï¿½ INFO ï¿½   - sequence_length: 30
+2025-03-08 10:28:23,876 ï¿½ train_model ï¿½ INFO ï¿½   - l1_regularization: 0.0003967605077052988
+2025-03-08 10:28:23,876 ï¿½ train_model ï¿½ INFO ï¿½   - l2_regularization: 6.358358856676247e-05
+2025-03-08 10:28:23,876 ï¿½ train_model ï¿½ INFO ï¿½   - use_attention: True
+2025-03-08 10:28:23,877 ï¿½ train_model ï¿½ INFO ï¿½   - use_residual: True
+2025-03-08 10:28:23,877 ï¿½ train_model ï¿½ INFO ï¿½   - last_optimized: 2025-03-08 10:03:55
+2025-03-08 10:28:23,877 ï¿½ train_model ï¿½ INFO ï¿½   - f1_score: 0.6836915297092289
+2025-03-08 10:28:23,878 ï¿½ train_model ï¿½ INFO ï¿½ Chargement des donnï¿½es depuis data/market_data/BTCUSDT_15m.csv...
+2025-03-08 10:28:23,978 ï¿½ train_model ï¿½ INFO ï¿½ Donnï¿½es chargï¿½es: 34941 lignes de 2022-12-31 23:00:00 ï¿½ 2023-12-30 23:00:00
+2025-03-08 10:28:23,978 ï¿½ train_model ï¿½ INFO ï¿½ Crï¿½ation des caractï¿½ristiques...
+2025-03-08 10:28:25,940 ï¿½ train_model ï¿½ INFO ï¿½ Normalisation des donnï¿½es...
+2025-03-08 10:28:26,029 ï¿½ train_model ï¿½ INFO ï¿½ Division des donnï¿½es: 27952 ï¿½chantillons d'entraï¿½nement, 6989 ï¿½chantillons de validation
+2025-03-08 10:28:26,029 ï¿½ train_model ï¿½ INFO ï¿½ Utilisation d'un unique horizon de prï¿½diction: 4 pï¿½riodes
+2025-03-08 10:28:26,030 ï¿½ train_model ï¿½ INFO ï¿½ Using optimized parameters for 15m from config
+2025-03-08 10:28:26,030 ï¿½ train_model ï¿½ INFO ï¿½ Last optimization: 2025-03-08 10:03:55 with F1 score: 0.6837
+2025-03-08 10:28:26,030 ï¿½ train_model ï¿½ INFO ï¿½ Training with parameters: lstm_units=[128, 64, 32], dropout=0.39279757672456206, learning_rate=0.0006251373574521745, sequence_length=30, batch_size=64, l1_reg=0.0001, l2_reg=0.0001
+2025-03-08 10:28:26,031 ï¿½ train_model ï¿½ INFO ï¿½ Crï¿½ation des sï¿½quences pour l'entraï¿½nement...
+2025-03-08 10:31:05,160 ï¿½ train_model ï¿½ INFO ï¿½ Crï¿½ation des sï¿½quences pour la validation...
+2025-03-08 10:31:23,495 ï¿½ train_model ï¿½ INFO ï¿½ Vï¿½rification des dimensions: X_train = (27918, 30, 66), X_val = (6955, 30, 66)
+2025-03-08 10:31:23,496 ï¿½ train_model ï¿½ INFO ï¿½ Crï¿½ation du modï¿½le LSTM avec unitï¿½s: [128, 64, 32]
+2025-03-08 10:31:23,641 ï¿½ train_model ï¿½ INFO ï¿½ Dï¿½but de l'entraï¿½nement pour 100 ï¿½poques avec batch_size=64...
+2025-03-08 10:31:26,079 ï¿½ train_model ï¿½ ERROR ï¿½ Erreur lors de l'entraï¿½nement: Expected all entries in the `metrics` list to be metric objects. Received instead:
 metrics=[['accuracy'], ['accuracy'], ['accuracy']]
-2025-03-08 10:40:19,480 — train_model — INFO — Using optimized parameters from config for 15m
-2025-03-08 10:40:19,483 — train_model — INFO — Using optimized parameters as defaults:
-2025-03-08 10:40:19,483 — train_model — INFO —   - lstm_units: [136, 68, 68]
-2025-03-08 10:40:19,483 — train_model — INFO —   - dropout_rate: 0.39279757672456206
-2025-03-08 10:40:19,484 — train_model — INFO —   - learning_rate: 0.0006251373574521745
-2025-03-08 10:40:19,484 — train_model — INFO —   - batch_size: 64
-2025-03-08 10:40:19,484 — train_model — INFO —   - sequence_length: 30
-2025-03-08 10:40:19,484 — train_model — INFO —   - l1_regularization: 0.0003967605077052988
-2025-03-08 10:40:19,485 — train_model — INFO —   - l2_regularization: 6.358358856676247e-05
-2025-03-08 10:40:19,485 — train_model — INFO —   - use_attention: True
-2025-03-08 10:40:19,485 — train_model — INFO —   - use_residual: True
-2025-03-08 10:40:19,486 — train_model — INFO —   - last_optimized: 2025-03-08 10:03:55
-2025-03-08 10:40:19,486 — train_model — INFO —   - f1_score: 0.6836915297092289
-2025-03-08 10:40:19,486 — train_model — INFO — Chargement des données depuis data/market_data/BTCUSDT_15m.csv...
-2025-03-08 10:40:19,581 — train_model — INFO — Données chargées: 34941 lignes de 2022-12-31 23:00:00 à 2023-12-30 23:00:00
-2025-03-08 10:40:19,581 — train_model — INFO — Création des caractéristiques...
-2025-03-08 10:40:21,604 — train_model — INFO — Normalisation des données...
-2025-03-08 10:40:21,694 — train_model — INFO — Division des données: 27952 échantillons d'entraînement, 6989 échantillons de validation
-2025-03-08 10:40:21,695 — train_model — INFO — Utilisation d'un unique horizon de prédiction: 4 périodes
-2025-03-08 10:40:21,695 — train_model — INFO — Using optimized parameters for 15m from config
-2025-03-08 10:40:21,695 — train_model — INFO — Last optimization: 2025-03-08 10:03:55 with F1 score: 0.6837
-2025-03-08 10:40:21,696 — train_model — INFO — Training with parameters: lstm_units=[128, 64, 32], dropout=0.39279757672456206, learning_rate=0.0006251373574521745, sequence_length=30, batch_size=64, l1_reg=0.0001, l2_reg=0.0001
-2025-03-08 10:40:21,696 — train_model — INFO — Création des séquences pour l'entraînement...
-2025-03-08 10:43:09,471 — train_model — INFO — Création des séquences pour la validation...
-2025-03-08 10:43:28,830 — train_model — INFO — Vérification des dimensions: X_train = (27918, 30, 66), X_val = (6955, 30, 66)
-2025-03-08 10:43:28,831 — train_model — INFO — Création du modèle LSTM avec unités: [128, 64, 32]
-2025-03-08 10:43:28,968 — train_model — INFO — Début de l'entraînement pour 100 époques avec batch_size=64...
-2025-03-08 10:43:31,546 — train_model — ERROR — Erreur lors de l'entraînement: Expected all entries in the `metrics` list to be metric objects. Received instead:
+2025-03-08 10:40:19,480 ï¿½ train_model ï¿½ INFO ï¿½ Using optimized parameters from config for 15m
+2025-03-08 10:40:19,483 ï¿½ train_model ï¿½ INFO ï¿½ Using optimized parameters as defaults:
+2025-03-08 10:40:19,483 ï¿½ train_model ï¿½ INFO ï¿½   - lstm_units: [136, 68, 68]
+2025-03-08 10:40:19,483 ï¿½ train_model ï¿½ INFO ï¿½   - dropout_rate: 0.39279757672456206
+2025-03-08 10:40:19,484 ï¿½ train_model ï¿½ INFO ï¿½   - learning_rate: 0.0006251373574521745
+2025-03-08 10:40:19,484 ï¿½ train_model ï¿½ INFO ï¿½   - batch_size: 64
+2025-03-08 10:40:19,484 ï¿½ train_model ï¿½ INFO ï¿½   - sequence_length: 30
+2025-03-08 10:40:19,484 ï¿½ train_model ï¿½ INFO ï¿½   - l1_regularization: 0.0003967605077052988
+2025-03-08 10:40:19,485 ï¿½ train_model ï¿½ INFO ï¿½   - l2_regularization: 6.358358856676247e-05
+2025-03-08 10:40:19,485 ï¿½ train_model ï¿½ INFO ï¿½   - use_attention: True
+2025-03-08 10:40:19,485 ï¿½ train_model ï¿½ INFO ï¿½   - use_residual: True
+2025-03-08 10:40:19,486 ï¿½ train_model ï¿½ INFO ï¿½   - last_optimized: 2025-03-08 10:03:55
+2025-03-08 10:40:19,486 ï¿½ train_model ï¿½ INFO ï¿½   - f1_score: 0.6836915297092289
+2025-03-08 10:40:19,486 ï¿½ train_model ï¿½ INFO ï¿½ Chargement des donnï¿½es depuis data/market_data/BTCUSDT_15m.csv...
+2025-03-08 10:40:19,581 ï¿½ train_model ï¿½ INFO ï¿½ Donnï¿½es chargï¿½es: 34941 lignes de 2022-12-31 23:00:00 ï¿½ 2023-12-30 23:00:00
+2025-03-08 10:40:19,581 ï¿½ train_model ï¿½ INFO ï¿½ Crï¿½ation des caractï¿½ristiques...
+2025-03-08 10:40:21,604 ï¿½ train_model ï¿½ INFO ï¿½ Normalisation des donnï¿½es...
+2025-03-08 10:40:21,694 ï¿½ train_model ï¿½ INFO ï¿½ Division des donnï¿½es: 27952 ï¿½chantillons d'entraï¿½nement, 6989 ï¿½chantillons de validation
+2025-03-08 10:40:21,695 ï¿½ train_model ï¿½ INFO ï¿½ Utilisation d'un unique horizon de prï¿½diction: 4 pï¿½riodes
+2025-03-08 10:40:21,695 ï¿½ train_model ï¿½ INFO ï¿½ Using optimized parameters for 15m from config
+2025-03-08 10:40:21,695 ï¿½ train_model ï¿½ INFO ï¿½ Last optimization: 2025-03-08 10:03:55 with F1 score: 0.6837
+2025-03-08 10:40:21,696 ï¿½ train_model ï¿½ INFO ï¿½ Training with parameters: lstm_units=[128, 64, 32], dropout=0.39279757672456206, learning_rate=0.0006251373574521745, sequence_length=30, batch_size=64, l1_reg=0.0001, l2_reg=0.0001
+2025-03-08 10:40:21,696 ï¿½ train_model ï¿½ INFO ï¿½ Crï¿½ation des sï¿½quences pour l'entraï¿½nement...
+2025-03-08 10:43:09,471 ï¿½ train_model ï¿½ INFO ï¿½ Crï¿½ation des sï¿½quences pour la validation...
+2025-03-08 10:43:28,830 ï¿½ train_model ï¿½ INFO ï¿½ Vï¿½rification des dimensions: X_train = (27918, 30, 66), X_val = (6955, 30, 66)
+2025-03-08 10:43:28,831 ï¿½ train_model ï¿½ INFO ï¿½ Crï¿½ation du modï¿½le LSTM avec unitï¿½s: [128, 64, 32]
+2025-03-08 10:43:28,968 ï¿½ train_model ï¿½ INFO ï¿½ Dï¿½but de l'entraï¿½nement pour 100 ï¿½poques avec batch_size=64...
+2025-03-08 10:43:31,546 ï¿½ train_model ï¿½ ERROR ï¿½ Erreur lors de l'entraï¿½nement: Expected all entries in the `metrics` list to be metric objects. Received instead:
 metrics=[['accuracy'], ['accuracy'], ['accuracy']]
-2025-03-08 12:34:06,757 — train_model — INFO — Using optimized parameters from config for 15m
-2025-03-08 12:34:06,760 — train_model — INFO — Using optimized parameters as defaults:
-2025-03-08 12:34:06,760 — train_model — INFO —   - lstm_units: [136, 68, 68]
-2025-03-08 12:34:06,760 — train_model — INFO —   - dropout_rate: 0.39279757672456206
-2025-03-08 12:34:06,760 — train_model — INFO —   - learning_rate: 0.0006251373574521745
-2025-03-08 12:34:06,761 — train_model — INFO —   - batch_size: 64
-2025-03-08 12:34:06,761 — train_model — INFO —   - sequence_length: 30
-2025-03-08 12:34:06,761 — train_model — INFO —   - l1_regularization: 0.0003967605077052988
-2025-03-08 12:34:06,761 — train_model — INFO —   - l2_regularization: 6.358358856676247e-05
-2025-03-08 12:34:06,762 — train_model — INFO —   - use_attention: True
-2025-03-08 12:34:06,762 — train_model — INFO —   - use_residual: True
-2025-03-08 12:34:06,762 — train_model — INFO —   - last_optimized: 2025-03-08 10:03:55
-2025-03-08 12:34:06,763 — train_model — INFO —   - f1_score: 0.6836915297092289
-2025-03-08 12:34:06,763 — train_model — INFO — Chargement des données depuis data/market_data/BTCUSDT_15m.csv...
-2025-03-08 12:34:06,843 — train_model — INFO — Données chargées: 34941 lignes de 2022-12-31 23:00:00 à 2023-12-30 23:00:00
-2025-03-08 12:34:06,843 — train_model — INFO — Création des caractéristiques...
-2025-03-08 12:34:08,756 — train_model — INFO — Normalisation des données...
-2025-03-08 12:34:08,845 — train_model — INFO — Division des données: 27952 échantillons d'entraînement, 6989 échantillons de validation
-2025-03-08 12:34:08,845 — train_model — INFO — Utilisation d'un unique horizon de prédiction: 4 périodes
-2025-03-08 12:34:08,846 — train_model — INFO — Using optimized parameters for 15m from config
-2025-03-08 12:34:08,846 — train_model — INFO — Last optimization: 2025-03-08 10:03:55 with F1 score: 0.6837
-2025-03-08 12:34:08,846 — train_model — INFO — Training with parameters: lstm_units=[128, 64, 32], dropout=0.39279757672456206, learning_rate=0.0006251373574521745, sequence_length=30, batch_size=64, l1_reg=0.0001, l2_reg=0.0001
-2025-03-08 12:34:08,847 — train_model — INFO — Création des séquences pour l'entraînement...
-2025-03-08 12:36:47,216 — train_model — INFO — Création des séquences pour la validation...
-2025-03-08 12:37:06,754 — train_model — INFO — Vérification des dimensions: X_train = (27918, 30, 66), X_val = (6955, 30, 66)
-2025-03-08 12:37:06,755 — train_model — INFO — Création du modèle LSTM avec unités: [128, 64, 32]
-2025-03-08 12:37:06,950 — train_model — ERROR — Erreur lors de l'entraînement: Expected `metrics` argument to be a list, tuple, or dict. Received instead: metrics=accuracy of type <class 'str'>
-2025-03-08 12:39:34,233 — train_model — INFO — Using optimized parameters from config for 15m
-2025-03-08 12:39:34,236 — train_model — INFO — Using optimized parameters as defaults:
-2025-03-08 12:39:34,236 — train_model — INFO —   - lstm_units: [136, 68, 68]
-2025-03-08 12:39:34,236 — train_model — INFO —   - dropout_rate: 0.39279757672456206
-2025-03-08 12:39:34,237 — train_model — INFO —   - learning_rate: 0.0006251373574521745
-2025-03-08 12:39:34,237 — train_model — INFO —   - batch_size: 64
-2025-03-08 12:39:34,237 — train_model — INFO —   - sequence_length: 30
-2025-03-08 12:39:34,238 — train_model — INFO —   - l1_regularization: 0.0003967605077052988
-2025-03-08 12:39:34,238 — train_model — INFO —   - l2_regularization: 6.358358856676247e-05
-2025-03-08 12:39:34,238 — train_model — INFO —   - use_attention: True
-2025-03-08 12:39:34,238 — train_model — INFO —   - use_residual: True
-2025-03-08 12:39:34,239 — train_model — INFO —   - last_optimized: 2025-03-08 10:03:55
-2025-03-08 12:39:34,239 — train_model — INFO —   - f1_score: 0.6836915297092289
-2025-03-08 12:39:34,239 — train_model — INFO — Chargement des données depuis data/market_data/BTCUSDT_15m.csv...
-2025-03-08 12:39:34,318 — train_model — INFO — Données chargées: 34941 lignes de 2022-12-31 23:00:00 à 2023-12-30 23:00:00
-2025-03-08 12:39:34,319 — train_model — INFO — Création des caractéristiques...
-2025-03-08 12:39:36,230 — train_model — INFO — Normalisation des données...
-2025-03-08 12:39:36,328 — train_model — INFO — Division des données: 27952 échantillons d'entraînement, 6989 échantillons de validation
-2025-03-08 12:39:36,329 — train_model — INFO — Utilisation d'un unique horizon de prédiction: 4 périodes
-2025-03-08 12:39:36,329 — train_model — INFO — Using optimized parameters for 15m from config
-2025-03-08 12:39:36,329 — train_model — INFO — Last optimization: 2025-03-08 10:03:55 with F1 score: 0.6837
-2025-03-08 12:39:36,330 — train_model — INFO — Training with parameters: lstm_units=[128, 64, 32], dropout=0.39279757672456206, learning_rate=0.0006251373574521745, sequence_length=30, batch_size=64, l1_reg=0.0001, l2_reg=0.0001
-2025-03-08 12:39:36,330 — train_model — INFO — Création des séquences pour l'entraînement...
-2025-03-08 12:42:13,129 — train_model — INFO — Création des séquences pour la validation...
-2025-03-08 12:42:31,271 — train_model — INFO — Vérification des dimensions: X_train = (27918, 30, 66), X_val = (6955, 30, 66)
-2025-03-08 12:42:31,272 — train_model — INFO — Création du modèle LSTM avec unités: [128, 64, 32]
-2025-03-08 12:42:31,415 — train_model — INFO — Début de l'entraînement pour 100 époques avec batch_size=64...
-2025-03-08 12:55:44,210 — train_model — INFO — Sauvegarde du modèle dans C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras...
-2025-03-08 12:55:44,258 — train_model — INFO — Évaluation du modèle sur les données de validation...
-2025-03-08 12:55:50,562 — train_model — INFO — Précision de direction: {'horizon_1h': 0.525233644859813}
-2025-03-08 12:55:50,563 — train_model — INFO — Métriques sauvegardées dans C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\metrics_BTCUSDT_15m.json
-2025-03-08 12:55:51,493 — train_model — ERROR — Erreur lors de l'entraînement: list index out of range
-2025-03-08 13:24:56,665 — train_model — INFO — Using optimized parameters from config for 15m
-2025-03-08 13:24:56,667 — train_model — INFO — Using optimized parameters as defaults:
-2025-03-08 13:24:56,667 — train_model — INFO —   - lstm_units: [136, 68, 68]
-2025-03-08 13:24:56,668 — train_model — INFO —   - dropout_rate: 0.39279757672456206
-2025-03-08 13:24:56,668 — train_model — INFO —   - learning_rate: 0.0006251373574521745
-2025-03-08 13:24:56,668 — train_model — INFO —   - batch_size: 64
-2025-03-08 13:24:56,668 — train_model — INFO —   - sequence_length: 30
-2025-03-08 13:24:56,669 — train_model — INFO —   - l1_regularization: 0.0003967605077052988
-2025-03-08 13:24:56,669 — train_model — INFO —   - l2_regularization: 6.358358856676247e-05
-2025-03-08 13:24:56,669 — train_model — INFO —   - use_attention: True
-2025-03-08 13:24:56,669 — train_model — INFO —   - use_residual: True
-2025-03-08 13:24:56,670 — train_model — INFO —   - last_optimized: 2025-03-08 10:03:55
-2025-03-08 13:24:56,670 — train_model — INFO —   - f1_score: 0.6836915297092289
-2025-03-08 13:24:56,670 — train_model — INFO — Chargement des données depuis data/market_data/BTCUSDT_15m.csv...
-2025-03-08 13:24:56,748 — train_model — INFO — Données chargées: 34941 lignes de 2022-12-31 23:00:00 à 2023-12-30 23:00:00
-2025-03-08 13:24:56,749 — train_model — INFO — Création des caractéristiques...
-2025-03-08 13:24:58,644 — train_model — INFO — Normalisation des données...
-2025-03-08 13:24:58,734 — train_model — INFO — Division des données: 27952 échantillons d'entraînement, 6989 échantillons de validation
-2025-03-08 13:24:58,734 — train_model — INFO — Utilisation d'un unique horizon de prédiction: 4 périodes
-2025-03-08 13:24:58,734 — train_model — INFO — Using optimized parameters for 15m from config
-2025-03-08 13:24:58,735 — train_model — INFO — Last optimization: 2025-03-08 10:03:55 with F1 score: 0.6837
-2025-03-08 13:24:58,735 — train_model — INFO — Training with parameters: lstm_units=[128, 64, 32], dropout=0.39279757672456206, learning_rate=0.0006251373574521745, sequence_length=30, batch_size=64, l1_reg=0.0001, l2_reg=0.0001
-2025-03-08 13:24:58,736 — train_model — INFO — Création des séquences pour l'entraînement...
-2025-03-08 13:27:35,667 — train_model — INFO — Création des séquences pour la validation...
-2025-03-08 13:27:53,571 — train_model — INFO — Vérification des dimensions: X_train = (27918, 30, 66), X_val = (6955, 30, 66)
-2025-03-08 13:27:53,571 — train_model — INFO — Création du modèle LSTM avec unités: [128, 64, 32]
-2025-03-08 13:27:53,743 — train_model — INFO — Début de l'entraînement pour 100 époques avec batch_size=64...
-2025-03-08 13:42:09,891 — train_model — INFO — Sauvegarde du modèle dans C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras...
-2025-03-08 13:42:09,940 — train_model — INFO — Évaluation du modèle sur les données de validation...
-2025-03-08 13:42:15,907 — train_model — INFO — Précision de direction: {'horizon_1h': 0.525233644859813}
-2025-03-08 13:42:15,907 — train_model — INFO — Métriques sauvegardées dans C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\metrics_BTCUSDT_15m.json
-2025-03-08 13:42:16,550 — train_model — INFO — Visualisations sauvegardées dans C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\visualizations
-2025-03-08 13:42:16,591 — train_model — INFO — Entraînement terminé avec succès!
+2025-03-08 12:34:06,757 ï¿½ train_model ï¿½ INFO ï¿½ Using optimized parameters from config for 15m
+2025-03-08 12:34:06,760 ï¿½ train_model ï¿½ INFO ï¿½ Using optimized parameters as defaults:
+2025-03-08 12:34:06,760 ï¿½ train_model ï¿½ INFO ï¿½   - lstm_units: [136, 68, 68]
+2025-03-08 12:34:06,760 ï¿½ train_model ï¿½ INFO ï¿½   - dropout_rate: 0.39279757672456206
+2025-03-08 12:34:06,760 ï¿½ train_model ï¿½ INFO ï¿½   - learning_rate: 0.0006251373574521745
+2025-03-08 12:34:06,761 ï¿½ train_model ï¿½ INFO ï¿½   - batch_size: 64
+2025-03-08 12:34:06,761 ï¿½ train_model ï¿½ INFO ï¿½   - sequence_length: 30
+2025-03-08 12:34:06,761 ï¿½ train_model ï¿½ INFO ï¿½   - l1_regularization: 0.0003967605077052988
+2025-03-08 12:34:06,761 ï¿½ train_model ï¿½ INFO ï¿½   - l2_regularization: 6.358358856676247e-05
+2025-03-08 12:34:06,762 ï¿½ train_model ï¿½ INFO ï¿½   - use_attention: True
+2025-03-08 12:34:06,762 ï¿½ train_model ï¿½ INFO ï¿½   - use_residual: True
+2025-03-08 12:34:06,762 ï¿½ train_model ï¿½ INFO ï¿½   - last_optimized: 2025-03-08 10:03:55
+2025-03-08 12:34:06,763 ï¿½ train_model ï¿½ INFO ï¿½   - f1_score: 0.6836915297092289
+2025-03-08 12:34:06,763 ï¿½ train_model ï¿½ INFO ï¿½ Chargement des donnï¿½es depuis data/market_data/BTCUSDT_15m.csv...
+2025-03-08 12:34:06,843 ï¿½ train_model ï¿½ INFO ï¿½ Donnï¿½es chargï¿½es: 34941 lignes de 2022-12-31 23:00:00 ï¿½ 2023-12-30 23:00:00
+2025-03-08 12:34:06,843 ï¿½ train_model ï¿½ INFO ï¿½ Crï¿½ation des caractï¿½ristiques...
+2025-03-08 12:34:08,756 ï¿½ train_model ï¿½ INFO ï¿½ Normalisation des donnï¿½es...
+2025-03-08 12:34:08,845 ï¿½ train_model ï¿½ INFO ï¿½ Division des donnï¿½es: 27952 ï¿½chantillons d'entraï¿½nement, 6989 ï¿½chantillons de validation
+2025-03-08 12:34:08,845 ï¿½ train_model ï¿½ INFO ï¿½ Utilisation d'un unique horizon de prï¿½diction: 4 pï¿½riodes
+2025-03-08 12:34:08,846 ï¿½ train_model ï¿½ INFO ï¿½ Using optimized parameters for 15m from config
+2025-03-08 12:34:08,846 ï¿½ train_model ï¿½ INFO ï¿½ Last optimization: 2025-03-08 10:03:55 with F1 score: 0.6837
+2025-03-08 12:34:08,846 ï¿½ train_model ï¿½ INFO ï¿½ Training with parameters: lstm_units=[128, 64, 32], dropout=0.39279757672456206, learning_rate=0.0006251373574521745, sequence_length=30, batch_size=64, l1_reg=0.0001, l2_reg=0.0001
+2025-03-08 12:34:08,847 ï¿½ train_model ï¿½ INFO ï¿½ Crï¿½ation des sï¿½quences pour l'entraï¿½nement...
+2025-03-08 12:36:47,216 ï¿½ train_model ï¿½ INFO ï¿½ Crï¿½ation des sï¿½quences pour la validation...
+2025-03-08 12:37:06,754 ï¿½ train_model ï¿½ INFO ï¿½ Vï¿½rification des dimensions: X_train = (27918, 30, 66), X_val = (6955, 30, 66)
+2025-03-08 12:37:06,755 ï¿½ train_model ï¿½ INFO ï¿½ Crï¿½ation du modï¿½le LSTM avec unitï¿½s: [128, 64, 32]
+2025-03-08 12:37:06,950 ï¿½ train_model ï¿½ ERROR ï¿½ Erreur lors de l'entraï¿½nement: Expected `metrics` argument to be a list, tuple, or dict. Received instead: metrics=accuracy of type <class 'str'>
+2025-03-08 12:39:34,233 ï¿½ train_model ï¿½ INFO ï¿½ Using optimized parameters from config for 15m
+2025-03-08 12:39:34,236 ï¿½ train_model ï¿½ INFO ï¿½ Using optimized parameters as defaults:
+2025-03-08 12:39:34,236 ï¿½ train_model ï¿½ INFO ï¿½   - lstm_units: [136, 68, 68]
+2025-03-08 12:39:34,236 ï¿½ train_model ï¿½ INFO ï¿½   - dropout_rate: 0.39279757672456206
+2025-03-08 12:39:34,237 ï¿½ train_model ï¿½ INFO ï¿½   - learning_rate: 0.0006251373574521745
+2025-03-08 12:39:34,237 ï¿½ train_model ï¿½ INFO ï¿½   - batch_size: 64
+2025-03-08 12:39:34,237 ï¿½ train_model ï¿½ INFO ï¿½   - sequence_length: 30
+2025-03-08 12:39:34,238 ï¿½ train_model ï¿½ INFO ï¿½   - l1_regularization: 0.0003967605077052988
+2025-03-08 12:39:34,238 ï¿½ train_model ï¿½ INFO ï¿½   - l2_regularization: 6.358358856676247e-05
+2025-03-08 12:39:34,238 ï¿½ train_model ï¿½ INFO ï¿½   - use_attention: True
+2025-03-08 12:39:34,238 ï¿½ train_model ï¿½ INFO ï¿½   - use_residual: True
+2025-03-08 12:39:34,239 ï¿½ train_model ï¿½ INFO ï¿½   - last_optimized: 2025-03-08 10:03:55
+2025-03-08 12:39:34,239 ï¿½ train_model ï¿½ INFO ï¿½   - f1_score: 0.6836915297092289
+2025-03-08 12:39:34,239 ï¿½ train_model ï¿½ INFO ï¿½ Chargement des donnï¿½es depuis data/market_data/BTCUSDT_15m.csv...
+2025-03-08 12:39:34,318 ï¿½ train_model ï¿½ INFO ï¿½ Donnï¿½es chargï¿½es: 34941 lignes de 2022-12-31 23:00:00 ï¿½ 2023-12-30 23:00:00
+2025-03-08 12:39:34,319 ï¿½ train_model ï¿½ INFO ï¿½ Crï¿½ation des caractï¿½ristiques...
+2025-03-08 12:39:36,230 ï¿½ train_model ï¿½ INFO ï¿½ Normalisation des donnï¿½es...
+2025-03-08 12:39:36,328 ï¿½ train_model ï¿½ INFO ï¿½ Division des donnï¿½es: 27952 ï¿½chantillons d'entraï¿½nement, 6989 ï¿½chantillons de validation
+2025-03-08 12:39:36,329 ï¿½ train_model ï¿½ INFO ï¿½ Utilisation d'un unique horizon de prï¿½diction: 4 pï¿½riodes
+2025-03-08 12:39:36,329 ï¿½ train_model ï¿½ INFO ï¿½ Using optimized parameters for 15m from config
+2025-03-08 12:39:36,329 ï¿½ train_model ï¿½ INFO ï¿½ Last optimization: 2025-03-08 10:03:55 with F1 score: 0.6837
+2025-03-08 12:39:36,330 ï¿½ train_model ï¿½ INFO ï¿½ Training with parameters: lstm_units=[128, 64, 32], dropout=0.39279757672456206, learning_rate=0.0006251373574521745, sequence_length=30, batch_size=64, l1_reg=0.0001, l2_reg=0.0001
+2025-03-08 12:39:36,330 ï¿½ train_model ï¿½ INFO ï¿½ Crï¿½ation des sï¿½quences pour l'entraï¿½nement...
+2025-03-08 12:42:13,129 ï¿½ train_model ï¿½ INFO ï¿½ Crï¿½ation des sï¿½quences pour la validation...
+2025-03-08 12:42:31,271 ï¿½ train_model ï¿½ INFO ï¿½ Vï¿½rification des dimensions: X_train = (27918, 30, 66), X_val = (6955, 30, 66)
+2025-03-08 12:42:31,272 ï¿½ train_model ï¿½ INFO ï¿½ Crï¿½ation du modï¿½le LSTM avec unitï¿½s: [128, 64, 32]
+2025-03-08 12:42:31,415 ï¿½ train_model ï¿½ INFO ï¿½ Dï¿½but de l'entraï¿½nement pour 100 ï¿½poques avec batch_size=64...
+2025-03-08 12:55:44,210 ï¿½ train_model ï¿½ INFO ï¿½ Sauvegarde du modï¿½le dans C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras...
+2025-03-08 12:55:44,258 ï¿½ train_model ï¿½ INFO ï¿½ ï¿½valuation du modï¿½le sur les donnï¿½es de validation...
+2025-03-08 12:55:50,562 ï¿½ train_model ï¿½ INFO ï¿½ Prï¿½cision de direction: {'horizon_1h': 0.525233644859813}
+2025-03-08 12:55:50,563 ï¿½ train_model ï¿½ INFO ï¿½ Mï¿½triques sauvegardï¿½es dans C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\metrics_BTCUSDT_15m.json
+2025-03-08 12:55:51,493 ï¿½ train_model ï¿½ ERROR ï¿½ Erreur lors de l'entraï¿½nement: list index out of range
+2025-03-08 13:24:56,665 ï¿½ train_model ï¿½ INFO ï¿½ Using optimized parameters from config for 15m
+2025-03-08 13:24:56,667 ï¿½ train_model ï¿½ INFO ï¿½ Using optimized parameters as defaults:
+2025-03-08 13:24:56,667 ï¿½ train_model ï¿½ INFO ï¿½   - lstm_units: [136, 68, 68]
+2025-03-08 13:24:56,668 ï¿½ train_model ï¿½ INFO ï¿½   - dropout_rate: 0.39279757672456206
+2025-03-08 13:24:56,668 ï¿½ train_model ï¿½ INFO ï¿½   - learning_rate: 0.0006251373574521745
+2025-03-08 13:24:56,668 ï¿½ train_model ï¿½ INFO ï¿½   - batch_size: 64
+2025-03-08 13:24:56,668 ï¿½ train_model ï¿½ INFO ï¿½   - sequence_length: 30
+2025-03-08 13:24:56,669 ï¿½ train_model ï¿½ INFO ï¿½   - l1_regularization: 0.0003967605077052988
+2025-03-08 13:24:56,669 ï¿½ train_model ï¿½ INFO ï¿½   - l2_regularization: 6.358358856676247e-05
+2025-03-08 13:24:56,669 ï¿½ train_model ï¿½ INFO ï¿½   - use_attention: True
+2025-03-08 13:24:56,669 ï¿½ train_model ï¿½ INFO ï¿½   - use_residual: True
+2025-03-08 13:24:56,670 ï¿½ train_model ï¿½ INFO ï¿½   - last_optimized: 2025-03-08 10:03:55
+2025-03-08 13:24:56,670 ï¿½ train_model ï¿½ INFO ï¿½   - f1_score: 0.6836915297092289
+2025-03-08 13:24:56,670 ï¿½ train_model ï¿½ INFO ï¿½ Chargement des donnï¿½es depuis data/market_data/BTCUSDT_15m.csv...
+2025-03-08 13:24:56,748 ï¿½ train_model ï¿½ INFO ï¿½ Donnï¿½es chargï¿½es: 34941 lignes de 2022-12-31 23:00:00 ï¿½ 2023-12-30 23:00:00
+2025-03-08 13:24:56,749 ï¿½ train_model ï¿½ INFO ï¿½ Crï¿½ation des caractï¿½ristiques...
+2025-03-08 13:24:58,644 ï¿½ train_model ï¿½ INFO ï¿½ Normalisation des donnï¿½es...
+2025-03-08 13:24:58,734 ï¿½ train_model ï¿½ INFO ï¿½ Division des donnï¿½es: 27952 ï¿½chantillons d'entraï¿½nement, 6989 ï¿½chantillons de validation
+2025-03-08 13:24:58,734 ï¿½ train_model ï¿½ INFO ï¿½ Utilisation d'un unique horizon de prï¿½diction: 4 pï¿½riodes
+2025-03-08 13:24:58,734 ï¿½ train_model ï¿½ INFO ï¿½ Using optimized parameters for 15m from config
+2025-03-08 13:24:58,735 ï¿½ train_model ï¿½ INFO ï¿½ Last optimization: 2025-03-08 10:03:55 with F1 score: 0.6837
+2025-03-08 13:24:58,735 ï¿½ train_model ï¿½ INFO ï¿½ Training with parameters: lstm_units=[128, 64, 32], dropout=0.39279757672456206, learning_rate=0.0006251373574521745, sequence_length=30, batch_size=64, l1_reg=0.0001, l2_reg=0.0001
+2025-03-08 13:24:58,736 ï¿½ train_model ï¿½ INFO ï¿½ Crï¿½ation des sï¿½quences pour l'entraï¿½nement...
+2025-03-08 13:27:35,667 ï¿½ train_model ï¿½ INFO ï¿½ Crï¿½ation des sï¿½quences pour la validation...
+2025-03-08 13:27:53,571 ï¿½ train_model ï¿½ INFO ï¿½ Vï¿½rification des dimensions: X_train = (27918, 30, 66), X_val = (6955, 30, 66)
+2025-03-08 13:27:53,571 ï¿½ train_model ï¿½ INFO ï¿½ Crï¿½ation du modï¿½le LSTM avec unitï¿½s: [128, 64, 32]
+2025-03-08 13:27:53,743 ï¿½ train_model ï¿½ INFO ï¿½ Dï¿½but de l'entraï¿½nement pour 100 ï¿½poques avec batch_size=64...
+2025-03-08 13:42:09,891 ï¿½ train_model ï¿½ INFO ï¿½ Sauvegarde du modï¿½le dans C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras...
+2025-03-08 13:42:09,940 ï¿½ train_model ï¿½ INFO ï¿½ ï¿½valuation du modï¿½le sur les donnï¿½es de validation...
+2025-03-08 13:42:15,907 ï¿½ train_model ï¿½ INFO ï¿½ Prï¿½cision de direction: {'horizon_1h': 0.525233644859813}
+2025-03-08 13:42:15,907 ï¿½ train_model ï¿½ INFO ï¿½ Mï¿½triques sauvegardï¿½es dans C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\metrics_BTCUSDT_15m.json
+2025-03-08 13:42:16,550 ï¿½ train_model ï¿½ INFO ï¿½ Visualisations sauvegardï¿½es dans C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\visualizations
+2025-03-08 13:42:16,591 ï¿½ train_model ï¿½ INFO ï¿½ Entraï¿½nement terminï¿½ avec succï¿½s!
+2025-03-13 18:22:44,764 ï¿½ train_model ï¿½ INFO ï¿½ Chargement des donnï¿½es depuis data/market_data/BTCUSDT_15m.csv...
+2025-03-13 18:22:44,895 ï¿½ train_model ï¿½ INFO ï¿½ Donnï¿½es chargï¿½es: 34941 lignes de 2022-12-31 23:00:00 ï¿½ 2023-12-30 23:00:00
+2025-03-13 18:22:44,896 ï¿½ train_model ï¿½ INFO ï¿½ Crï¿½ation des caractï¿½ristiques...
+2025-03-13 18:22:46,930 ï¿½ train_model ï¿½ INFO ï¿½ Normalisation des donnï¿½es...
+2025-03-13 18:22:47,023 ï¿½ train_model ï¿½ ERROR ï¿½ Erreur lors de l'entraï¿½nement: 'Namespace' object has no attribute 'validation_split'
+2025-03-13 18:29:19,805 ï¿½ train_model ï¿½ INFO ï¿½ Chargement des donnï¿½es depuis data/market_data/BTCUSDT_15m.csv...
+2025-03-13 18:29:19,886 ï¿½ train_model ï¿½ INFO ï¿½ Donnï¿½es chargï¿½es: 34941 lignes de 2022-12-31 23:00:00 ï¿½ 2023-12-30 23:00:00
+2025-03-13 18:29:19,886 ï¿½ train_model ï¿½ INFO ï¿½ Crï¿½ation des caractï¿½ristiques...
+2025-03-13 18:29:21,921 ï¿½ train_model ï¿½ INFO ï¿½ Normalisation des donnï¿½es...
+2025-03-13 18:29:22,011 ï¿½ train_model ï¿½ INFO ï¿½ Division des donnï¿½es: 27952 ï¿½chantillons d'entraï¿½nement, 6989 ï¿½chantillons de validation
+2025-03-13 18:29:22,011 ï¿½ train_model ï¿½ INFO ï¿½ Utilisation d'un unique horizon de prï¿½diction: 4 pï¿½riodes
+2025-03-13 18:29:22,012 ï¿½ train_model ï¿½ INFO ï¿½ Using optimized parameters for 15m from config
+2025-03-13 18:29:22,012 ï¿½ train_model ï¿½ INFO ï¿½ Last optimization: 2025-03-08 10:03:55 with F1 score: 0.6837
+2025-03-13 18:29:22,012 ï¿½ train_model ï¿½ ERROR ï¿½ Erreur lors de l'entraï¿½nement: 'list' object has no attribute 'split'
+2025-03-13 18:31:16,502 ï¿½ train_model ï¿½ INFO ï¿½ Chargement des donnï¿½es depuis data/market_data/BTCUSDT_15m.csv...
+2025-03-13 18:31:16,582 ï¿½ train_model ï¿½ INFO ï¿½ Donnï¿½es chargï¿½es: 34941 lignes de 2022-12-31 23:00:00 ï¿½ 2023-12-30 23:00:00
+2025-03-13 18:31:16,583 ï¿½ train_model ï¿½ INFO ï¿½ Crï¿½ation des caractï¿½ristiques...
+2025-03-13 18:31:18,633 ï¿½ train_model ï¿½ INFO ï¿½ Normalisation des donnï¿½es...
+2025-03-13 18:31:18,729 ï¿½ train_model ï¿½ INFO ï¿½ Division des donnï¿½es: 27952 ï¿½chantillons d'entraï¿½nement, 6989 ï¿½chantillons de validation
+2025-03-13 18:31:18,729 ï¿½ train_model ï¿½ INFO ï¿½ Utilisation d'un unique horizon de prï¿½diction: 4 pï¿½riodes
+2025-03-13 18:31:18,730 ï¿½ train_model ï¿½ INFO ï¿½ Using optimized parameters for 15m from config
+2025-03-13 18:31:18,730 ï¿½ train_model ï¿½ INFO ï¿½ Last optimization: 2025-03-08 10:03:55 with F1 score: 0.6837
+2025-03-13 18:31:18,730 ï¿½ train_model ï¿½ ERROR ï¿½ Erreur lors de l'entraï¿½nement: 'Namespace' object has no attribute 'dropout'
+2025-03-13 18:32:45,578 ï¿½ train_model ï¿½ INFO ï¿½ Chargement des donnï¿½es depuis data/market_data/BTCUSDT_15m.csv...
+2025-03-13 18:32:45,658 ï¿½ train_model ï¿½ INFO ï¿½ Donnï¿½es chargï¿½es: 34941 lignes de 2022-12-31 23:00:00 ï¿½ 2023-12-30 23:00:00
+2025-03-13 18:32:45,658 ï¿½ train_model ï¿½ INFO ï¿½ Crï¿½ation des caractï¿½ristiques...
+2025-03-13 18:32:47,669 ï¿½ train_model ï¿½ INFO ï¿½ Normalisation des donnï¿½es...
+2025-03-13 18:32:47,757 ï¿½ train_model ï¿½ INFO ï¿½ Division des donnï¿½es: 27952 ï¿½chantillons d'entraï¿½nement, 6989 ï¿½chantillons de validation
+2025-03-13 18:32:47,757 ï¿½ train_model ï¿½ INFO ï¿½ Utilisation d'un unique horizon de prï¿½diction: 4 pï¿½riodes
+2025-03-13 18:32:47,758 ï¿½ train_model ï¿½ INFO ï¿½ Using optimized parameters for 15m from config
+2025-03-13 18:32:47,758 ï¿½ train_model ï¿½ INFO ï¿½ Last optimization: 2025-03-08 10:03:55 with F1 score: 0.6837
+2025-03-13 18:32:47,759 ï¿½ train_model ï¿½ ERROR ï¿½ Erreur lors de l'entraï¿½nement: 'Namespace' object has no attribute 'dropout'
+2025-03-13 18:35:05,131 ï¿½ train_model ï¿½ INFO ï¿½ Chargement des donnï¿½es depuis data/market_data/BTCUSDT_15m.csv...
+2025-03-13 18:35:05,226 ï¿½ train_model ï¿½ INFO ï¿½ Donnï¿½es chargï¿½es: 34941 lignes de 2022-12-31 23:00:00 ï¿½ 2023-12-30 23:00:00
+2025-03-13 18:35:05,227 ï¿½ train_model ï¿½ INFO ï¿½ Crï¿½ation des caractï¿½ristiques...
+2025-03-13 18:35:07,252 ï¿½ train_model ï¿½ INFO ï¿½ Normalisation des donnï¿½es...
+2025-03-13 18:35:07,347 ï¿½ train_model ï¿½ INFO ï¿½ Division des donnï¿½es: 27952 ï¿½chantillons d'entraï¿½nement, 6989 ï¿½chantillons de validation
+2025-03-13 18:35:07,347 ï¿½ train_model ï¿½ INFO ï¿½ Utilisation d'un unique horizon de prï¿½diction: 4 pï¿½riodes
+2025-03-13 18:35:07,348 ï¿½ train_model ï¿½ INFO ï¿½ Using optimized parameters for 15m from config
+2025-03-13 18:35:07,348 ï¿½ train_model ï¿½ INFO ï¿½ Last optimization: 2025-03-08 10:03:55 with F1 score: 0.6837
+2025-03-13 18:35:07,349 ï¿½ train_model ï¿½ ERROR ï¿½ Erreur lors de l'entraï¿½nement: 'Namespace' object has no attribute 'dropout'
+2025-03-13 18:50:21,457 — train_model — INFO — Chargement des données depuis data/market_data/BTCUSDT_15m.csv...
+2025-03-13 18:50:21,537 — train_model — INFO — Données chargées: 34941 lignes de 2022-12-31 23:00:00 à 2023-12-30 23:00:00
+2025-03-13 18:50:21,538 — train_model — INFO — Création des caractéristiques...
+2025-03-13 18:50:23,598 — train_model — INFO — Normalisation des données...
+2025-03-13 18:50:23,685 — train_model — INFO — Division des données: 27952 échantillons d'entraînement, 6989 échantillons de validation
+2025-03-13 18:50:23,685 — train_model — INFO — Utilisation d'un unique horizon de prédiction: 4 périodes
+2025-03-13 18:50:23,686 — train_model — INFO — Using optimized parameters for 15m from config
+2025-03-13 18:50:23,686 — train_model — INFO — Last optimization: 2025-03-08 10:03:55 with F1 score: 0.6837
+2025-03-13 18:50:23,687 — train_model — ERROR — Erreur lors de l'entraînement: 'Namespace' object has no attribute 'learning_rate'
+2025-03-13 18:52:08,745 — train_model — INFO — Chargement des données depuis data/market_data/BTCUSDT_15m.csv...
+2025-03-13 18:52:08,828 — train_model — INFO — Données chargées: 34941 lignes de 2022-12-31 23:00:00 à 2023-12-30 23:00:00
+2025-03-13 18:52:08,828 — train_model — INFO — Création des caractéristiques...
+2025-03-13 18:52:10,919 — train_model — INFO — Normalisation des données...
+2025-03-13 18:52:11,033 — train_model — INFO — Division des données: 27952 échantillons d'entraînement, 6989 échantillons de validation
+2025-03-13 18:52:11,033 — train_model — INFO — Utilisation d'un unique horizon de prédiction: 4 périodes
+2025-03-13 18:52:11,034 — train_model — INFO — Using optimized parameters for 15m from config
+2025-03-13 18:52:11,034 — train_model — INFO — Last optimization: 2025-03-08 10:03:55 with F1 score: 0.6837
+2025-03-13 18:52:11,034 — train_model — ERROR — Erreur lors de l'entraînement: 'Namespace' object has no attribute 'learning_rate'
+2025-03-13 18:52:22,288 — train_model — INFO — Chargement des données depuis data/market_data/BTCUSDT_15m.csv...
+2025-03-13 18:52:22,367 — train_model — INFO — Données chargées: 34941 lignes de 2022-12-31 23:00:00 à 2023-12-30 23:00:00
+2025-03-13 18:52:22,367 — train_model — INFO — Création des caractéristiques...
+2025-03-13 18:52:24,397 — train_model — INFO — Normalisation des données...
+2025-03-13 18:52:24,485 — train_model — INFO — Division des données: 27952 échantillons d'entraînement, 6989 échantillons de validation
+2025-03-13 18:52:24,486 — train_model — INFO — Utilisation d'un unique horizon de prédiction: 4 périodes
+2025-03-13 18:52:24,486 — train_model — INFO — Using optimized parameters for 15m from config
+2025-03-13 18:52:24,486 — train_model — INFO — Last optimization: 2025-03-08 10:03:55 with F1 score: 0.6837
+2025-03-13 18:52:24,487 — train_model — ERROR — Erreur lors de l'entraînement: 'Namespace' object has no attribute 'learning_rate'
+2025-03-13 18:55:57,054 — train_model — INFO — Chargement des données depuis data/market_data/BTCUSDT_15m.csv...
+2025-03-13 18:55:57,139 — train_model — INFO — Données chargées: 34941 lignes de 2022-12-31 23:00:00 à 2023-12-30 23:00:00
+2025-03-13 18:55:57,140 — train_model — INFO — Création des caractéristiques...
+2025-03-13 18:55:59,315 — train_model — INFO — Normalisation des données...
+2025-03-13 18:55:59,405 — train_model — INFO — Division des données: 27952 échantillons d'entraînement, 6989 échantillons de validation
+2025-03-13 18:55:59,406 — train_model — INFO — Utilisation d'un unique horizon de prédiction: 4 périodes
+2025-03-13 18:55:59,406 — train_model — INFO — Using optimized parameters for 15m from config
+2025-03-13 18:55:59,406 — train_model — INFO — Last optimization: 2025-03-08 10:03:55 with F1 score: 0.6837
+2025-03-13 18:55:59,406 — train_model — ERROR — Erreur lors de l'entraînement: 'Namespace' object has no attribute 'learning_rate'
+2025-03-13 19:00:11,973 — train_model — INFO — Chargement des données depuis data/market_data/BTCUSDT_15m.csv...
+2025-03-13 19:00:12,072 — train_model — INFO — Données chargées: 34941 lignes de 2022-12-31 23:00:00 à 2023-12-30 23:00:00
+2025-03-13 19:00:12,073 — train_model — INFO — Création des caractéristiques...
+2025-03-13 19:00:14,066 — train_model — INFO — Normalisation des données...
+2025-03-13 19:00:14,155 — train_model — INFO — Division des données: 27952 échantillons d'entraînement, 6989 échantillons de validation
+2025-03-13 19:00:14,156 — train_model — INFO — Utilisation d'un unique horizon de prédiction: 4 périodes
+2025-03-13 19:00:14,157 — train_model — INFO — Using optimized parameters for 15m from config
+2025-03-13 19:00:14,157 — train_model — INFO — Last optimization: 2025-03-08 10:03:55 with F1 score: 0.6837
+2025-03-13 19:00:14,157 — train_model — INFO — Training with parameters: lstm_units=[128, 64, 32], dropout=0.5, learning_rate=0.0006251373574521745, sequence_length=30, batch_size=64, l1_reg=0.0003967605077052988, l2_reg=6.358358856676247e-05
+2025-03-13 19:00:14,158 — train_model — INFO — Création des séquences pour l'entraînement...
+2025-03-13 19:03:14,465 — train_model — INFO — Création des séquences pour la validation...
+2025-03-13 19:03:34,920 — train_model — INFO — Vérification des dimensions: X_train = (27918, 30, 66), X_val = (6955, 30, 66)
+2025-03-13 19:03:34,921 — train_model — ERROR — Erreur lors de l'entraînement: 'list' object has no attribute 'split'
+2025-03-13 19:04:38,359 — train_model — INFO — Chargement des données depuis data/market_data/BTCUSDT_15m.csv...
+2025-03-13 19:04:38,452 — train_model — INFO — Données chargées: 34941 lignes de 2022-12-31 23:00:00 à 2023-12-30 23:00:00
+2025-03-13 19:04:38,453 — train_model — INFO — Création des caractéristiques...
+2025-03-13 19:04:40,513 — train_model — INFO — Normalisation des données...
+2025-03-13 19:04:40,608 — train_model — INFO — Division des données: 27952 échantillons d'entraînement, 6989 échantillons de validation
+2025-03-13 19:04:40,608 — train_model — INFO — Utilisation d'un unique horizon de prédiction: 4 périodes
+2025-03-13 19:04:40,609 — train_model — INFO — Using optimized parameters for 15m from config
+2025-03-13 19:04:40,609 — train_model — INFO — Last optimization: 2025-03-08 10:03:55 with F1 score: 0.6837
+2025-03-13 19:04:40,609 — train_model — INFO — Training with parameters: lstm_units=[128, 64, 32], dropout=0.5, learning_rate=0.0006251373574521745, sequence_length=30, batch_size=64, l1_reg=0.0003967605077052988, l2_reg=6.358358856676247e-05
+2025-03-13 19:04:40,610 — train_model — INFO — Création des séquences pour l'entraînement...
+2025-03-13 19:07:38,775 — train_model — INFO — Création des séquences pour la validation...
+2025-03-13 19:07:58,941 — train_model — INFO — Vérification des dimensions: X_train = (27918, 30, 66), X_val = (6955, 30, 66)
+2025-03-13 19:07:58,941 — train_model — ERROR — Erreur lors de l'entraînement: 'list' object has no attribute 'split'
+2025-03-14 10:03:23,617 — train_model — INFO — Chargement des données depuis data/market_data/BTCUSDT_15m.csv...
+2025-03-14 10:03:23,724 — train_model — INFO — Données chargées: 34941 lignes de 2022-12-31 23:00:00 à 2023-12-30 23:00:00
+2025-03-14 10:03:23,725 — train_model — INFO — Création des caractéristiques...
+2025-03-14 10:03:25,713 — train_model — INFO — Normalisation des données...
+2025-03-14 10:03:25,806 — train_model — INFO — Division des données: 27952 échantillons d'entraînement, 6989 échantillons de validation
+2025-03-14 10:03:25,807 — train_model — INFO — Utilisation d'un unique horizon de prédiction: 4 périodes
+2025-03-14 10:03:25,807 — train_model — INFO — Using optimized parameters for 15m from config
+2025-03-14 10:03:25,807 — train_model — INFO — Last optimization: 2025-03-08 10:03:55 with F1 score: 0.6837
+2025-03-14 10:03:25,808 — train_model — INFO — Training with parameters: lstm_units=[128, 64, 32], dropout=0.5, learning_rate=0.0006251373574521745, sequence_length=30, batch_size=64, l1_reg=0.0003967605077052988, l2_reg=6.358358856676247e-05
+2025-03-14 10:03:25,808 — train_model — INFO — Création des séquences pour l'entraînement...
+2025-03-14 10:06:28,497 — train_model — INFO — Création des séquences pour la validation...
+2025-03-14 10:06:48,044 — train_model — INFO — Vérification des dimensions: X_train = (27918, 30, 66), X_val = (6955, 30, 66)
+2025-03-14 10:06:48,044 — train_model — INFO — Création du modèle LSTM avec unités: [128, 64, 32]
+2025-03-14 10:06:48,311 — train_model — ERROR — Erreur lors de l'entraînement: 'Namespace' object has no attribute 'patience'
+2025-03-14 10:09:10,437 — train_model — INFO — Chargement des données depuis data/market_data/BTCUSDT_15m.csv...
+2025-03-14 10:09:10,518 — train_model — INFO — Données chargées: 34941 lignes de 2022-12-31 23:00:00 à 2023-12-30 23:00:00
+2025-03-14 10:09:10,519 — train_model — INFO — Création des caractéristiques...
+2025-03-14 10:09:12,487 — train_model — INFO — Normalisation des données...
+2025-03-14 10:09:12,591 — train_model — INFO — Division des données: 27952 échantillons d'entraînement, 6989 échantillons de validation
+2025-03-14 10:09:12,591 — train_model — INFO — Utilisation d'un unique horizon de prédiction: 4 périodes
+2025-03-14 10:09:12,592 — train_model — INFO — Using optimized parameters for 15m from config
+2025-03-14 10:09:12,592 — train_model — INFO — Last optimization: 2025-03-08 10:03:55 with F1 score: 0.6837
+2025-03-14 10:09:12,592 — train_model — INFO — Training with parameters: lstm_units=[128, 64, 32], dropout=0.5, learning_rate=0.0006251373574521745, sequence_length=30, batch_size=64, l1_reg=0.0003967605077052988, l2_reg=6.358358856676247e-05
+2025-03-14 10:09:12,593 — train_model — INFO — Création des séquences pour l'entraînement...
+2025-03-14 10:12:03,375 — train_model — INFO — Création des séquences pour la validation...
+2025-03-14 10:12:23,069 — train_model — INFO — Vérification des dimensions: X_train = (27918, 30, 66), X_val = (6955, 30, 66)
+2025-03-14 10:12:23,070 — train_model — INFO — Création du modèle LSTM avec unités: [128, 64, 32]
+2025-03-14 10:12:23,254 — train_model — INFO — Début de l'entraînement pour 100 époques avec batch_size=64...
+2025-03-14 12:21:41,419 — train_model — INFO — Chargement des données depuis data/market_data/BTCUSDT_15mfor2y.csv\BTCUSDT_15m.csv...
+2025-03-14 12:21:41,671 — train_model — INFO — Données chargées: 105128 lignes de 2021-12-31 23:00:00 à 2024-12-30 23:00:00
+2025-03-14 12:21:41,672 — train_model — INFO — Création des caractéristiques...
+2025-03-14 12:21:48,045 — train_model — INFO — Normalisation des données...
+2025-03-14 12:21:48,299 — train_model — INFO — Division des données: 84102 échantillons d'entraînement, 21026 échantillons de validation
+2025-03-14 12:21:48,299 — train_model — INFO — Utilisation d'un unique horizon de prédiction: 4 périodes
+2025-03-14 12:21:48,300 — train_model — INFO — Using optimized parameters for 15m from config
+2025-03-14 12:21:48,300 — train_model — INFO — Last optimization: 2025-03-08 10:03:55 with F1 score: 0.6837
+2025-03-14 12:21:48,300 — train_model — INFO — Training with parameters: lstm_units=[128, 64, 32], dropout=0.5, learning_rate=0.0006251373574521745, sequence_length=30, batch_size=64, l1_reg=0.0003967605077052988, l2_reg=6.358358856676247e-05
+2025-03-14 12:21:48,301 — train_model — INFO — Création des séquences pour l'entraînement...
+2025-03-14 12:44:37,875 — train_model — INFO — Création des séquences pour la validation...
+2025-03-14 12:46:17,291 — train_model — INFO — Vérification des dimensions: X_train = (84068, 30, 66), X_val = (20992, 30, 66)
+2025-03-14 12:46:17,292 — train_model — INFO — Création du modèle LSTM avec unités: [128, 64, 32]
+2025-03-14 12:46:17,455 — train_model — INFO — Début de l'entraînement pour 100 époques avec batch_size=64...
+2025-03-14 14:41:29,086 — train_model — INFO — Sauvegarde du modèle dans C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras...
+2025-03-14 14:41:29,277 — train_model — INFO — Entraînement terminé avec succès!

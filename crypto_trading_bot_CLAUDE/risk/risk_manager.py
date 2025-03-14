@@ -10,6 +10,7 @@ from datetime import datetime
 
 from utils.logger import setup_logger
 from config.config import DATA_DIR
+from utils.correlation_matrix import CorrelationMatrix
 
 logger = setup_logger("risk_manager")
 
@@ -17,7 +18,8 @@ class RiskManager:
     """
     Manages trading risk by controlling position sizes and monitoring exposure
     """
-    def __init__(self, default_risk_per_trade: float = 0.02, 
+    def __init__(self, capital: float, kelly_fraction: float = 0.3, max_risk_per_trade: float = 5.0,
+               default_risk_per_trade: float = 0.02, 
                account_risk_limit: float = 0.10,
                max_trades_per_symbol: int = 1,
                use_correlation_adjustment: bool = True):
@@ -25,11 +27,20 @@ class RiskManager:
         Initialize the risk manager
         
         Args:
+            capital: Initial capital
+            kelly_fraction: Fraction of Kelly criterion to use
+            max_risk_per_trade: Maximum risk per trade (as percentage of capital)
             default_risk_per_trade: Default risk per trade (as decimal percentage of account)
             account_risk_limit: Maximum total risk exposure (as decimal percentage of account)
             max_trades_per_symbol: Maximum number of concurrent trades per symbol
             use_correlation_adjustment: Whether to adjust risk based on correlation between assets
         """
+        self.capital = capital
+        self.kelly_fraction = kelly_fraction
+        self.max_risk_per_trade = max_risk_per_trade  # expressed as a percentage
+        self.win_rate = 50.0  # Valeur initiale (50% neutre)
+        self.trade_history = []
+        self.correlation_matrix = {}  # ...existing structures...
         self.default_risk_per_trade = default_risk_per_trade
         self.account_risk_limit = account_risk_limit
         self.max_trades_per_symbol = max_trades_per_symbol
@@ -144,17 +155,29 @@ class RiskManager:
         
         # Apply correlation adjustment if enabled and market data provided
         correlation_factor = 1.0
-        
-        if self.use_correlation_adjustment and market_data and len(market_data) > 1:
-            correlation_factor = self._calculate_correlation_adjustment(symbol, market_data)
-            position_size *= correlation_factor
+        if self.use_correlation_adjustment and market_data:
+            # Initialize the correlation matrix and update with market data
+            cm = CorrelationMatrix(cache_duration=3600)
+            cm.update_matrix(market_data, time_window='7d')
+            correlations = []
+            # For each active position, get the correlation with the new symbol
+            for pos in self.active_positions.values():
+                pos_symbol = pos.get("symbol")
+                if pos_symbol and pos_symbol != symbol:
+                    corr = cm.get_correlation(symbol, pos_symbol, market_data)
+                    if corr is not None and not np.isnan(corr):
+                        correlations.append(corr)
+            if correlations:
+                avg_corr = np.mean(correlations)
+                # Example: if average correlation is high, reduce risk (here assume >0.5 is high)
+                correlation_factor = 1 - avg_corr if avg_corr > 0.5 else 1.0
         
         # Final position sizing and approval
         return {
             "approved": True,
             "position_sizing": {
-                "position_size": position_size,
-                "position_value": position_size * entry_price,
+                "position_size": position_size * correlation_factor,
+                "position_value": position_size * entry_price * correlation_factor,
                 "risk_amount": risk_amount,
                 "risk_percentage": self.default_risk_per_trade * 100,
                 "stop_distance_percentage": stop_distance * 100,
@@ -480,3 +503,49 @@ class RiskManager:
             logger.info(f"Loaded risk manager state: {len(self.active_positions)} active positions")
         except Exception as e:
             logger.error(f"Error loading risk manager state: {e}")
+
+    def update_account_balance(self, account_info: dict) -> None:
+        # ...existing code...
+        pass
+
+    def update_trade_history(self, trade_result: dict) -> None:
+        # ...existing code for updating trade history...
+        self.trade_history.append(trade_result)
+        # Update win rate if sufficient data
+        if len(self.trade_history) >= 10:
+            wins = len([t for t in self.trade_history if t.get("pnl", 0) > 0])
+            self.win_rate = wins / len(self.trade_history) * 100
+        # ...existing code...
+    
+    def calculer_risque_trade(self, opportunity: dict) -> float:
+        """
+        Calcule le montant à risquer sur un trade en fonction du capital actuel,
+        du risque maximum par trade, du critère de Kelly et du win rate.
+        
+        Args:
+            opportunity: Dictionnaire décrivant l'opportunité de trading.
+                         (Peut inclure des facteurs supplémentaires si besoin)
+        
+        Returns:
+            Montant à risquer (en valeur absolue).
+        """
+        # Calcul de risque de base (pourcentage du capital)
+        risque_base = self.capital * (self.max_risk_per_trade / 100)
+        # Calcul simplifié de Kelly basé sur le win rate
+        # Kelly simplifié : f* = (p - (1-p)), avec p = win_rate/100
+        p = self.win_rate / 100
+        kelly = max(0, p - (1 - p))
+        kelly = min(kelly, self.kelly_fraction)
+        montant_risque = risque_base * kelly
+        return montant_risque
+
+    def get_risk_state(self) -> dict:
+        """
+        Retourne l'état actuel du risque incluant le capital, le win rate
+        et le montant de risque calculé par trade.
+        """
+        return {
+            "capital": self.capital,
+            "win_rate": self.win_rate,
+            "montant_risque_par_trade": self.calculer_risque_trade({})  # opportunity factors can be added later
+        }

@@ -243,3 +243,56 @@ class ReasoningEngine:
         )
         
         return explanation
+
+    def explain_decision(self, decision: dict, inputs: dict) -> str:
+        """
+        Génère une explication textuelle détaillée de la décision de trading prise.
+        
+        Args:
+            decision: Dictionnaire contenant la décision finale (ex: direction, weighted_score)
+            inputs: Dictionnaire regroupant les contributions des signaux (strategy, risk, technical)
+        
+        Returns:
+            Explication en texte clair.
+        """
+        explanation = "Décision prise: " + decision.get("direction", "NEUTRAL") + ". "
+        explanation += "Contributions: "
+
+        if "strategy" in inputs and inputs["strategy"].get("available", False):
+            strat_dir = inputs["strategy"].get("direction", "NEUTRAL")
+            explanation += f"[Stratégie: {strat_dir};] "
+        else:
+            explanation += "[Stratégie: non disponible;] "
+            
+        if "risk" in inputs and inputs["risk"].get("available", False):
+            risk_score = inputs["risk"].get("score", 50)
+            explanation += f"[Risque: {risk_score};] "
+        else:
+            explanation += "[Risque: neutre;] "
+            
+        if "technical" in inputs and inputs["technical"].get("available", False):
+            tech_score = inputs["technical"].get("score", 50)
+            explanation += f"[Technique: {tech_score};] "
+        else:
+            explanation += "[Technique: neutre;] "
+            
+        weighted_score = decision.get("weighted_score", 50)
+        explanation += f"Score pondéré: {weighted_score}. "
+
+        if weighted_score >= 65:
+            explanation += "Signal d'achat fort détecté."
+        elif weighted_score <= 35:
+            explanation += "Signal de vente fort détecté."
+        else:
+            explanation += "Signal neutre, aucune action recommandée."
+        
+        return explanation
+
+    def log_decision_explanation(self, decision: dict, inputs: dict) -> None:
+        """
+        Enregistre l'explication de la décision (ex. dans des logs ou en console)
+        """
+        explanation = self.explain_decision(decision, inputs)
+        # ...existing log handling...
+        print("Explication de décision:", explanation)
+        # ou utiliser un logger, par ex. self.logger.info(explanation)

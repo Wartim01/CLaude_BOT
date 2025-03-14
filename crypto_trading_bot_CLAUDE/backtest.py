@@ -21,7 +21,6 @@ from config.trading_params import (
 )
 
 from strategies.technical_bounce import TechnicalBounceStrategy
-from ai.scoring_engine import ScoringEngine
 from utils.logger import setup_logger
 
 logger = setup_logger("backtest")
@@ -38,9 +37,6 @@ class BacktestEngine:
         for directory in [self.data_dir, self.results_dir]:
             if not os.path.exists(directory):
                 os.makedirs(directory)
-        
-        # Initialiser les composants
-        self.scoring_engine = ScoringEngine()
     
     def load_data(self, symbol: str, timeframe: str, start_date: str, end_date: str) -> pd.DataFrame:
         """
@@ -55,21 +51,26 @@ class BacktestEngine:
         Returns:
             DataFrame avec les données OHLCV
         """
-        # Construire le chemin du fichier
         filename = f"{symbol}_{timeframe}_{start_date}_{end_date}.csv"
         filepath = os.path.join(self.data_dir, filename)
-        
-        # Vérifier si le fichier existe déjà
         if os.path.exists(filepath):
             logger.info(f"Chargement des données depuis {filepath}")
-            df = pd.read_csv(filepath, parse_dates=['timestamp'])
+            # --- Changed code: Large volume management ---
+            file_size_mb = os.path.getsize(filepath) / (1024 * 1024)
+            if file_size_mb > 50:
+                logger.info(f"Fichier volumineux détecté ({file_size_mb:.2f} MB). Lecture par chunks...")
+                chunks = []
+                for chunk in pd.read_csv(filepath, parse_dates=['timestamp'], chunksize=10000):
+                    chunks.append(chunk)
+                df = pd.concat(chunks)
+                del chunks
+            else:
+                df = pd.read_csv(filepath, parse_dates=['timestamp'])
             df.set_index('timestamp', inplace=True)
             return df
-        
-        # Si le fichier n'existe pas, vous pouvez implémenter la récupération des données
-        # depuis une API externe (Binance, etc.)
-        logger.error(f"Fichier de données non trouvé: {filepath}")
-        return pd.DataFrame()
+        else:
+            logger.error(f"Fichier de données non trouvé: {filepath}")
+            return pd.DataFrame()
     
     def run_backtest(self, symbol: str, timeframe: str, start_date: str, end_date: str,
                    initial_capital: float = 200, strategy_name: str = "technical_bounce") -> Dict:
@@ -107,6 +108,14 @@ class BacktestEngine:
         
         # Simuler le trading
         backtest_results = self._simulate_trading(data, strategy, initial_capital, symbol)
+        
+        # --- Changed code: Enhanced commentary on result interpretation ---
+        logger.info("Interprétation des résultats du backtest :")
+        logger.info("  - Un rendement total positif indique une performance profitable.")
+        logger.info("  - Un drawdown maximum important (>20-30%) peut signaler un risque élevé.")
+        logger.info("  - Un ratio de Sharpe supérieur à 1 est généralement considéré comme bon pour le rendement ajusté au risque.")
+        logger.info("  - Le profit factor (>1, idéalement >2) montre un bon rapport gains/pertes.")
+        logger.info("  - Vérifiez également le win rate afin de juger de la cohérence de la stratégie.")
         
         # Sauvegarder les résultats
         self._save_backtest_results(backtest_results, symbol, strategy_name, start_date, end_date)

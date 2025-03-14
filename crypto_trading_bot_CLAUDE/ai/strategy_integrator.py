@@ -20,13 +20,14 @@ class StrategyIntegrator:
     """
     Intègre des signaux de stratégies diverses pour une meilleure prise de décision
     """
-    def __init__(self, config_path: Optional[str] = None, strategies_dir: Optional[str] = None):
+    def __init__(self, config_path: Optional[str] = None, strategies_dir: Optional[str] = None, strategies: Optional[List] = None):
         """
         Initialise l'intégrateur de stratégies
         
         Args:
             config_path: Chemin du fichier de configuration
             strategies_dir: Répertoire contenant les modules de stratégie
+            strategies: Liste d'instances de stratégies
         """
         # Chemins des fichiers
         self.config_path = config_path or os.path.join(DATA_DIR, "strategies", "strategy_config.json")
@@ -37,7 +38,7 @@ class StrategyIntegrator:
         os.makedirs(os.path.dirname(self.config_path), exist_ok=True)
         
         # Listes des modules de stratégie
-        self.strategies = {}
+        self.strategies = strategies if strategies is not None else []
         self.active_strategies = []
         
         # Configuration
@@ -854,3 +855,44 @@ class StrategyIntegrator:
         except Exception as e:
             logger.error(f"Erreur lors de la réinitialisation des statistiques: {str(e)}")
             return False
+    
+    def get_signal(self, opportunity: Dict) -> str:
+        """
+        Agrège les signaux de chaque stratégie pour retourner un signal unifié.
+        
+        Args:
+            opportunity: Dictionnaire contenant les données liées à l'opportunité.
+            
+        Returns:
+            Signal unifié ("STRONG_BUY", "BUY", "NEUTRAL", "SELL", "STRONG_SELL").
+        """
+        signals = []
+        # Boucler sur toutes les stratégies et récupérer leur signal
+        for strat in self.strategies:
+            try:
+                # Chaque stratégie doit implémenter une méthode evaluate qui retourne un dictionnaire
+                # avec la clé "direction".
+                result = strat.evaluate(opportunity)
+                signals.append(result.get("direction", "NEUTRAL"))
+            except Exception as e:
+                # En cas d'erreur, ignorer la stratégie et continuer.
+                continue
+        
+        if not signals:
+            return "NEUTRAL"
+        
+        # Simple règle de majorité des signaux
+        strong_buy = signals.count("STRONG_BUY")
+        buy = signals.count("BUY")
+        strong_sell = signals.count("STRONG_SELL")
+        sell = signals.count("SELL")
+        
+        total_buy = strong_buy + buy
+        total_sell = strong_sell + sell
+        
+        if total_buy > total_sell:
+            return "STRONG_BUY" if strong_buy > 0 else "BUY"
+        elif total_sell > total_buy:
+            return "STRONG_SELL" if strong_sell > 0 else "SELL"
+        else:
+            return "NEUTRAL"

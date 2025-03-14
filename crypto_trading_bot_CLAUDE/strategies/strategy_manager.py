@@ -16,118 +16,91 @@ class StrategyManager:
     """
     Manages multiple trading strategies and combines their signals
     """
-    def __init__(self, strategies: List[str] = None, strategy_params: Dict = None, strategy_weights: Dict = None):
+    def __init__(self, config, data_fetcher, market_analyzer, scoring_engine):
         """
         Initialize the strategy manager
         
         Args:
-            strategies: List of strategy names to load
-            strategy_params: Parameters for each strategy
-            strategy_weights: Weights for combining strategy signals
+            config: Configuration dictionary
+            data_fetcher: Data fetcher instance
+            market_analyzer: Market analyzer instance
+            scoring_engine: Scoring engine instance
         """
-        self.strategies = {}
-        self.strategy_weights = strategy_weights or {}
-        self.strategy_params = strategy_params or {}
+        self.config = config
+        self.data_fetcher = data_fetcher
+        self.market_analyzer = market_analyzer
+        self.scoring_engine = scoring_engine
+        self.active_strategies = []
+        self.strategy_weights = {}
+        self.strategy_params = {}
         
         # Strategy performance metrics
         self.performance_metrics = {}
         
-        # Load strategies
-        if strategies:
-            self.load_strategies(strategies)
+        # Load active strategies from config strategies["active"]
+        active_list = self.config.get("strategies", {}).get("active", [])
+        self.load_strategies(active_list)
     
-    def load_strategies(self, strategy_names: List[str]) -> None:
+    def load_strategies(self, strategy_names: list) -> None:
         """
-        Load trading strategies
-        
-        Args:
-            strategy_names: List of strategy names to load
+        Charge dynamiquement les stratégies actives à partir de la liste de noms.
         """
-        for strategy_name in strategy_names:
+        import importlib
+        for strat_name in strategy_names:
             try:
-                # Create strategy module path
-                module_path = f"strategies.{strategy_name}"
-                
-                # Import the strategy module
-                strategy_module = importlib.import_module(module_path)
-                
-                # Get strategy parameters
-                params = self.strategy_params.get(strategy_name, {})
-                
-                # Create strategy instance
-                if hasattr(strategy_module, 'Strategy'):
-                    strategy_instance = strategy_module.Strategy(**params)
-                    self.strategies[strategy_name] = strategy_instance
-                    logger.info(f"Loaded strategy: {strategy_name}")
-                else:
-                    # For functional strategies
-                    self.strategies[strategy_name] = {
-                        "module": strategy_module,
-                        "params": params
-                    }
-                    logger.info(f"Loaded functional strategy: {strategy_name}")
-                
-                # Initialize performance metrics
-                self.performance_metrics[strategy_name] = {
-                    "signals_generated": 0,
-                    "correct_signals": 0,
-                    "incorrect_signals": 0,
-                    "win_rate": 0.0,
-                    "total_pnl": 0.0,
-                    "avg_pnl_per_trade": 0.0
-                }
-                
+                # Exemple : "trend_following" -> module "strategies.trend_following"
+                module_path = f"strategies.{strat_name}"
+                module = importlib.import_module(module_path)
+                # Supposons que la classe s'appelle CamelCase version (ex: "TrendFollowing")
+                class_name = "".join(word.capitalize() for word in strat_name.split("_"))
+                strategy_class = getattr(module, class_name)
+                # Instancier la stratégie et l’ajouter à la liste active
+                instance = strategy_class(self.data_fetcher, self.market_analyzer, self.scoring_engine)
+                self.active_strategies.append(instance)
             except Exception as e:
-                logger.error(f"Failed to load strategy {strategy_name}: {str(e)}")
+                logger.error(f"Failed to load strategy {strat_name}: {str(e)}")
     
-    def generate_signal(self, symbol: str, timeframe: str, data: pd.DataFrame) -> Dict:
+    def run_strategies(self, symbol: str) -> Optional[Dict]:
+        """
+        Exécute toutes les stratégies actives pour le symbole donné et agrège
+        leurs signaux via une combinaison pondérée.
+        """
+        signals = []
+        for strategy in self.active_strategies:
+            opp = strategy.find_trading_opportunity(symbol)
+            if opp:
+                signals.append(opp)
+        if not signals:
+            return None
+        total_score = 0
+        total_weight = 0
+        vote = {"BUY": 0, "SELL": 0, "NEUTRAL": 0}
+        for sig in signals:
+            score = sig.get("score", 0)
+            confidence = sig.get("confidence", 0.5)
+            weight = confidence  # utilise la confiance comme poids
+            total_score += score * weight
+            total_weight += weight
+            s = sig.get("signal", "NEUTRAL")
+            if s in vote:
+                vote[s] += weight
+        avg_score = total_score / total_weight if total_weight else 0
+        final_signal = max(vote, key=vote.get)
+        if avg_score < self.config.get("strategies", {}).get("min_score", 50):
+            final_signal = "NEUTRAL"
+        return {"signal": final_signal, "avg_score": avg_score, "detailed_votes": vote}
+
+    def generate_signal(self, symbol: str) -> Optional[Dict]:
         """
         Generate a trading signal from a single strategy
         
         Args:
             symbol: Trading pair symbol
-            timeframe: Time frame of the data
-            data: DataFrame with OHLCV data
             
         Returns:
             Trading signal dictionary
         """
-        if not self.strategies:
-            logger.warning("No strategies loaded")
-            return {"direction": "NEUTRAL", "signal_strength": 0, "timeframe": timeframe}
-        
-        # Run each strategy and collect signals
-        strategy_signals = {}
-        
-        for name, strategy in self.strategies.items():
-            try:
-                signal = None
-                
-                # Handle both class and functional strategies
-                if hasattr(strategy, 'generate_signal'):
-                    # Class-based strategy
-                    signal = strategy.generate_signal(data, symbol, timeframe)
-                elif isinstance(strategy, dict) and "module" in strategy:
-                    # Functional strategy
-                    module = strategy["module"]
-                    params = strategy["params"]
-                    
-                    if hasattr(module, 'generate_signal'):
-                        signal = module.generate_signal(data, symbol, timeframe, **params)
-                
-                if signal:
-                    strategy_signals[name] = signal
-                    # Update metrics
-                    self.performance_metrics[name]["signals_generated"] += 1
-            except Exception as e:
-                logger.error(f"Error running strategy {name}: {str(e)}")
-        
-        # If we have strategy signals, combine them
-        if strategy_signals:
-            return self.combine_signals(strategy_signals)
-        
-        # Default neutral signal
-        return {"direction": "NEUTRAL", "signal_strength": 0, "timeframe": timeframe}
+        return self.run_strategies(symbol)
     
     def combine_signals(self, signals: Dict[str, Dict]) -> Dict:
         """
@@ -228,7 +201,7 @@ class StrategyManager:
         exit_signals = {}
         
         # Check each strategy for exit signals
-        for name, strategy in self.strategies.items():
+        for name, strategy in self.active_strategies:
             try:
                 exit_signal = None
                 
@@ -252,7 +225,7 @@ class StrategyManager:
         if exit_signals:
             # Count exit signals
             exit_count = len(exit_signals)
-            total_count = len(self.strategies)
+            total_count = len(self.active_strategies)
             
             # Exit if more than half of strategies say to exit
             should_exit = exit_count > total_count / 2
@@ -279,7 +252,7 @@ class StrategyManager:
             pnl: Profit/Loss from the trade
         """
         # For each strategy, check if it generated a correct signal
-        for name, strategy in self.strategies.items():
+        for name, strategy in self.active_strategies:
             # Get the last signal from this strategy for the symbol
             signal_direction = None
             

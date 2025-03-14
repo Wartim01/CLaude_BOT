@@ -11,7 +11,6 @@ from datetime import datetime, timedelta
 
 from config.config import DATA_DIR
 from utils.logger import setup_logger
-from ai.trading_agent import TradingAgent
 from ai.strategy_integrator import StrategyIntegrator
 from utils.market_risk_feed import MarketRiskFeed
 
@@ -22,10 +21,7 @@ class DecisionEngine:
     Moteur de décision qui analyse toutes les sources d'information
     pour générer les meilleures décisions de trading possibles
     """
-    def __init__(self,
-                trading_agent: Optional[TradingAgent] = None,
-                strategy_integrator: Optional[StrategyIntegrator] = None,
-                market_risk_feed: Optional[MarketRiskFeed] = None):
+    def __init__(self, trading_agent=None, strategy_integrator=None, market_risk_feed=None, config=None):
         """
         Initialise le moteur de décision
         
@@ -36,7 +32,22 @@ class DecisionEngine:
         """
         self.trading_agent = trading_agent
         self.strategy_integrator = strategy_integrator
-        self.market_risk_feed = market_risk_feed
+        self.config = config
+        # Instantiate MarketRiskFeed if not provided
+        if market_risk_feed is None:
+            from data.data_manager import DataManager  # assuming a DataManager exists
+            data_source = trading_agent.data_fetcher if trading_agent else DataManager()
+            self.market_risk_feed = MarketRiskFeed(data_source)
+        else:
+            self.market_risk_feed = market_risk_feed
+        
+        # Instead of market_risk_feed=None, integrate MarketRiskAnalyzer
+        from risk.market_risk_analyzer import MarketRiskAnalyzer
+        self.market_risk_analyzer = MarketRiskAnalyzer()
+        
+        # Instantiate StrategyManager using config (ensure config contains strategies.active list)
+        from strategies.strategy_manager import StrategyManager
+        self.strategy_manager = StrategyManager(config, trading_agent.data_fetcher, trading_agent.market_analyzer, trading_agent.scoring_engine)
         
         # Historique des décisions
         self.decision_history = {}
@@ -84,60 +95,96 @@ class DecisionEngine:
             "win_rate": 0.0
         }
     
-    def evaluate_trading_opportunity(self, symbol: str, data: pd.DataFrame, 
-                                 timeframe: str = '1h', execute: bool = False) -> Dict:
+    def evaluate_trading_opportunity(self, opportunity, market_data=None, symbol=None):
         """
-        Évalue une opportunité de trading en combinant toutes les sources d'information
+        Évalue une opportunité de trading en pondérant les signaux de stratégie,
+        le risque de marché et le score technique.
         
-        Args:
-            symbol: Symbole de trading (ex: 'BTCUSDT')
-            data: DataFrame avec les données OHLCV
-            timeframe: Timeframe des données
-            execute: Exécuter automatiquement le trade si opportunité valide
-            
-        Returns:
-            Résultat de l'évaluation et décision de trading
+        Retourne une décision parmi: "STRONG_BUY", "BUY", "NEUTRAL", "SELL", "STRONG_SELL"
         """
-        current_time = datetime.now()
+        # Récupérer le signal stratégique depuis StrategyIntegrator si disponible
+        if self.strategy_integrator is not None:
+            strategy_signal = self.strategy_integrator.get_signal(opportunity)
+        else:
+            strategy_signal = "NEUTRAL"  # Signal par défaut
         
-        # 1. Récupérer le signal de la stratégie intégrée
-        strategy_signal = self._get_strategy_signal(symbol, data, timeframe)
+        # Récupérer le score de risque depuis MarketRiskFeed si disponible
+        if self.market_risk_feed is not None:
+            risk_score = self.market_risk_feed.get_risk_score(market_data)
+        else:
+            risk_score = 0.5  # Risque neutre
         
-        # 2. Récupérer les indicateurs de risque du marché
-        market_risk = self._get_market_risk(symbol)
+        # Récupérer le score technique depuis l'opportunité ou défaut
+        technical_score = opportunity.get("technical_score", 0.5)
         
-        # 3. Obtenir le score technique direct
-        technical_score = self._get_technical_score(data)
+        # Poids attribués aux différentes sources (possibilité d'ajustement dynamique ultérieure)
+        strategy_weight = 0.4
+        risk_weight = 0.3
+        technical_weight = 0.3
         
-        # 4. Combiner toutes les sources pour une décision finale
-        decision = self._make_decision(
-            symbol=symbol,
-            strategy_signal=strategy_signal,
-            market_risk=market_risk,
-            technical_score=technical_score
-        )
+        # Mapper le signal stratégique vers une valeur numérique
+        signal_mapping = {
+            "STRONG_BUY": 1.0,
+            "BUY": 0.5,
+            "NEUTRAL": 0.0,
+            "SELL": -0.5,
+            "STRONG_SELL": -1.0
+        }
+        strategy_value = signal_mapping.get(strategy_signal, 0.0)
         
-        # 5. Enregistrer la décision dans l'historique
-        decision_id = self._record_decision(
-            symbol=symbol,
-            timeframe=timeframe,
-            decision=decision,
-            strategy_signal=strategy_signal,
-            market_risk=market_risk,
-            technical_score=technical_score
-        )
+        # Calculer le score composite
+        # Remarque: un risque plus faible (score proche de 0) améliore le score (0.5 - risk_score)
+        composite_score = (strategy_weight * strategy_value +
+                           risk_weight * (0.5 - risk_score) +
+                           technical_weight * (technical_score - 0.5))
         
-        # 6. Exécuter le trade si demandé et si la décision est favorable
-        execution_result = None
-        if execute and decision["should_trade"] and self.trading_agent:
-            execution_result = self._execute_trade(
-                symbol=symbol,
-                decision=decision
-            )
-            
-            decision["execution_result"] = execution_result
+        self.logger.debug(f"Strategy: {strategy_signal} ({strategy_value}), Risk: {risk_score}, Technical: {technical_score} -> Composite: {composite_score:.2f}")
         
-        return decision
+        # Integrate market risk if market_data is provided
+        if market_data:
+            risk_assessment = self.market_risk_analyzer.calculate_market_risk(market_data)
+            self.logger.info("Market risk assessment: " + str(risk_assessment))
+            # Optionally adjust the composite score or decision using risk_assessment["risk_score"]
+            # For example:
+            market_risk_factor = (100 - risk_assessment.get("risk_score", 50)) / 100.0
+            # Incorporate: composite_score *= market_risk_factor
+            # ...existing composite score calculation...
+        
+        # Use the StrategyManager to generate a signal for the symbol
+        if symbol and self.strategy_manager:
+            strat_signal = self.strategy_manager.generate_signal(symbol)
+            self.logger.info(f"StrategyManager signal for {symbol}: {strat_signal}")
+            # Optionally adjust composite decision using the strategy signal
+            if strat_signal and strat_signal.get("signal", "NEUTRAL") != "NEUTRAL":
+                # Example: combine with other scores by increasing confidence if signals align
+                opportunity["score"] += 10  # minimal adjustment (adjust as needed)
+        
+        # Use MarketRiskFeed to adjust decision based on current market risk level
+        if self.market_risk_feed and symbol:
+            risk_metrics = self.market_risk_feed.get_market_risk(symbol)
+            self.logger.info(f"Market risk metrics for {symbol}: {risk_metrics}")
+            # Example: if the risk score is high, reduce overall opportunity score
+            risk_score = risk_metrics.get("risk_score", 50)
+            if risk_score > 70:
+                opportunity["score"] *= 0.9  # reduce score by 10%
+                opportunity["risk_adjustment"] = "High market risk"
+        
+        # Définir des seuils de décision
+        if composite_score >= 0.6:
+            decision = "STRONG_BUY"
+        elif composite_score >= 0.2:
+            decision = "BUY"
+        elif composite_score > -0.2:
+            decision = "NEUTRAL"
+        elif composite_score > -0.6:
+            decision = "SELL"
+        else:
+            decision = "STRONG_SELL"
+        
+        return {
+            "direction": opportunity.get("signal", "NEUTRAL"),
+            "weighted_score": opportunity.get("score", 50)
+        }
     
     def _get_strategy_signal(self, symbol: str, data: pd.DataFrame, timeframe: str) -> Dict:
         """

@@ -30,6 +30,7 @@ class OrderManager:
         self.api = api_connector
         self.position_tracker = position_tracker
         self.leverage_set = set()  # Paires pour lesquelles le levier a déjà été défini
+        self.pending_orders = {}  # order_id: order details
     
     def set_leverage_if_needed(self, symbol: str) -> bool:
         """
@@ -381,3 +382,73 @@ class OrderManager:
         except Exception as e:
             logger.error(f"Erreur lors de la fermeture de la position {position_id}: {str(e)}")
             return {"success": False, "message": str(e)}
+
+    def create_order(self, symbol: str, order_type: str, side: str, quantity: float, price: float = None, params: dict = None) -> dict:
+        """
+        Place an order via the exchange client with retries.
+        
+        Args:
+            symbol: Trading pair
+            order_type: "market" or "limit"
+            side: "BUY" or "SELL"
+            quantity: Amount to trade
+            price: Price for limit orders (ignored in market orders)
+            params: Additional parameters
+        
+        Returns:
+            Order response dictionary.
+        """
+        params = params or {}
+        attempts = 3
+        for attempt in range(1, attempts + 1):
+            try:
+                if order_type.lower() == "market":
+                    response = self.api.create_order(symbol, order_type, side, quantity, params=params)
+                else:
+                    response = self.api.create_order(symbol, order_type, side, quantity, price, params=params)
+                order_id = response.get("id")
+                if order_id:
+                    self.pending_orders[order_id] = response
+                logger.info(f"Order placed: {response}")
+                return response
+            except Exception as e:
+                logger.error(f"Error placing order (attempt {attempt}): {e}")
+                time.sleep(1)
+        return {"error": "Order placement failed after retries"}
+
+    def cancel_order(self, symbol: str, order_id: str) -> dict:
+        """
+        Cancel an existing order.
+        """
+        try:
+            response = self.api.cancel_order(symbol, order_id)
+            if order_id in self.pending_orders:
+                del self.pending_orders[order_id]
+            logger.info(f"Order cancelled: {order_id}")
+            return response
+        except Exception as e:
+            logger.error(f"Error cancelling order {order_id}: {e}")
+            return {"error": str(e)}
+
+    def check_order_status(self, order_id: str) -> dict:
+        """
+        Check the status of an order.
+        """
+        try:
+            response = self.api.get_order_status(order_id)
+            logger.info(f"Order status for {order_id}: {response}")
+            return response
+        except Exception as e:
+            logger.error(f"Error checking status for order {order_id}: {e}")
+            return {"error": str(e)}
+
+    def retry_pending_orders(self) -> None:
+        """
+        Retry orders that have not been filled yet.
+        """
+        for order_id, order in list(self.pending_orders.items()):
+            status = self.check_order_status(order_id)
+            if status.get("status") in ["canceled", "rejected"]:
+                logger.info(f"Pending order {order_id} failed, removing from queue.")
+                del self.pending_orders[order_id]
+            # ...existing code for additional retry logic if needed...

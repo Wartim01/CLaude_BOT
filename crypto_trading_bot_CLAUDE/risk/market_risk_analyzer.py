@@ -8,6 +8,7 @@ import time
 from datetime import datetime
 
 from utils.logger import setup_logger
+from config.trading_params import MAX_DRAWDOWN_LIMIT, POSITION_SIZING_METHOD  # Example constants
 
 logger = setup_logger("market_risk_analyzer")
 
@@ -44,6 +45,8 @@ class MarketRiskAnalyzer:
         # Risk assessment history
         self.risk_history = []
         self.last_assessment_time = None
+        self.last_risk_score = None
+        self.last_risk_level = "unknown"
         
     def calculate_market_risk(self, market_data: Dict[str, pd.DataFrame], 
                            weights: Optional[Dict[str, float]] = None) -> Dict[str, Any]:
@@ -336,3 +339,54 @@ class MarketRiskAnalyzer:
                 
                 # Align the series by index
                 joined = pd.concat([returns_data[sym1], returns_data[sym2]], axis=1).dropna()
+
+    def analyze_risk(self, market_data: dict) -> dict:
+        """
+        Analyse le risque global du marché en fonction de la volatilité,
+        de la corrélation inter-actifs et d'autres facteurs.
+        
+        Args:
+            market_data: Données de marché nécessaires au calcul.
+            
+        Returns:
+            Dictionnaire contenant risk_score, risk_level, et d'autres détails.
+        """
+        try:
+            # ...existing code to extract factors from market_data...
+            # Exemple simplifié de calcul du risk_score:
+            volatility = market_data.get("volatility", 0.0)  # Ex: mesure en pourcentage
+            correlation = market_data.get("average_correlation", 0.0)  # Ex: valeur entre 0 et 1
+            
+            # Calculer un score combiné (poids arbitraires)
+            risk_score = volatility * 0.7 + correlation * 0.3
+            
+            # Définir le niveau de risque selon des seuils prédéfinis
+            if risk_score < 20:
+                risk_level = "low"
+            elif risk_score < 40:
+                risk_level = "medium"
+            elif risk_score < 60:
+                risk_level = "high"
+            else:
+                risk_level = "extreme"
+            
+            # Stocker le dernier résultat
+            self.last_risk_score = risk_score
+            self.last_risk_level = risk_level
+            
+            return {
+                "risk_score": risk_score,
+                "risk_level": risk_level,
+                "details": {
+                    "volatility": volatility,
+                    "average_correlation": correlation
+                }
+            }
+        except Exception as e:
+            # En cas d'erreur, renvoyer le dernier risque connu
+            # et signaler l'erreur dans details
+            return {
+                "risk_score": self.last_risk_score if self.last_risk_score is not None else 0,
+                "risk_level": self.last_risk_level,
+                "error": str(e)
+            }

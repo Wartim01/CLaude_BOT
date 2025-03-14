@@ -729,23 +729,10 @@ class HybridStrategy(StrategyBase):
         }
     
     def _generate_technical_summary(self, trend: str, rsi: str, bollinger: str, adx: str) -> Dict:
-        """
-        Génère un résumé de l'analyse technique
-        
-        Args:
-            trend: Analyse de tendance
-            rsi: Analyse RSI
-            bollinger: Analyse Bollinger
-            adx: Analyse ADX
-            
-        Returns:
-            Résumé de l'analyse technique
-        """
-        # Calculer un score haussier/baissier
+        # Correction: Replace French connectors with Python equivalents
         bullish_score = 0
         bearish_score = 0
-        
-        # Évaluer la tendance
+
         if "haussier fort" in trend:
             bullish_score += 3
         elif "haussier" in trend:
@@ -754,8 +741,7 @@ class HybridStrategy(StrategyBase):
             bearish_score += 3
         elif "baissier" in trend:
             bearish_score += 2
-        
-        # Évaluer le RSI
+
         if "survente" in rsi:
             bullish_score += 2  # Potentiel rebond
         elif "surachat" in rsi:
@@ -764,8 +750,7 @@ class HybridStrategy(StrategyBase):
             bearish_score += 1
         elif "haussier" in rsi:
             bullish_score += 1
-        
-        # Évaluer les bandes de Bollinger
+
         if "sous-bande" in bollinger:
             bullish_score += 2  # Potentiel rebond
         elif "au-dessus" in bollinger:
@@ -774,16 +759,14 @@ class HybridStrategy(StrategyBase):
             bullish_score += 1
         elif "proche de la bande supérieure" in bollinger:
             bearish_score += 1
-        
-        # Évaluer l'ADX
+
         adx_multiplier = 1
         if "forte" in adx:
             adx_multiplier = 1.5
-        
-        # Conclusion
+
         total_bullish = bullish_score * adx_multiplier
         total_bearish = bearish_score * adx_multiplier
-        
+
         bias = "neutre"
         if total_bullish > total_bearish * 1.5:
             bias = "fortement haussier"
@@ -793,7 +776,7 @@ class HybridStrategy(StrategyBase):
             bias = "fortement baissier"
         elif total_bearish > total_bullish:
             bias = "modérément baissier"
-        
+
         return {
             "bias": bias,
             "bullish_score": total_bullish,
@@ -973,3 +956,60 @@ class HybridStrategy(StrategyBase):
             explanation += "Considérez une exposition réduite dans ce contexte contradictoire."
         
         return explanation
+
+    def generate_signal(self, symbol: str, data) -> dict:
+        """
+        Génère un signal de trading basé sur l'analyse de tendance et d'oscillateurs.
+        
+        Args:
+            symbol: Le symbole du marché.
+            data: DataFrame enrichi avec indicateurs (ex: MA_50, MA_200, RSI).
+            
+        Returns:
+            Dictionnaire contenant 'signal' et 'confidence'.
+        """
+        # Calcul de la tendance via moyennes mobiles
+        ma_short = data["MA_50"].iloc[-1] if "MA_50" in data.columns else None
+        ma_long = data["MA_200"].iloc[-1] if "MA_200" in data.columns else None
+        # Calcul de l'oscillateur RSI
+        rsi = data["RSI"].iloc[-1] if "RSI" in data.columns else None
+        
+        signal = "NEUTRAL"
+        confidence = 0.5
+        
+        # Signal de tendance basé sur l'analyse des moyennes mobiles
+        if ma_short and ma_long:
+            if ma_short > ma_long:
+                trend_signal = "BUY"
+            elif ma_short < ma_long:
+                trend_signal = "SELL"
+            else:
+                trend_signal = "NEUTRAL"
+        else:
+            trend_signal = "NEUTRAL"
+        
+        # Signal de l'oscillateur basé sur RSI
+        if rsi is not None:
+            if rsi < 30:
+                oscillator_signal = "BUY"
+            elif rsi > 70:
+                oscillator_signal = "SELL"
+            else:
+                oscillator_signal = "NEUTRAL"
+        else:
+            oscillator_signal = "NEUTRAL"
+        
+        # Combinaison des signaux
+        if trend_signal == oscillator_signal and trend_signal != "NEUTRAL":
+            signal = trend_signal
+            confidence = 0.8
+        elif trend_signal != "NEUTRAL" or oscillator_signal != "NEUTRAL":
+            # Choix du signal si l'un d'eux est non neutre
+            if trend_signal != "NEUTRAL":
+                signal = trend_signal
+                confidence = 0.6
+            else:
+                signal = oscillator_signal
+                confidence = 0.6
+        
+        return {"signal": signal, "confidence": confidence}

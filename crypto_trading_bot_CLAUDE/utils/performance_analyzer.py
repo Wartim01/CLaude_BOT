@@ -1251,3 +1251,93 @@ class PerformanceAnalyzer:
             return 'negative'
         else:
             return 'neutral'
+
+def calculate_sharpe_ratio(equity_curve, risk_free_rate=0.02):
+    """
+    Calcule le Sharpe ratio à partir d'une courbe d'équité.
+    
+    Args:
+        equity_curve: Liste ou array de valeurs d'équité sur le temps.
+        risk_free_rate: Taux sans risque annuel (par défaut 2%).
+        
+    Returns:
+        Sharpe ratio (float).
+    """
+    # Calculer les rendements journaliers
+    equity = np.array(equity_curve)
+    daily_returns = np.diff(equity) / equity[:-1]
+    avg_return = np.mean(daily_returns)
+    std_return = np.std(daily_returns)
+    if std_return == 0:
+        return 0.0
+    # Annualiser le ratio (252 jours de trading)
+    sharpe_ratio = (avg_return - risk_free_rate / 252) / std_return * np.sqrt(252)
+    return sharpe_ratio
+
+def calculate_max_drawdown(equity_curve):
+    """
+    Calcule le drawdown maximal à partir de la courbe d'équité.
+    
+    Args:
+        equity_curve: Liste ou array de valeurs d'équité sur le temps.
+        
+    Returns:
+        Drawdown maximal (float, en décimal).
+    """
+    equity = np.array(equity_curve)
+    peak = np.maximum.accumulate(equity)
+    drawdown = (peak - equity) / peak
+    return np.max(drawdown)
+
+def analyze_performance(equity_curve, trades, initial_capital):
+    """
+    Analyse la performance d'un backtest en calculant diverses métriques.
+    
+    Args:
+        equity_curve: Liste de valeurs d'équité.
+        trades: Liste de dictionnaires de trades (doit contenir une clé 'pnl').
+        initial_capital: Capital initial utilisé au début du backtest.
+        
+    Returns:
+        Dictionnaire contenant les métriques de performance.
+    """
+    final_equity = equity_curve[-1]
+    total_return = final_equity - initial_capital
+    total_return_pct = (total_return / initial_capital) * 100
+    
+    sharpe_ratio = calculate_sharpe_ratio(equity_curve)
+    max_dd = calculate_max_drawdown(equity_curve)
+    
+    total_trades = len(trades)
+    winning_trades = sum(1 for t in trades if t.get('pnl', 0) > 0)
+    losing_trades = total_trades - winning_trades
+    win_rate = (winning_trades / total_trades * 100) if total_trades > 0 else 0
+    total_pnl = sum(t.get('pnl', 0) for t in trades)
+    avg_pnl = (total_pnl / total_trades) if total_trades > 0 else 0
+    
+    metrics = {
+        "final_equity": final_equity,
+        "total_return": total_return,
+        "total_return_pct": total_return_pct,
+        "sharpe_ratio": sharpe_ratio,
+        "max_drawdown": max_dd,
+        "total_trades": total_trades,
+        "winning_trades": winning_trades,
+        "losing_trades": losing_trades,
+        "win_rate": win_rate,
+        "avg_pnl": avg_pnl,
+        "analysis_timestamp": datetime.now().isoformat()
+    }
+    return metrics
+
+if __name__ == "__main__":
+    # Exemple d'utilisation avec des données fictives
+    equity_curve_example = [10000, 10200, 10150, 10300, 10500, 10400]
+    trades_example = [
+        {"pnl": 200},
+        {"pnl": -50},
+        {"pnl": 150},
+        {"pnl": -100},
+    ]
+    metrics = analyze_performance(equity_curve_example, trades_example, 10000)
+    print(metrics)

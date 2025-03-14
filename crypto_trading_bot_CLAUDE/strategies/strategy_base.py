@@ -17,7 +17,8 @@ logger = setup_logger("strategy_base")
 
 class StrategyBase(ABC):
     """
-    Classe de base abstraite pour les stratégies de trading
+    Classe de base pour définir l'interface des stratégies de trading.
+    Les stratégies concrètes doivent implémenter la méthode generate_signal.
     """
     def __init__(self, data_fetcher, market_analyzer, scoring_engine):
         self.data_fetcher = data_fetcher
@@ -29,6 +30,33 @@ class StrategyBase(ABC):
         self.trades_dir = os.path.join(DATA_DIR, "trade_logs")
         if not os.path.exists(self.trades_dir):
             os.makedirs(self.trades_dir)
+    
+    @abstractmethod
+    def generate_signal(self, symbol: str, data) -> dict:
+        """
+        Génère un signal de trading pour le symbole donné à partir des données fournies.
+        
+        Args:
+            symbol: Le symbole du marché.
+            data: Données de marché ou DataFrame d'indicateurs.
+            
+        Returns:
+            Dictionnaire contenant au minimum la clé 'signal', éventuellement d'autres informations.
+        """
+        pass
+
+    def evaluate_performance(self, signals: list) -> float:
+        """
+        Méthode utilitaire pour évaluer la performance d'une stratégie.
+        
+        Args:
+            signals: Liste de signaux générés.
+            
+        Returns:
+            Score de performance (pourcentage ou autre métrique).
+        """
+        # ...existing code or custom evaluation logic...
+        return 0.0
     
     @abstractmethod
     def find_trading_opportunity(self, symbol: str) -> Optional[Dict]:

@@ -5,7 +5,12 @@ import numpy as np
 import pandas as pd
 from typing import Dict, List, Optional, Union
 import talib
-import pywt  # PyWavelets for wavelet transform
+
+try:
+    import pywt  # PyWavelets for wavelet transform
+except ImportError:
+    pywt = None
+    print("Warning: Module 'pywt' not installed. Wavelet transform features will be disabled. To install, run 'pip install PyWavelets'.")
 
 class AdvancedFeatures:
     """Class providing advanced market features beyond basic indicators"""
@@ -229,8 +234,8 @@ class AdvancedFeatures:
             except Exception as e:
                 print(f"Error calculating FFT features: {str(e)}")
         
-        # Wavelet transform features
-        if len(df) >= 64:
+        # Wavelet transform features (only if pywt is available)
+        if pywt is not None and len(df) >= 64:
             try:
                 # Apply wavelet decomposition
                 data = df['close'].values[-64:]
@@ -246,6 +251,9 @@ class AdvancedFeatures:
                 
             except Exception as e:
                 print(f"Error calculating wavelet features: {str(e)}")
+        else:
+            if pywt is None:
+                print("Skipping wavelet features due to missing PyWavelets module.")
         
         return df
     
@@ -335,7 +343,7 @@ class AdvancedFeatures:
             # Normalize to [0, 1]
             ts_min = np.min(ts)
             ts_max = np.max(ts)
-            if ts_max - ts_min != 0:
+            if (ts_max - ts_min) != 0:
                 ts_norm = (ts - ts_min) / (ts_max - ts_min)
                 
                 # Calculate curve length
@@ -350,3 +358,35 @@ class AdvancedFeatures:
                 result.iloc[i] = 1.0  # Default value
                 
         return result
+
+def calculate_advanced_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Calculate advanced features for the given DataFrame using the AdvancedFeatures class.
+    This function performs preprocessing by filling missing values, then computes advanced features,
+    drops fully NaN columns, and standardizes numeric features.
+    
+    Args:
+        df: DataFrame with market data.
+        
+    Returns:
+        DataFrame with advanced features added and standardized.
+    """
+    if df.empty:
+        raise ValueError("Input DataFrame is empty.")
+    
+    # Preprocessing: Fill missing values
+    df_filled = df.fillna(method='ffill').fillna(method='bfill')
+    
+    # Compute advanced features using the AdvancedFeatures class methods
+    features_df = AdvancedFeatures.create_all_features(df_filled)
+    
+    # Postprocessing: Drop any column that is entirely NaN
+    features_df.dropna(axis=1, how='all', inplace=True)
+    
+    # Standardize numeric features
+    numeric_cols = features_df.select_dtypes(include=['number']).columns
+    for col in numeric_cols:
+        std_val = features_df[col].std()
+        if std_val != 0:
+            features_df[col] = (features_df[col] - features_df[col].mean()) / std_val
+    return features_df

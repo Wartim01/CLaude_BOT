@@ -45,7 +45,8 @@ class AdaptiveRiskManager:
                 volatility_scaling: bool = True,   # Ajuster le risque selon la volatilité
                 use_kelly_criterion: bool = True,  # Utiliser le critère de Kelly pour le sizing
                 kelly_fraction: float = 0.5,      # Fraction du critère de Kelly (0.5 = demi-Kelly)
-                risk_control_mode: str = "balanced"  # "conservative", "balanced", "aggressive"
+                risk_control_mode: str = "balanced",  # "conservative", "balanced", "aggressive"
+                model_dir: str = None
                 ):
         """
         Initialise le gestionnaire de risque adaptatif
@@ -107,6 +108,30 @@ class AdaptiveRiskManager:
         
         # Charger l'historique précédent si disponible
         self._load_history()
+        
+        # Définir des profils de risque
+        self.risk_profiles = {
+            "conservative": {
+                "stop_loss_percent": 5.0,
+                "take_profit_percent": 6.0,
+                "leverage": 2,
+                "risk_per_trade_percent": 2.0
+            },
+            "neutral": {
+                "stop_loss_percent": 4.0,
+                "take_profit_percent": 7.0,
+                "leverage": 3,
+                "risk_per_trade_percent": 4.0
+            },
+            "aggressive": {
+                "stop_loss_percent": 3.0,
+                "take_profit_percent": 8.0,
+                "leverage": 5,
+                "risk_per_trade_percent": 6.0
+            }
+        }
+        self.current_profile = "neutral"
+        self.daily_performance = []  # Liste des PnL quotidiens
     
     def _initialize_risk_profiles(self, mode: str) -> Dict:
         """
@@ -1113,6 +1138,45 @@ class AdaptiveRiskManager:
                 params["volatility_adjustment_applied"] = False
         
         return params
+    
+    def update_risk_profile(self, market_data: pd.DataFrame, latest_price: float) -> None:
+        """
+        Utilise MarketAnomalyDetector pour ajuster le profil de risque.
+        En cas d'anomalie, passe au profil "conservative".
+        Sinon, adapte vers "aggressive" si la performance récente est positive, sinon "neutral".
+        """
+        anomaly_result = self.anomaly_detector.get_anomaly_score(market_data["close"], market_data["volume"])
+        if anomaly_result["is_anomalous"]:
+            self.current_profile = "conservative"
+            logger.info("Anomalie détectée, profil de risque ajusté à 'conservative'.")
+        else:
+            recent_pnl = self._get_recent_pnl()
+            if recent_pnl > 0:
+                self.current_profile = "aggressive"
+            else:
+                self.current_profile = "neutral"
+            logger.info(f"Aucune anomalie, profil de risque ajusté à '{self.current_profile}'.")
+    
+    def _get_recent_pnl(self) -> float:
+        """
+        Calcule le PnL moyen sur les 5 dernières journées.
+        """
+        if not self.daily_performance:
+            return 0.0
+        return sum(self.daily_performance[-5:]) / len(self.daily_performance[-5:])
+    
+    def get_risk_parameters(self) -> dict:
+        """
+        Retourne les paramètres de risque en fonction du profil actuel.
+        """
+        return self.risk_profiles.get(self.current_profile, self.risk_profiles["neutral"])
+    
+    def record_daily_performance(self, pnl: float) -> None:
+        """
+        Enregistre la performance quotidienne (PnL) pour une adaptation future.
+        """
+        self.daily_performance.append(pnl)
+        logger.info(f"Performance quotidienne enregistrée: {pnl}")
 
 def test_risk_manager():
     """Fonction de test simple pour vérifier l'initialisation du gestionnaire de risque"""

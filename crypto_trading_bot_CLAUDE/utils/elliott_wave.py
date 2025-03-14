@@ -9,7 +9,6 @@ import talib
 from scipy import signal
 
 from utils.logger import setup_logger
-from utils.technical_analysis import TechnicalAnalysis
 
 logger = setup_logger("elliott_wave")
 
@@ -512,25 +511,6 @@ class ElliottWaveAnalysis:
                     "confidence": float(confidence),
                     "description": f"Projection de vague corrective basée sur la structure actuelle"
                 })
-        
-        # Ajouter également des niveaux de support/résistance clés
-        sr_levels = TechnicalAnalysis.detect_support_resistance(df)
-        
-        if sr_levels.get("nearest_support") is not None and sr_levels["nearest_support"] < current_price:
-            targets.append({
-                "price": float(sr_levels["nearest_support"]),
-                "type": "support",
-                "confidence": 0.75,
-                "description": "Niveau de support clé"
-            })
-        
-        if sr_levels.get("nearest_resistance") is not None and sr_levels["nearest_resistance"] > current_price:
-            targets.append({
-                "price": float(sr_levels["nearest_resistance"]),
-                "type": "resistance",
-                "confidence": 0.75,
-                "description": "Niveau de résistance clé"
-            })
         
         # Trier les cibles par prix (de bas en haut)
         targets.sort(key=lambda x: x["price"])
