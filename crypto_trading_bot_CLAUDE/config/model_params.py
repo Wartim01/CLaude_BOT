@@ -23,7 +23,7 @@ LSTM_DEFAULT_PARAMS = {
 
 # [AUTO-UPDATE SECTION] - DO NOT EDIT MANUALLY
 # This section is automatically updated by hyperparameter_search.py
-# Last optimization: 2025-03-08 10:03:55 (timeframe: 15m, F1: 0.6837)
+# Last optimization: 2025-03-15 18:39:30 (timeframe: 15m, F1: 0.0000)
 LSTM_OPTIMIZED_PARAMS = {
     "15m": {
         "lstm_units": [136, 68, 68],
@@ -35,8 +35,8 @@ LSTM_OPTIMIZED_PARAMS = {
         "l2_regularization": 6.358358856676247e-05,
         "use_attention": True,
         "use_residual": True,
-        "last_optimized": "2025-03-08 10:03:55",
-        "f1_score": 0.6836915297092289
+        "last_optimized": "2025-03-15 18:39:30",
+        "f1_score": 0.0
     },
 }
 

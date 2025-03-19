@@ -223,7 +223,9 @@ def load_test_data(test_data_path):
     return X, y
 
 def evaluate(model, X, y):
-    predictions = model.predict(X)
+    # Convertir X en float32 pour être sûr que TensorFlow puisse le traiter
+    X = X.astype(np.float32)
+    predictions = model.model.predict(X)
     # Handle multi-output: assume single output for evaluation simplicity
     if isinstance(predictions, list):
         predictions = predictions[0]
@@ -254,10 +256,21 @@ def main():
     model = load_model(args.model_path)
     logger.info(f"Modèle chargé depuis {args.model_path}")
     
-    X, y = load_test_data(args.test_data)
-    logger.info(f"Données de test chargées: {X.shape[0]} échantillons")
+    # Remplacer le chargement des données via load_test_data par l'utilisation de ModelValidator
+    from ai.models.feature_engineering import FeatureEngineering
+    validator = ModelValidator(model, FeatureEngineering())
+    import pandas as pd
+    # Charger les données de test sous forme de DataFrame
+    test_data = pd.read_csv(args.test_data, parse_dates=['timestamp'])
+    test_data.set_index('timestamp', inplace=True)
+    logger.info(f"Test data shape after index set: {test_data.shape}")
     
-    metrics, cm, y_pred = evaluate(model, X, y)
+    # Process the features
+    results = validator.evaluate_on_test_set(test_data)
+    logger.info(f"Les séquences d'entrée utilisées dans l'évaluation ont {results.get('input_shape', 'N/A')} features.")
+    metrics = results['metrics']
+    cm = results['confusion_matrix']
+    
     logger.info("=== RÉSULTATS DE L'ÉVALUATION ===")
     logger.info(f"Accuracy    : {metrics['accuracy']:.4f}")
     logger.info(f"Precision   : {metrics['precision']:.4f}")

@@ -231,6 +231,7 @@ def train_model(args):
         horizons=horizons,
         is_training=True
     )
+    logger.info(f"Dimensions de X_train: {X_train.shape} (attendu: (*, {sequence_length}, 80))")
     
     logger.info("Création des séquences pour la validation...")
     X_val, y_val = feature_engineering.create_multi_horizon_data(

@@ -1,0 +1,329 @@
+2025-03-17 14:37:40,964 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 54
+2025-03-17 14:52:11,042 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 54
+2025-03-17 14:57:59,478 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 54
+2025-03-17 14:59:00,221 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 54
+2025-03-17 15:18:06,802 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-17 15:35:39,889 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-17 15:36:50,153 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-17 15:39:22,228 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-17 15:39:22,229 — feature_engineering — WARNING — Nombre de features obtenu (72) inférieur à 78; ajout de 6 colonnes supplémentaires.
+2025-03-17 15:39:22,230 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 78
+2025-03-17 15:57:16,359 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-17 15:57:16,359 — feature_engineering — WARNING — Nombre de features obtenu (72) inférieur à 78; ajout de 6 colonnes supplémentaires.
+2025-03-17 15:57:16,361 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 78
+2025-03-18 09:09:56,564 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 09:09:56,565 — feature_engineering — INFO — Nombre de features obtenu (72) inférieur à 78; génération de 6 features additionnelles via PCA.
+2025-03-18 09:09:57,808 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 78
+2025-03-18 09:34:39,675 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 09:34:39,676 — feature_engineering — INFO — Utilisation du nombre de features par défaut: 78
+2025-03-18 09:34:39,676 — feature_engineering — INFO — Nombre de features obtenu (72) inférieur à 78; génération de 6 features additionnelles via PCA.
+2025-03-18 09:34:39,680 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 78
+2025-03-18 09:34:39,725 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 09:34:39,725 — feature_engineering — INFO — Utilisation du nombre optimal de features déterminé par auto-optimisation: 42
+2025-03-18 09:34:39,726 — feature_engineering — INFO — Nombre de features obtenu (72) supérieur à 42; sélection des features.
+2025-03-18 09:34:39,728 — feature_engineering — INFO — Sélection basée sur la variance des caractéristiques.
+2025-03-18 09:34:39,729 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 42
+2025-03-18 09:34:39,730 — feature_engineering — INFO — Évaluation des performances avec 20 caractéristiques
+2025-03-18 09:34:40,136 — feature_engineering — INFO — Performance moyenne avec 20 features: F1=0.6899, Accuracy=0.6933, Precision=0.7201, Recall=0.6933
+2025-03-18 09:34:40,137 — feature_engineering — INFO — Évaluation des performances avec 30 caractéristiques
+2025-03-18 09:34:40,532 — feature_engineering — INFO — Performance moyenne avec 30 features: F1=0.7046, Accuracy=0.7067, Precision=0.7191, Recall=0.7067
+2025-03-18 09:34:40,532 — feature_engineering — INFO — Évaluation des performances avec 40 caractéristiques
+2025-03-18 09:34:40,914 — feature_engineering — INFO — Performance moyenne avec 40 features: F1=0.7862, Accuracy=0.7867, Precision=0.7874, Recall=0.7867
+2025-03-18 09:34:40,914 — feature_engineering — INFO — Résultats de l'évaluation du nombre de caractéristiques:
+2025-03-18 09:34:40,915 — feature_engineering — INFO —   20 caractéristiques: F1=0.6899, Accuracy=0.6933
+2025-03-18 09:34:40,915 — feature_engineering — INFO —   30 caractéristiques: F1=0.7046, Accuracy=0.7067
+2025-03-18 09:34:40,915 — feature_engineering — INFO —   40 caractéristiques: F1=0.7862, Accuracy=0.7867
+2025-03-18 09:34:40,916 — feature_engineering — INFO — Nombre optimal de caractéristiques: 40 avec F1=0.7862
+2025-03-18 09:34:40,957 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 09:34:40,958 — feature_engineering — INFO — Nombre de features obtenu (72) supérieur à 40; sélection des features.
+2025-03-18 09:34:40,959 — feature_engineering — INFO — Sélection basée sur l'importance des caractéristiques.
+2025-03-18 09:34:40,959 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 40
+2025-03-18 09:34:40,960 — feature_engineering — INFO — Configuration des caractéristiques sauvegardée dans c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_config.json
+2025-03-18 09:34:40,967 — feature_engineering — INFO — Configuration des caractéristiques chargée: 40 caractéristiques optimales.
+2025-03-18 09:34:41,024 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 73
+2025-03-18 09:34:41,024 — feature_engineering — INFO — Utilisation du nombre de features par défaut: 78
+2025-03-18 09:34:41,025 — feature_engineering — INFO — Nombre de features obtenu (73) inférieur à 78; génération de 5 features additionnelles via PCA.
+2025-03-18 09:34:41,039 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 78
+2025-03-18 09:34:41,040 — feature_engineering — INFO — Évaluation des performances avec 30 caractéristiques
+2025-03-18 09:34:41,338 — feature_engineering — INFO — Performance moyenne avec 30 features: F1=0.7195, Accuracy=0.7200, Precision=0.7286, Recall=0.7200
+2025-03-18 09:34:41,338 — feature_engineering — INFO — Évaluation des performances avec 40 caractéristiques
+2025-03-18 09:34:41,661 — feature_engineering — INFO — Performance moyenne avec 40 features: F1=0.7049, Accuracy=0.7050, Precision=0.7099, Recall=0.7050
+2025-03-18 09:34:41,661 — feature_engineering — INFO — Évaluation des performances avec 50 caractéristiques
+2025-03-18 09:34:41,971 — feature_engineering — INFO — Performance moyenne avec 50 features: F1=0.7100, Accuracy=0.7100, Precision=0.7136, Recall=0.7100
+2025-03-18 09:34:41,971 — feature_engineering — INFO — Évaluation des performances avec 60 caractéristiques
+2025-03-18 09:34:42,264 — feature_engineering — INFO — Performance moyenne avec 60 features: F1=0.7300, Accuracy=0.7300, Precision=0.7327, Recall=0.7300
+2025-03-18 09:34:42,265 — feature_engineering — INFO — Résultats de l'évaluation du nombre de caractéristiques:
+2025-03-18 09:34:42,265 — feature_engineering — INFO —   30 caractéristiques: F1=0.7195, Accuracy=0.7200
+2025-03-18 09:34:42,265 — feature_engineering — INFO —   40 caractéristiques: F1=0.7049, Accuracy=0.7050
+2025-03-18 09:34:42,266 — feature_engineering — INFO —   50 caractéristiques: F1=0.7100, Accuracy=0.7100
+2025-03-18 09:34:42,266 — feature_engineering — INFO —   60 caractéristiques: F1=0.7300, Accuracy=0.7300
+2025-03-18 09:34:42,266 — feature_engineering — INFO — Nombre optimal de caractéristiques: 60 avec F1=0.7300
+2025-03-18 09:34:42,321 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 73
+2025-03-18 09:34:42,321 — feature_engineering — INFO — Nombre de features obtenu (73) supérieur à 60; sélection des features.
+2025-03-18 09:34:42,322 — feature_engineering — INFO — Sélection basée sur l'importance des caractéristiques.
+2025-03-18 09:34:42,323 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 60
+2025-03-18 09:46:50,988 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 09:46:50,989 — feature_engineering — INFO — Utilisation du nombre de features par défaut: 78
+2025-03-18 09:46:50,989 — feature_engineering — INFO — Nombre de features obtenu (72) inférieur à 78; génération de 6 features additionnelles via PCA.
+2025-03-18 09:46:50,993 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 78
+2025-03-18 09:46:51,011 — feature_engineering — INFO — Métadonnées des caractéristiques enregistrées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 09:46:51,057 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 09:46:51,058 — feature_engineering — INFO — Utilisation du nombre de features par défaut: 78
+2025-03-18 09:46:51,058 — feature_engineering — INFO — Nombre de features obtenu (72) inférieur à 78; génération de 6 features additionnelles via PCA.
+2025-03-18 09:46:51,108 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 78
+2025-03-18 09:46:51,126 — feature_engineering — INFO — Métadonnées des caractéristiques enregistrées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 09:46:51,168 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 09:46:51,168 — feature_engineering — INFO — Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-18 09:46:51,169 — feature_engineering — WARNING — Caractéristiques manquantes: 6. Ajout de colonnes de remplacement.
+2025-03-18 09:46:51,170 — feature_engineering — INFO — DataFrame harmonisé selon la configuration précédente: 78 colonnes
+2025-03-18 09:46:51,212 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 09:46:51,213 — feature_engineering — INFO — Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-18 09:46:51,213 — feature_engineering — WARNING — Caractéristiques manquantes: 6. Ajout de colonnes de remplacement.
+2025-03-18 09:46:51,215 — feature_engineering — INFO — DataFrame harmonisé selon la configuration précédente: 78 colonnes
+2025-03-18 09:46:51,264 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 73
+2025-03-18 09:46:51,265 — feature_engineering — INFO — Utilisation du nombre de features par défaut: 78
+2025-03-18 09:46:51,265 — feature_engineering — INFO — Nombre de features obtenu (73) inférieur à 78; génération de 5 features additionnelles via PCA.
+2025-03-18 09:46:51,340 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 78
+2025-03-18 09:46:51,359 — feature_engineering — INFO — Métadonnées des caractéristiques enregistrées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 09:46:51,499 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 09:46:51,500 — feature_engineering — INFO — Utilisation du nombre de features par défaut: 78
+2025-03-18 09:46:51,500 — feature_engineering — INFO — Nombre de features obtenu (72) inférieur à 78; génération de 6 features additionnelles via PCA.
+2025-03-18 09:46:51,503 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 78
+2025-03-18 09:46:51,521 — feature_engineering — INFO — Métadonnées des caractéristiques enregistrées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 09:46:51,537 — feature_engineering — INFO — Métadonnées des caractéristiques enregistrées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 09:46:51,545 — feature_engineering — INFO — Métadonnées des caractéristiques chargées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 09:46:51,546 — feature_engineering — INFO — Liste de caractéristiques chargée: 78 colonnes
+2025-03-18 09:46:51,588 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 09:46:51,588 — feature_engineering — INFO — Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-18 09:46:51,588 — feature_engineering — WARNING — Caractéristiques manquantes: 6. Ajout de colonnes de remplacement.
+2025-03-18 09:46:51,590 — feature_engineering — INFO — DataFrame harmonisé selon la configuration précédente: 78 colonnes
+2025-03-18 09:46:51,646 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 09:46:51,646 — feature_engineering — INFO — Utilisation du nombre de features par défaut: 78
+2025-03-18 09:46:51,647 — feature_engineering — INFO — Nombre de features obtenu (72) inférieur à 78; génération de 6 features additionnelles via PCA.
+2025-03-18 09:46:51,650 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 78
+2025-03-18 09:46:51,668 — feature_engineering — INFO — Métadonnées des caractéristiques enregistrées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 09:46:51,710 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 09:46:51,711 — feature_engineering — INFO — Utilisation du nombre optimal de features déterminé par auto-optimisation: 42
+2025-03-18 09:46:51,711 — feature_engineering — INFO — Nombre de features obtenu (72) supérieur à 42; sélection des features.
+2025-03-18 09:46:51,713 — feature_engineering — INFO — Sélection basée sur la variance des caractéristiques.
+2025-03-18 09:46:51,713 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 42
+2025-03-18 09:46:51,715 — feature_engineering — INFO — Évaluation des performances avec 20 caractéristiques
+2025-03-18 09:46:52,092 — feature_engineering — INFO — Performance moyenne avec 20 features: F1=0.5496, Accuracy=0.6000, Precision=0.6738, Recall=0.6000
+2025-03-18 09:46:52,092 — feature_engineering — INFO — Évaluation des performances avec 30 caractéristiques
+2025-03-18 09:46:52,542 — feature_engineering — INFO — Performance moyenne avec 30 features: F1=0.6290, Accuracy=0.6533, Precision=0.7502, Recall=0.6533
+2025-03-18 09:46:52,542 — feature_engineering — INFO — Évaluation des performances avec 40 caractéristiques
+2025-03-18 09:46:52,923 — feature_engineering — INFO — Performance moyenne avec 40 features: F1=0.6521, Accuracy=0.6667, Precision=0.7418, Recall=0.6667
+2025-03-18 09:46:52,924 — feature_engineering — INFO — Résultats de l'évaluation du nombre de caractéristiques:
+2025-03-18 09:46:52,924 — feature_engineering — INFO —   20 caractéristiques: F1=0.5496, Accuracy=0.6000
+2025-03-18 09:46:52,925 — feature_engineering — INFO —   30 caractéristiques: F1=0.6290, Accuracy=0.6533
+2025-03-18 09:46:52,925 — feature_engineering — INFO —   40 caractéristiques: F1=0.6521, Accuracy=0.6667
+2025-03-18 09:46:52,925 — feature_engineering — INFO — Nombre optimal de caractéristiques: 40 avec F1=0.6521
+2025-03-18 09:46:52,967 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 09:46:52,967 — feature_engineering — INFO — Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-18 09:46:52,968 — feature_engineering — WARNING — Caractéristiques manquantes: 42. Ajout de colonnes de remplacement.
+2025-03-18 09:46:52,974 — feature_engineering — WARNING — Caractéristiques supplémentaires ignorées: 72
+2025-03-18 09:46:52,975 — feature_engineering — INFO — DataFrame harmonisé selon la configuration précédente: 42 colonnes
+2025-03-18 09:46:52,977 — feature_engineering — INFO — Configuration des caractéristiques sauvegardée dans c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_config.json
+2025-03-18 09:46:52,985 — feature_engineering — INFO — Métadonnées des caractéristiques chargées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 09:46:52,985 — feature_engineering — INFO — Liste de caractéristiques chargée: 78 colonnes
+2025-03-18 09:46:53,040 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 73
+2025-03-18 09:46:53,041 — feature_engineering — INFO — Utilisation du nombre de features par défaut: 78
+2025-03-18 09:46:53,041 — feature_engineering — INFO — Nombre de features obtenu (73) inférieur à 78; génération de 5 features additionnelles via PCA.
+2025-03-18 09:46:53,046 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 78
+2025-03-18 09:46:53,048 — feature_engineering — INFO — Évaluation des performances avec 30 caractéristiques
+2025-03-18 09:46:53,416 — feature_engineering — INFO — Performance moyenne avec 30 features: F1=0.7150, Accuracy=0.7200, Precision=0.7545, Recall=0.7200
+2025-03-18 09:46:53,417 — feature_engineering — INFO — Évaluation des performances avec 40 caractéristiques
+2025-03-18 09:46:53,713 — feature_engineering — INFO — Performance moyenne avec 40 features: F1=0.6932, Accuracy=0.7000, Precision=0.7369, Recall=0.7000
+2025-03-18 09:46:53,713 — feature_engineering — INFO — Évaluation des performances avec 50 caractéristiques
+2025-03-18 09:46:54,008 — feature_engineering — INFO — Performance moyenne avec 50 features: F1=0.6910, Accuracy=0.6950, Precision=0.7218, Recall=0.6950
+2025-03-18 09:46:54,008 — feature_engineering — INFO — Évaluation des performances avec 60 caractéristiques
+2025-03-18 09:46:54,310 — feature_engineering — INFO — Performance moyenne avec 60 features: F1=0.6827, Accuracy=0.6900, Precision=0.7244, Recall=0.6900
+2025-03-18 09:46:54,310 — feature_engineering — INFO — Résultats de l'évaluation du nombre de caractéristiques:
+2025-03-18 09:46:54,311 — feature_engineering — INFO —   30 caractéristiques: F1=0.7150, Accuracy=0.7200
+2025-03-18 09:46:54,311 — feature_engineering — INFO —   40 caractéristiques: F1=0.6932, Accuracy=0.7000
+2025-03-18 09:46:54,312 — feature_engineering — INFO —   50 caractéristiques: F1=0.6910, Accuracy=0.6950
+2025-03-18 09:46:54,312 — feature_engineering — INFO —   60 caractéristiques: F1=0.6827, Accuracy=0.6900
+2025-03-18 09:46:54,312 — feature_engineering — INFO — Nombre optimal de caractéristiques: 30 avec F1=0.7150
+2025-03-18 09:46:54,367 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 73
+2025-03-18 09:46:54,369 — feature_engineering — INFO — Nombre de features obtenu (73) supérieur à 30; sélection des features.
+2025-03-18 09:46:54,370 — feature_engineering — INFO — Sélection basée sur l'importance des caractéristiques.
+2025-03-18 09:46:54,370 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 30
+2025-03-18 09:46:54,379 — feature_engineering — INFO — Métadonnées des caractéristiques enregistrées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 10:06:10,789 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 10:06:10,790 — feature_engineering — INFO — Utilisation du nombre de features par défaut: 78
+2025-03-18 10:06:10,790 — feature_engineering — INFO — Nombre de features obtenu (72) inférieur à 78; génération de 6 features additionnelles via PCA.
+2025-03-18 10:06:10,794 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 78
+2025-03-18 10:06:10,813 — feature_engineering — INFO — Métadonnées des caractéristiques enregistrées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 10:06:10,902 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 10:06:10,902 — feature_engineering — INFO — Utilisation du nombre de features par défaut: 50
+2025-03-18 10:06:10,903 — feature_engineering — INFO — Nombre de features obtenu (72) supérieur à 50; sélection des features.
+2025-03-18 10:06:10,904 — feature_engineering — INFO — Sélection basée sur la variance des caractéristiques.
+2025-03-18 10:06:10,905 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 50
+2025-03-18 10:06:10,917 — feature_engineering — INFO — Métadonnées des caractéristiques enregistrées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 10:06:10,969 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 10:06:10,970 — feature_engineering — INFO — Utilisation du nombre de features par défaut: 78
+2025-03-18 10:06:10,970 — feature_engineering — INFO — Nombre de features obtenu (72) inférieur à 78; génération de 6 features additionnelles via PCA.
+2025-03-18 10:06:11,048 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 78
+2025-03-18 10:06:11,067 — feature_engineering — INFO — Métadonnées des caractéristiques enregistrées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 10:06:11,110 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 10:06:11,111 — feature_engineering — INFO — Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-18 10:06:11,111 — feature_engineering — WARNING — Caractéristiques manquantes: 6. Ajout de colonnes de remplacement.
+2025-03-18 10:06:11,113 — feature_engineering — INFO — DataFrame harmonisé selon la configuration précédente: 78 colonnes
+2025-03-18 10:06:11,158 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 10:06:11,159 — feature_engineering — INFO — Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-18 10:06:11,159 — feature_engineering — WARNING — Caractéristiques manquantes: 6. Ajout de colonnes de remplacement.
+2025-03-18 10:06:11,161 — feature_engineering — INFO — DataFrame harmonisé selon la configuration précédente: 78 colonnes
+2025-03-18 10:06:11,218 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 73
+2025-03-18 10:06:11,218 — feature_engineering — INFO — Utilisation du nombre de features par défaut: 78
+2025-03-18 10:06:11,219 — feature_engineering — INFO — Nombre de features obtenu (73) inférieur à 78; génération de 5 features additionnelles via PCA.
+2025-03-18 10:06:11,223 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 78
+2025-03-18 10:06:11,241 — feature_engineering — INFO — Métadonnées des caractéristiques enregistrées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 10:06:11,333 — feature_engineering — INFO — Métadonnées des caractéristiques chargées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 10:06:11,333 — feature_engineering — INFO — Liste de caractéristiques chargée: 78 colonnes
+2025-03-18 10:06:11,336 — feature_engineering — INFO — Configuration centralisée mise à jour avec 78 features
+2025-03-18 10:06:11,378 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 10:06:11,378 — feature_engineering — INFO — Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-18 10:06:11,379 — feature_engineering — WARNING — Caractéristiques manquantes: 6. Ajout de colonnes de remplacement.
+2025-03-18 10:06:11,381 — feature_engineering — INFO — DataFrame harmonisé selon la configuration précédente: 78 colonnes
+2025-03-18 10:06:11,399 — feature_engineering — INFO — Métadonnées des caractéristiques enregistrées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 10:06:11,415 — feature_engineering — INFO — Métadonnées des caractéristiques chargées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 10:06:11,415 — feature_engineering — INFO — Liste de caractéristiques chargée: 78 colonnes
+2025-03-18 10:06:11,418 — feature_engineering — INFO — Configuration centralisée mise à jour avec 78 features
+2025-03-18 10:06:11,461 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 10:06:11,461 — feature_engineering — INFO — Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-18 10:06:11,462 — feature_engineering — WARNING — Caractéristiques manquantes: 6. Ajout de colonnes de remplacement.
+2025-03-18 10:06:11,464 — feature_engineering — INFO — DataFrame harmonisé selon la configuration précédente: 78 colonnes
+2025-03-18 10:06:11,515 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 10:06:11,515 — feature_engineering — INFO — Utilisation du nombre de features par défaut: 78
+2025-03-18 10:06:11,516 — feature_engineering — INFO — Nombre de features obtenu (72) inférieur à 78; génération de 6 features additionnelles via PCA.
+2025-03-18 10:06:11,527 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 78
+2025-03-18 10:06:11,545 — feature_engineering — INFO — Métadonnées des caractéristiques enregistrées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 10:06:11,570 — feature_engineering — INFO — Métadonnées des caractéristiques chargées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 10:06:11,570 — feature_engineering — INFO — Liste de caractéristiques chargée: 78 colonnes
+2025-03-18 10:06:11,572 — feature_engineering — INFO — Configuration centralisée mise à jour avec 78 features
+2025-03-18 10:06:11,615 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 10:06:11,616 — feature_engineering — INFO — Utilisation du nombre optimal de features déterminé par auto-optimisation: 42
+2025-03-18 10:06:11,617 — feature_engineering — INFO — Nombre de features obtenu (72) supérieur à 42; sélection des features.
+2025-03-18 10:06:11,618 — feature_engineering — INFO — Sélection basée sur la variance des caractéristiques.
+2025-03-18 10:06:11,619 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 42
+2025-03-18 10:06:11,621 — feature_engineering — INFO — Évaluation des performances avec 20 caractéristiques
+2025-03-18 10:06:12,050 — feature_engineering — INFO — Performance moyenne avec 20 features: F1=0.7157, Accuracy=0.7333, Precision=0.7797, Recall=0.7333
+2025-03-18 10:06:12,050 — feature_engineering — INFO — Évaluation des performances avec 30 caractéristiques
+2025-03-18 10:06:12,449 — feature_engineering — INFO — Performance moyenne avec 30 features: F1=0.6896, Accuracy=0.6933, Precision=0.7005, Recall=0.6933
+2025-03-18 10:06:12,450 — feature_engineering — INFO — Évaluation des performances avec 40 caractéristiques
+2025-03-18 10:06:12,849 — feature_engineering — INFO — Performance moyenne avec 40 features: F1=0.7554, Accuracy=0.7600, Precision=0.7738, Recall=0.7600
+2025-03-18 10:06:12,858 — feature_engineering — INFO — Résultats de l'évaluation du nombre de caractéristiques:
+2025-03-18 10:06:12,858 — feature_engineering — INFO —   20 caractéristiques: F1=0.7157, Accuracy=0.7333
+2025-03-18 10:06:12,859 — feature_engineering — INFO —   30 caractéristiques: F1=0.6896, Accuracy=0.6933
+2025-03-18 10:06:12,859 — feature_engineering — INFO —   40 caractéristiques: F1=0.7554, Accuracy=0.7600
+2025-03-18 10:06:12,859 — feature_engineering — INFO — Nombre optimal de caractéristiques: 40 avec F1=0.7554
+2025-03-18 10:06:12,910 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 10:06:12,911 — feature_engineering — INFO — Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-18 10:06:12,911 — feature_engineering — WARNING — Caractéristiques manquantes: 42. Ajout de colonnes de remplacement.
+2025-03-18 10:06:12,918 — feature_engineering — WARNING — Caractéristiques supplémentaires ignorées: 72
+2025-03-18 10:06:12,919 — feature_engineering — INFO — DataFrame harmonisé selon la configuration précédente: 42 colonnes
+2025-03-18 10:06:12,921 — feature_engineering — INFO — Configuration des caractéristiques sauvegardée dans c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_config.json
+2025-03-18 10:06:12,928 — feature_engineering — INFO — Métadonnées des caractéristiques chargées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 10:06:12,929 — feature_engineering — INFO — Liste de caractéristiques chargée: 78 colonnes
+2025-03-18 10:06:12,931 — feature_engineering — INFO — Configuration centralisée mise à jour avec 78 features
+2025-03-18 10:06:12,932 — feature_engineering — INFO — Métadonnées des caractéristiques chargées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 10:06:12,933 — feature_engineering — INFO — Liste de caractéristiques chargée: 78 colonnes
+2025-03-18 10:06:12,941 — feature_engineering — INFO — Configuration centralisée mise à jour avec 78 features
+2025-03-18 10:06:12,952 — feature_engineering — INFO — Métadonnées des caractéristiques chargées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 10:06:12,953 — feature_engineering — INFO — Liste de caractéristiques chargée: 78 colonnes
+2025-03-18 10:06:12,955 — feature_engineering — INFO — Configuration centralisée mise à jour avec 78 features
+2025-03-18 10:06:13,008 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 73
+2025-03-18 10:06:13,008 — feature_engineering — INFO — Utilisation du nombre optimal de features déterminé par auto-optimisation: 78
+2025-03-18 10:06:13,009 — feature_engineering — INFO — Nombre de features obtenu (73) inférieur à 78; génération de 5 features additionnelles via PCA.
+2025-03-18 10:06:13,016 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 78
+2025-03-18 10:06:13,017 — feature_engineering — INFO — Évaluation des performances avec 30 caractéristiques
+2025-03-18 10:06:13,330 — feature_engineering — INFO — Performance moyenne avec 30 features: F1=0.7248, Accuracy=0.7250, Precision=0.7298, Recall=0.7250
+2025-03-18 10:06:13,330 — feature_engineering — INFO — Évaluation des performances avec 40 caractéristiques
+2025-03-18 10:06:13,627 — feature_engineering — INFO — Performance moyenne avec 40 features: F1=0.7450, Accuracy=0.7450, Precision=0.7491, Recall=0.7450
+2025-03-18 10:06:13,627 — feature_engineering — INFO — Évaluation des performances avec 50 caractéristiques
+2025-03-18 10:06:13,914 — feature_engineering — INFO — Performance moyenne avec 50 features: F1=0.7340, Accuracy=0.7350, Precision=0.7358, Recall=0.7350
+2025-03-18 10:06:13,915 — feature_engineering — INFO — Évaluation des performances avec 60 caractéristiques
+2025-03-18 10:06:14,203 — feature_engineering — INFO — Performance moyenne avec 60 features: F1=0.7441, Accuracy=0.7450, Precision=0.7465, Recall=0.7450
+2025-03-18 10:06:14,212 — feature_engineering — INFO — Résultats de l'évaluation du nombre de caractéristiques:
+2025-03-18 10:06:14,213 — feature_engineering — INFO —   30 caractéristiques: F1=0.7248, Accuracy=0.7250
+2025-03-18 10:06:14,213 — feature_engineering — INFO —   40 caractéristiques: F1=0.7450, Accuracy=0.7450
+2025-03-18 10:06:14,213 — feature_engineering — INFO —   50 caractéristiques: F1=0.7340, Accuracy=0.7350
+2025-03-18 10:06:14,214 — feature_engineering — INFO —   60 caractéristiques: F1=0.7441, Accuracy=0.7450
+2025-03-18 10:06:14,214 — feature_engineering — INFO — Nombre optimal de caractéristiques: 40 avec F1=0.7450
+2025-03-18 10:06:14,267 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 73
+2025-03-18 10:06:14,267 — feature_engineering — INFO — Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-18 10:06:14,268 — feature_engineering — WARNING — Caractéristiques manquantes: 6. Ajout de colonnes de remplacement.
+2025-03-18 10:06:14,269 — feature_engineering — WARNING — Caractéristiques supplémentaires ignorées: 1
+2025-03-18 10:06:14,270 — feature_engineering — INFO — DataFrame harmonisé selon la configuration précédente: 78 colonnes
+2025-03-18 10:13:38,274 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 10:13:38,275 — feature_engineering — INFO — Utilisation du nombre de features par défaut: 78
+2025-03-18 10:13:38,275 — feature_engineering — INFO — Nombre de features obtenu (72) inférieur à 78; génération de 6 features additionnelles via PCA.
+2025-03-18 10:13:38,279 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 78
+2025-03-18 10:13:38,297 — feature_engineering — INFO — Métadonnées des caractéristiques enregistrées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 10:13:38,354 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 10:13:38,355 — feature_engineering — INFO — Utilisation du nombre de features par défaut: 50
+2025-03-18 10:13:38,355 — feature_engineering — INFO — Nombre de features obtenu (72) supérieur à 50; sélection des features.
+2025-03-18 10:13:38,357 — feature_engineering — INFO — Sélection basée sur la variance des caractéristiques.
+2025-03-18 10:13:38,357 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 50
+2025-03-18 10:13:38,369 — feature_engineering — INFO — Métadonnées des caractéristiques enregistrées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 10:13:38,415 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 10:13:38,415 — feature_engineering — INFO — Utilisation du nombre de features par défaut: 78
+2025-03-18 10:13:38,416 — feature_engineering — INFO — Nombre de features obtenu (72) inférieur à 78; génération de 6 features additionnelles via PCA.
+2025-03-18 10:13:38,419 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 78
+2025-03-18 10:13:38,437 — feature_engineering — INFO — Métadonnées des caractéristiques enregistrées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 10:13:38,478 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 10:13:38,478 — feature_engineering — INFO — Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-18 10:13:38,479 — feature_engineering — WARNING — Caractéristiques manquantes: 6. Ajout de colonnes de remplacement.
+2025-03-18 10:13:38,481 — feature_engineering — INFO — DataFrame harmonisé selon la configuration précédente: 78 colonnes
+2025-03-18 10:13:38,522 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 10:13:38,523 — feature_engineering — INFO — Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-18 10:13:38,523 — feature_engineering — WARNING — Caractéristiques manquantes: 6. Ajout de colonnes de remplacement.
+2025-03-18 10:13:38,525 — feature_engineering — INFO — DataFrame harmonisé selon la configuration précédente: 78 colonnes
+2025-03-18 10:13:38,581 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 73
+2025-03-18 10:13:38,581 — feature_engineering — INFO — Utilisation du nombre de features par défaut: 40
+2025-03-18 10:13:38,582 — feature_engineering — INFO — Nombre de features obtenu (73) supérieur à 40; sélection des features.
+2025-03-18 10:13:38,583 — feature_engineering — INFO — Sélection basée sur la variance des caractéristiques.
+2025-03-18 10:13:38,583 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 40
+2025-03-18 10:13:38,594 — feature_engineering — INFO — Métadonnées des caractéristiques enregistrées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 10:13:38,684 — feature_engineering — INFO — Métadonnées des caractéristiques chargées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 10:13:38,685 — feature_engineering — INFO — Liste de caractéristiques chargée: 40 colonnes
+2025-03-18 10:13:38,685 — feature_engineering — ERROR — Erreur lors du chargement de la configuration des caractéristiques: name 'sys' is not defined
+2025-03-18 10:13:38,726 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 10:13:38,726 — feature_engineering — INFO — Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-18 10:13:38,727 — feature_engineering — WARNING — Caractéristiques supplémentaires ignorées: 32
+2025-03-18 10:13:38,728 — feature_engineering — INFO — DataFrame harmonisé selon la configuration précédente: 40 colonnes
+2025-03-18 10:13:38,737 — feature_engineering — INFO — Métadonnées des caractéristiques enregistrées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 10:13:38,746 — feature_engineering — INFO — Métadonnées des caractéristiques chargées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 10:13:38,746 — feature_engineering — INFO — Liste de caractéristiques chargée: 40 colonnes
+2025-03-18 10:13:38,747 — feature_engineering — ERROR — Erreur lors du chargement de la configuration des caractéristiques: name 'sys' is not defined
+2025-03-18 10:13:38,798 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 72
+2025-03-18 10:13:38,799 — feature_engineering — INFO — Utilisation du nombre de features par défaut: 78
+2025-03-18 10:13:38,799 — feature_engineering — INFO — Nombre de features obtenu (72) inférieur à 78; génération de 6 features additionnelles via PCA.
+2025-03-18 10:13:38,836 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 78
+2025-03-18 10:13:38,853 — feature_engineering — INFO — Métadonnées des caractéristiques enregistrées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 10:13:38,865 — feature_engineering — INFO — Métadonnées des caractéristiques chargées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 10:13:38,866 — feature_engineering — INFO — Liste de caractéristiques chargée: 78 colonnes
+2025-03-18 10:13:38,866 — feature_engineering — ERROR — Erreur lors du chargement de la configuration des caractéristiques: name 'sys' is not defined
+2025-03-18 10:13:38,877 — feature_engineering — INFO — Métadonnées des caractéristiques enregistrées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 10:13:38,877 — feature_engineering — INFO — Utilisation du nombre de caractéristiques prédéfini: 42
+2025-03-18 10:13:38,894 — feature_engineering — INFO — Métadonnées des caractéristiques chargées: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-18 10:13:38,895 — feature_engineering — INFO — Liste de caractéristiques chargée: 42 colonnes
+2025-03-18 10:13:38,895 — feature_engineering — ERROR — Erreur lors du chargement de la configuration des caractéristiques: name 'sys' is not defined
+2025-03-18 10:13:38,948 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 73
+2025-03-18 10:13:38,948 — feature_engineering — INFO — Utilisation du nombre optimal de features déterminé par auto-optimisation: 42
+2025-03-18 10:13:38,948 — feature_engineering — INFO — Nombre de features obtenu (73) supérieur à 42; sélection des features.
+2025-03-18 10:13:38,950 — feature_engineering — INFO — Sélection basée sur la variance des caractéristiques.
+2025-03-18 10:13:38,950 — feature_engineering — INFO — Nombre de features utilisé pour l'entraînement: 42
+2025-03-18 10:13:38,952 — feature_engineering — INFO — Évaluation des performances avec 30 caractéristiques
+2025-03-18 10:13:39,250 — feature_engineering — INFO — Performance moyenne avec 30 features: F1=0.7200, Accuracy=0.7200, Precision=0.7220, Recall=0.7200
+2025-03-18 10:13:39,250 — feature_engineering — INFO — Évaluation des performances avec 40 caractéristiques
+2025-03-18 10:13:39,536 — feature_engineering — INFO — Performance moyenne avec 40 features: F1=0.7748, Accuracy=0.7750, Precision=0.7775, Recall=0.7750
+2025-03-18 10:13:39,538 — feature_engineering — INFO — Résultats de l'évaluation du nombre de caractéristiques:
+2025-03-18 10:13:39,539 — feature_engineering — INFO —   30 caractéristiques: F1=0.7200, Accuracy=0.7200
+2025-03-18 10:13:39,539 — feature_engineering — INFO —   40 caractéristiques: F1=0.7748, Accuracy=0.7750
+2025-03-18 10:13:39,539 — feature_engineering — INFO — Nombre optimal de caractéristiques: 40 avec F1=0.7748
+2025-03-18 10:13:39,592 — feature_engineering — INFO — Nombre de features généré avant harmonisation: 73
+2025-03-18 10:13:39,593 — feature_engineering — INFO — Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-18 10:13:39,593 — feature_engineering — WARNING — Caractéristiques manquantes: 42. Ajout de colonnes de remplacement.
+2025-03-18 10:13:39,599 — feature_engineering — WARNING — Caractéristiques supplémentaires ignorées: 73
+2025-03-18 10:13:39,601 — feature_engineering — INFO — DataFrame harmonisé selon la configuration précédente: 42 colonnes

@@ -1,0 +1,344 @@
+{
+  "timestamp": "2025-03-18T10:13:38.875035",
+  "feature_count": 42,
+  "feature_list": [
+    "feature_0",
+    "feature_1",
+    "feature_2",
+    "feature_3",
+    "feature_4",
+    "feature_5",
+    "feature_6",
+    "feature_7",
+    "feature_8",
+    "feature_9",
+    "feature_10",
+    "feature_11",
+    "feature_12",
+    "feature_13",
+    "feature_14",
+    "feature_15",
+    "feature_16",
+    "feature_17",
+    "feature_18",
+    "feature_19",
+    "feature_20",
+    "feature_21",
+    "feature_22",
+    "feature_23",
+    "feature_24",
+    "feature_25",
+    "feature_26",
+    "feature_27",
+    "feature_28",
+    "feature_29",
+    "feature_30",
+    "feature_31",
+    "feature_32",
+    "feature_33",
+    "feature_34",
+    "feature_35",
+    "feature_36",
+    "feature_37",
+    "feature_38",
+    "feature_39",
+    "feature_40",
+    "feature_41"
+  ],
+  "feature_stats": {
+    "feature_0": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_1": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_2": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_3": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_4": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_5": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_6": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_7": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_8": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_9": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_10": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_11": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_12": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_13": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_14": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_15": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_16": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_17": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_18": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_19": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_20": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_21": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_22": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_23": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_24": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_25": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_26": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_27": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_28": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_29": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_30": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_31": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_32": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_33": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_34": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_35": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_36": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_37": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_38": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_39": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_40": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    },
+    "feature_41": {
+      "mean": 4.5,
+      "std": 3.0276503540974917,
+      "min": 0.0,
+      "max": 9.0,
+      "nan_count": 0
+    }
+  }
+}

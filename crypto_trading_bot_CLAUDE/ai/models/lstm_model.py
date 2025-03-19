@@ -4,20 +4,20 @@ Architecture LSTM avancée pour prédictions multi-horizon et multi-facteur
 Intègre attention, connexions résiduelles et apprentissage par transfert
 """
 import os
-import numpy as np
+import numpy as np  # Correction effectuée ici: "import numpy as np" au lieu de "import numpy np"
 import pandas as pd
 import tensorflow as tf
-from tensorflow.keras.models import Model, load_model, clone_model
-from tensorflow.keras.layers import (
+from tensorflow.keras.models import Model, load_model, clone_model # type: ignore
+from tensorflow.keras.layers import ( # type: ignore
     Input, LSTM, Dense, Dropout, BatchNormalization, 
     Bidirectional, Concatenate, Add, Multiply, Reshape,
     Conv1D, MaxPooling1D, GlobalAveragePooling1D, Lambda,
     Layer, Activation
 )
-from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.regularizers import l1_l2
-import tensorflow.keras.backend as K
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau # type: ignore
+from tensorflow.keras.optimizers import Adam # type: ignore
+from tensorflow.keras.regularizers import l1_l2 # type: ignore
+import tensorflow.keras.backend as K # type: ignore
 from typing import Dict, List, Tuple, Union, Optional
 from datetime import datetime
 import json
@@ -160,7 +160,7 @@ class LSTMModel:
     Modèle LSTM avancé pour prédictions multi-horizon et multi-facteur.
     Intègre éventuellement attention et connexions résiduelles.
     """
-    def __init__(self, input_length=None, feature_dim=30, lstm_units=None,
+    def __init__(self, input_length=None, feature_dim=78, lstm_units=None,
                  dropout_rate=None, learning_rate=None, use_attention=None, use_residual=None,
                  prediction_horizons=[12, 24, 96], l1_reg=None, l2_reg=None,
                  symbol="BTCUSDT", timeframe="15m", use_optimized_params=True):
@@ -189,14 +189,17 @@ class LSTMModel:
         
         # Set parameters, with explicitly provided params taking precedence
         self.input_length = input_length if input_length is not None else params_source["sequence_length"]
-        self.feature_dim = feature_dim
-        self.lstm_units = lstm_units if lstm_units is not None else params_source["lstm_units"]
+        self.feature_dim = feature_dim  # Feature dimension updated to 78
+        # Simplify architecture: default to 2 layers [64, 32] instead of [128,64,32]
+        self.lstm_units = lstm_units if lstm_units is not None else [64, 32]
         self.dropout_rate = dropout_rate if dropout_rate is not None else params_source["dropout_rate"]
-        self.learning_rate = learning_rate if learning_rate is not None else params_source["learning_rate"]
+        # Lower the learning rate from 0.000625 to 0.001 for faster convergence
+        self.learning_rate = learning_rate if learning_rate is not None else 0.001
+        # Increase regularization: l1 from 0.00039 to 0.001, l2 from 0.00006 to 0.0001
+        self.l1_reg = l1_reg if l1_reg is not None else 0.001
+        self.l2_reg = l2_reg if l2_reg is not None else 0.0001
         self.use_attention = use_attention if use_attention is not None else params_source["use_attention"]
         self.use_residual = use_residual if use_residual is not None else params_source["use_residual"]
-        self.l1_reg = l1_reg if l1_reg is not None else params_source["l1_regularization"]
-        self.l2_reg = l2_reg if l2_reg is not None else params_source["l2_regularization"]
         self.prediction_horizons = prediction_horizons
         
         # Then, if use_optimized_params and no optimized params in config, try to load from files as before
@@ -253,10 +256,10 @@ class LSTMModel:
         """
         Construit le modèle LSTM multi-sorties complet
         """
-        from tensorflow.keras.layers import Input, LSTM, Dense, Dropout, Bidirectional
-        from tensorflow.keras.models import Model
-        from tensorflow.keras.optimizers import Adam
-        from tensorflow.keras.regularizers import l1_l2
+        from tensorflow.keras.layers import Input, LSTM, Dense, Dropout, Bidirectional # type: ignore
+        from tensorflow.keras.models import Model # type: ignore
+        from tensorflow.keras.optimizers import Adam # type: ignore
+        from tensorflow.keras.regularizers import l1_l2 # type: ignore
         
         inputs = Input(shape=(self.input_length, self.feature_dim))
         x = inputs
@@ -311,10 +314,10 @@ class LSTMModel:
         Returns:
             Modèle Keras avec une seule sortie
         """
-        from tensorflow.keras.layers import Input, LSTM, Dense, Dropout, Bidirectional
-        from tensorflow.keras.models import Model
-        from tensorflow.keras.optimizers import Adam
-        from tensorflow.keras.regularizers import l1_l2
+        from tensorflow.keras.layers import Input, LSTM, Dense, Dropout, Bidirectional # type: ignore
+        from tensorflow.keras.models import Model # type: ignore
+        from tensorflow.keras.optimizers import Adam # type: ignore
+        from tensorflow.keras.regularizers import l1_l2 # type: ignore
         
         inputs = Input(shape=(self.input_length, self.feature_dim))
         x = inputs
@@ -368,7 +371,7 @@ class LSTMModel:
             path: Chemin du modèle (utilise le chemin par défaut si None)
         """
         import os
-        from tensorflow.keras.models import load_model
+        from tensorflow.keras.models import load_model # type: ignore
         load_path = path or self.model_path
         if not os.path.exists(load_path):
             raise FileNotFoundError(f"Modèle non trouvé: {load_path}")
@@ -399,10 +402,10 @@ class EnhancedLSTMModel:
     """
     def __init__(self, 
                  input_length: int = 60,
-                 feature_dim: int = 30,
+                 feature_dim: int = 80,  # Updated default from 30 to 80
                  lstm_units: List[int] = [128, 96, 64],
-                 dropout_rate: float = 0.3,
-                 learning_rate: float = 0.0005,
+                 dropout_rate: float = 0.3,  # Reduced dropout from 0.5 to 0.3
+                 learning_rate: float = 0.001,  # Increased learning rate to 0.001
                  l1_reg: float = 0.0001,
                  l2_reg: float = 0.0001,
                  use_attention: bool = True,

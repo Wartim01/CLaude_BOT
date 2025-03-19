@@ -1,0 +1,10 @@
+2025-03-17 15:39:22,231 — test_feature_engineering — INFO — Nombre de features généré: 78
+2025-03-17 15:57:16,361 — test_feature_engineering — INFO — Nombre de features généré: 78
+2025-03-18 09:09:57,808 — test_feature_engineering — INFO — Nombre de features généré: 78
+2025-03-18 09:34:39,680 — test_feature_engineering — INFO — Nombre de features généré: 78
+2025-03-18 09:34:40,968 — test_feature_engineering — INFO — Test de chargement de configuration réussi: 40 caractéristiques
+2025-03-18 09:34:42,323 — test_feature_engineering — INFO — Test d'optimisation réussi: nombre optimal de caractéristiques = 60
+2025-03-18 09:46:51,012 — test_feature_engineering — INFO — Nombre de features généré: 78
+2025-03-18 09:46:54,380 — test_feature_engineering — INFO — Test d'optimisation réussi: nombre optimal de caractéristiques = 30
+2025-03-18 10:06:10,813 — test_feature_engineering — INFO — Nombre de features généré: 78
+2025-03-18 10:13:38,298 — test_feature_engineering — INFO — Nombre de features généré: 78

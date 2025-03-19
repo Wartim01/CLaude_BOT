@@ -162,6 +162,12 @@ class LSTMHyperparameterOptimizer:
             symbol: Symbole de la paire de trading
             timeframe: Intervalle de temps
         """
+        # Set a fixed seed for reproducibility so that the train/validation split remains constant
+        import numpy as np
+        import tensorflow as tf
+        np.random.seed(42)
+        tf.random.set_seed(42)
+        
         self.train_data = train_data
         self.val_data = val_data
         self.symbol = symbol
@@ -175,7 +181,7 @@ class LSTMHyperparameterOptimizer:
         self.feature_engineering = FeatureEngineering(save_scalers=True)
         
         # Préparer les données une seule fois
-        logger.info("Préparation des données pour l'optimisation...")
+        logger.info("Préparation des données fixées pour l'optimisation (ensembles d'entraînement et de validation constants)")
         self.featured_train, self.normalized_train = self.feature_engineering.create_features(train_data), self.feature_engineering.scale_features(
             self.feature_engineering.create_features(train_data),
             is_training=True,
@@ -197,6 +203,13 @@ class LSTMHyperparameterOptimizer:
         """
         Fonction objectif pour Optuna avec modèle à sortie unique
         """
+        # Assurer la reproductibilité pour chaque essai
+        import numpy as np
+        import tensorflow as tf
+        np.random.seed(42)
+        tf.random.set_seed(42)
+        # Utilise l'ensemble de validation fixe initialisé dans __init__
+        
         try:
             # Configuration des paramètres
             lstm_units_first = trial.suggest_int("lstm_units_first", 64, 256)
@@ -291,7 +304,7 @@ class LSTMHyperparameterOptimizer:
                 y=y_train,
                 epochs=30,  # Réduit pour l'optimisation
                 batch_size=batch_size,
-                validation_data=(X_val, y_val),
+                validation_data=(X_val, y_val),  # Validation fixe pour stabilité
                 class_weight=class_weights,
                 callbacks=callbacks,
                 verbose=0
@@ -575,7 +588,11 @@ def main():
         cmd += "--no-residual "
     
     logger.info(f"Commande suggérée: {cmd}")
+    logger.info("Une fois satisfaits, fixez ces hyperparamètres dans le fichier de configuration et redémarrez l’entraînement final pour vérifier l’impact sur l’accuracy.")
 
 if __name__ == "__main__":
     main()
+
+# Example command to run the script
+# python hyperparameter_search.py --data_path "c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\data" --symbol "BTCUSDT" --timeframe "15m" --max_evals 100 --output "c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\optimization\best_params.json"
 
