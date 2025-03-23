@@ -6,37 +6,31 @@ This file centralizes hyperparameters for different models to ensure consistency
 
 # LSTM model parameters
 LSTM_DEFAULT_PARAMS = {
-    "lstm_units": [136, 68, 68],
-    "dropout_rate": 0.39279757672456206,
-    "learning_rate": 0.0006251373574521745,
-    "batch_size": 64,
-    "sequence_length": 30,
-    "l1_regularization": 0.0003967605077052988,
-    "l2_regularization": 6.358358856676247e-05,
-    # Other parameters preserved
-    "use_attention": True,
-    "use_residual": True,
-    "epochs": 100,
-    "early_stopping_patience": 15,
-    "reduce_lr_patience": 7
+    "lstm_units": [128, 64, 32],
+    "dropout_rate": 0.5,
+    "learning_rate": 0.001,
+    "sequence_length": 90,  # Valeur par défaut mise à jour à 90
+    "l1_regularization": 1e-4,
+    "l2_regularization": 1e-4,
+    "batch_size": 64
 }
 
 # [AUTO-UPDATE SECTION] - DO NOT EDIT MANUALLY
 # This section is automatically updated by hyperparameter_search.py
-# Last optimization: 2025-03-15 18:39:30 (timeframe: 15m, F1: 0.0000)
+# Last optimization: 2025-03-22 08:54:52 (timeframe: 15m, F1: 0.6770)
 LSTM_OPTIMIZED_PARAMS = {
     "15m": {
         "lstm_units": [136, 68, 68],
-        "dropout_rate": 0.39279757672456206,
-        "learning_rate": 0.0006251373574521745,
-        "batch_size": 64,
-        "sequence_length": 30,
-        "l1_regularization": 0.0003967605077052988,
-        "l2_regularization": 6.358358856676247e-05,
+        "dropout_rate": 0.4195981825434215,
+        "learning_rate": 0.00015751320499779721,
+        "batch_size": 128,
+        "sequence_length": 60,
+        "l1_regularization": 0.0008123245085588687,
+        "l2_regularization": 0.0003142880890840109,
         "use_attention": True,
         "use_residual": True,
-        "last_optimized": "2025-03-15 18:39:30",
-        "f1_score": 0.0
+        "last_optimized": "2025-03-22 08:54:52",
+        "f1_score": 0.677028920881641
     },
 }
 
@@ -58,13 +52,12 @@ TRANSFORMER_DEFAULT_PARAMS = {
 # CNN-LSTM hybrid model parameters
 CNN_LSTM_DEFAULT_PARAMS = {
     "lstm_units": [136, 68, 68],
-    "dropout_rate": 0.39279757672456206,
-    "learning_rate": 0.0006251373574521745,
-    "batch_size": 64,
-    "sequence_length": 30,
-    "l1_regularization": 0.0003967605077052988,
-    "l2_regularization": 6.358358856676247e-05,
-    # Other parameters preserved
+    "dropout_rate": 0.4195981825434215,
+    "learning_rate": 0.00015751320499779721,
+    "batch_size": 128,
+    "sequence_length": 60,
+    "l1_regularization": 0.0008123245085588687,
+    "l2_regularization": 0.0003142880890840109,
     "use_attention": True,
     "use_residual": True,
     "epochs": 100,

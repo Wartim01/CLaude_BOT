@@ -241,7 +241,7 @@ class ModelBacktester:
                 
                 emas = {}
                 for col in featured_data.columns:
-                    if col.startswith('ema_'):
+                    if (col.startswith('ema_')):
                         period = col.split('_')[1]
                         emas[col] = featured_data[col]
                 
@@ -343,20 +343,75 @@ class ModelBacktester:
                 # Vérifier si le take profit ou stop loss est atteint
                 entry_price = position["entry_price"]
                 stop_loss = position["stop_loss"]
-                take_profit = position["take_profit"]
+                take_profit = position.get("take_profit")
                 side = position["side"]
                 position_id = position["id"]
                 leverage = position.get("leverage", LEVERAGE)
                 
-                # Simuler l'évolution de la position
-                hit_tp, hit_sl = False, False
+                # Initialize trailing stop parameters if not already set
+                if "trailing_activated" not in position:
+                    position["trailing_activated"] = False
+                    position["trailing_activation_threshold"] = 0.05  # 5% activation threshold
+                    position["trailing_step"] = 0.02  # 2% trailing step
+                    if side == "BUY":
+                        position["highest_price"] = entry_price
+                    else:
+                        position["lowest_price"] = entry_price
                 
+                # Update trailing stop logic
+                if side == "BUY":
+                    # Calculate current profit percentage
+                    current_profit_pct = (current_price - entry_price) / entry_price
+                    
+                    # Check if trailing stop should be activated
+                    if not position["trailing_activated"] and current_profit_pct >= position["trailing_activation_threshold"]:
+                        # Activate trailing stop
+                        position["trailing_activated"] = True
+                        # Set initial trailing stop to lock in some profit
+                        new_stop = entry_price + (current_price - entry_price) * 0.5
+                        position["stop_loss"] = max(position["stop_loss"], new_stop)
+                        position["highest_price"] = current_price
+                        logger.info(f"Activated trailing stop for position {position_id} at {new_stop}")
+                    
+                    # Update trailing stop if already activated
+                    elif position["trailing_activated"] and current_price > position["highest_price"]:
+                        position["highest_price"] = current_price
+                        # Calculate new stop loss level based on trailing step
+                        new_stop = position["highest_price"] * (1 - position["trailing_step"])
+                        if new_stop > position["stop_loss"]:
+                            position["stop_loss"] = new_stop
+                            logger.info(f"Updated trailing stop for position {position_id} to {new_stop}")
+                else:  # SELL
+                    # Calculate current profit percentage
+                    current_profit_pct = (entry_price - current_price) / entry_price
+                    
+                    # Check if trailing stop should be activated
+                    if not position["trailing_activated"] and current_profit_pct >= position["trailing_activation_threshold"]:
+                        # Activate trailing stop
+                        position["trailing_activated"] = True
+                        # Set initial trailing stop to lock in some profit
+                        new_stop = entry_price - (entry_price - current_price) * 0.5
+                        position["stop_loss"] = min(position["stop_loss"], new_stop) if position["stop_loss"] else new_stop
+                        position["lowest_price"] = current_price
+                        logger.info(f"Activated trailing stop for position {position_id} at {new_stop}")
+                    
+                    # Update trailing stop if already activated
+                    elif position["trailing_activated"] and current_price < position["lowest_price"]:
+                        position["lowest_price"] = current_price
+                        # Calculate new stop loss level based on trailing step
+                        new_stop = position["lowest_price"] * (1 + position["trailing_step"])
+                        if position["stop_loss"] is None or new_stop < position["stop_loss"]:
+                            position["stop_loss"] = new_stop
+                            logger.info(f"Updated trailing stop for position {position_id} to {new_stop}")
+                
+                # Check for stop loss hit
+                hit_tp, hit_sl = False, False
                 if side == "BUY":
                     if next_price <= stop_loss:
                         hit_sl = True
                         exit_price = stop_loss
                         profit_pct = -abs((entry_price - stop_loss) / entry_price * 100 * leverage)
-                    elif next_price >= take_profit:
+                    elif take_profit and next_price >= take_profit and not position.get("trailing_activated", False):
                         hit_tp = True
                         exit_price = take_profit
                         profit_pct = abs((take_profit - entry_price) / entry_price * 100 * leverage)
@@ -365,7 +420,7 @@ class ModelBacktester:
                         hit_sl = True
                         exit_price = stop_loss
                         profit_pct = -abs((stop_loss - entry_price) / entry_price * 100 * leverage)
-                    elif next_price <= take_profit:
+                    elif take_profit and next_price <= take_profit and not position.get("trailing_activated", False):
                         hit_tp = True
                         exit_price = take_profit
                         profit_pct = abs((entry_price - take_profit) / entry_price * 100 * leverage)

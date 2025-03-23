@@ -97,95 +97,115 @@ class DecisionEngine:
     
     def evaluate_trading_opportunity(self, opportunity, market_data=None, symbol=None):
         """
-        Évalue une opportunité de trading en pondérant les signaux de stratégie,
-        le risque de marché et le score technique.
+        Évalue une opportunité de trading en combinant stratégie technique et IA
         
-        Retourne une décision parmi: "STRONG_BUY", "BUY", "NEUTRAL", "SELL", "STRONG_SELL"
+        Args:
+            opportunity: Dictionnaire contenant les détails de l'opportunité
+            market_data: Données de marché (DataFrame ou dict)
+            symbol: Symbole de trading
+            
+        Returns:
+            Décision de trading
         """
-        # Récupérer le signal stratégique depuis StrategyIntegrator si disponible
-        if self.strategy_integrator is not None:
-            strategy_signal = self.strategy_integrator.get_signal(opportunity)
-        else:
-            strategy_signal = "NEUTRAL"  # Signal par défaut
+        if symbol is None and "symbol" in opportunity:
+            symbol = opportunity["symbol"]
         
-        # Récupérer le score de risque depuis MarketRiskFeed si disponible
-        if self.market_risk_feed is not None:
-            risk_score = self.market_risk_feed.get_risk_score(market_data)
-        else:
-            risk_score = 0.5  # Risque neutre
+        if symbol is None:
+            return {
+                "direction": "NEUTRAL",
+                "should_trade": False,
+                "reason": "No symbol provided",
+                "composite_score": 0
+            }
         
-        # Récupérer le score technique depuis l'opportunité ou défaut
-        technical_score = opportunity.get("technical_score", 0.5)
+        # Extraire les données pour évaluation
+        strategy_signals = opportunity.get("strategy_signals", {})
+        ai_prediction = opportunity.get("ai_prediction", {})
+        timeframe = opportunity.get("timeframe", "unknown")
         
-        # Poids attribués aux différentes sources (possibilité d'ajustement dynamique ultérieure)
-        strategy_weight = 0.4
-        risk_weight = 0.3
-        technical_weight = 0.3
-        
-        # Mapper le signal stratégique vers une valeur numérique
-        signal_mapping = {
-            "STRONG_BUY": 1.0,
-            "BUY": 0.5,
-            "NEUTRAL": 0.0,
-            "SELL": -0.5,
-            "STRONG_SELL": -1.0
+        # 1. Obtenir le signal de stratégie
+        strategy_signal = {
+            "available": "signal" in strategy_signals,
+            "signal": strategy_signals.get("signal", "NEUTRAL"),
+            "score": strategy_signals.get("score", 50),
+            "raw_signal": strategy_signals
         }
-        strategy_value = signal_mapping.get(strategy_signal, 0.0)
         
-        # Calculer le score composite
-        # Remarque: un risque plus faible (score proche de 0) améliore le score (0.5 - risk_score)
-        composite_score = (strategy_weight * strategy_value +
-                           risk_weight * (0.5 - risk_score) +
-                           technical_weight * (technical_score - 0.5))
+        # 2. Obtenir le risque du marché
+        market_risk = self._get_market_risk(symbol)
         
-        self.logger.debug(f"Strategy: {strategy_signal} ({strategy_value}), Risk: {risk_score}, Technical: {technical_score} -> Composite: {composite_score:.2f}")
+        # 3. Obtenir le score technique
+        technical_score = self._get_technical_score(market_data) if market_data is not None else {"available": False}
         
-        # Integrate market risk if market_data is provided
-        if market_data:
-            risk_assessment = self.market_risk_analyzer.calculate_market_risk(market_data)
-            self.logger.info("Market risk assessment: " + str(risk_assessment))
-            # Optionally adjust the composite score or decision using risk_assessment["risk_score"]
-            # For example:
-            market_risk_factor = (100 - risk_assessment.get("risk_score", 50)) / 100.0
-            # Incorporate: composite_score *= market_risk_factor
-            # ...existing composite score calculation...
+        # 4. Intégrer les prédictions du modèle IA si disponibles
+        ai_signal = {"available": False, "score": 0.5, "direction": "NEUTRAL"}
         
-        # Use the StrategyManager to generate a signal for the symbol
-        if symbol and self.strategy_manager:
-            strat_signal = self.strategy_manager.generate_signal(symbol)
-            self.logger.info(f"StrategyManager signal for {symbol}: {strat_signal}")
-            # Optionally adjust composite decision using the strategy signal
-            if strat_signal and strat_signal.get("signal", "NEUTRAL") != "NEUTRAL":
-                # Example: combine with other scores by increasing confidence if signals align
-                opportunity["score"] += 10  # minimal adjustment (adjust as needed)
+        if ai_prediction and ai_prediction.get("available", False):
+            prediction_value = ai_prediction.get("predictions", {})
+            
+            # Transposer la prédiction en signal
+            if isinstance(prediction_value, dict):
+                # Format: {"direction": "UP", "probability": 0.75}
+                direction = prediction_value.get("direction", "NEUTRAL")
+                probability = prediction_value.get("probability", 0.5)
+                
+                # Convertir la direction en signal de trading
+                if direction == "UP":
+                    signal = "BUY"
+                elif direction == "DOWN":
+                    signal = "SELL"
+                else:
+                    signal = "NEUTRAL"
+                    
+                ai_signal = {
+                    "available": True,
+                    "direction": signal,
+                    "score": probability,
+                    "raw_prediction": prediction_value
+                }
+            elif isinstance(prediction_value, (int, float)):
+                # Format: valeur numérique entre 0 et 1
+                probability = float(prediction_value)
+                
+                if probability > 0.6:
+                    signal = "BUY"
+                elif probability < 0.4:
+                    signal = "SELL"
+                else:
+                    signal = "NEUTRAL"
+                    
+                ai_signal = {
+                    "available": True,
+                    "direction": signal,
+                    "score": probability,
+                    "raw_prediction": prediction_value
+                }
         
-        # Use MarketRiskFeed to adjust decision based on current market risk level
-        if self.market_risk_feed and symbol:
-            risk_metrics = self.market_risk_feed.get_market_risk(symbol)
-            self.logger.info(f"Market risk metrics for {symbol}: {risk_metrics}")
-            # Example: if the risk score is high, reduce overall opportunity score
-            risk_score = risk_metrics.get("risk_score", 50)
-            if risk_score > 70:
-                opportunity["score"] *= 0.9  # reduce score by 10%
-                opportunity["risk_adjustment"] = "High market risk"
+        # 5. Prendre une décision finale à partir de toutes les sources
+        decision = self._make_decision(
+            symbol=symbol,
+            strategy_signal=strategy_signal,
+            market_risk=market_risk,
+            technical_score=technical_score,
+            ai_signal=ai_signal  # Nouveau paramètre: signal IA
+        )
         
-        # Définir des seuils de décision
-        if composite_score >= 0.6:
-            decision = "STRONG_BUY"
-        elif composite_score >= 0.2:
-            decision = "BUY"
-        elif composite_score > -0.2:
-            decision = "NEUTRAL"
-        elif composite_score > -0.6:
-            decision = "SELL"
-        else:
-            decision = "STRONG_SELL"
+        # 6. Enregistrer la décision pour analyse ultérieure
+        decision_id = self._record_decision(
+            symbol=symbol,
+            timeframe=timeframe,
+            decision=decision,
+            strategy_signal=strategy_signal,
+            market_risk=market_risk,
+            technical_score=technical_score,
+            ai_signal=ai_signal  # Inclure aussi le signal IA dans l'enregistrement
+        )
         
-        return {
-            "direction": opportunity.get("signal", "NEUTRAL"),
-            "weighted_score": opportunity.get("score", 50)
-        }
-    
+        # 7. Enrichir la décision avec l'ID unique pour traçabilité
+        decision["id"] = decision_id
+        
+        return decision
+
     def _get_strategy_signal(self, symbol: str, data: pd.DataFrame, timeframe: str) -> Dict:
         """
         Récupère le signal de stratégie intégrée
@@ -346,157 +366,146 @@ class DecisionEngine:
     def _make_decision(self, symbol: str, 
                      strategy_signal: Dict,
                      market_risk: Dict,
-                     technical_score: Dict) -> Dict:
+                     technical_score: Dict,
+                     ai_signal: Dict = None) -> Dict:
         """
-        Combine toutes les sources d'information pour prendre une décision
+        Prendre une décision de trading basée sur toutes les sources d'information
         
         Args:
             symbol: Symbole de trading
-            strategy_signal: Signal de stratégie
+            strategy_signal: Signal de la stratégie
             market_risk: Risque du marché
             technical_score: Score technique
+            ai_signal: Signal du modèle IA (nouveau)
             
         Returns:
             Décision de trading
         """
-        # 1. Vérifier la disponibilité des données
+        # Récupérer les valeurs des différentes sources
         strategy_available = strategy_signal.get("available", False)
         risk_available = market_risk.get("available", False)
         technical_available = technical_score.get("available", False)
+        ai_available = ai_signal is not None and ai_signal.get("available", False)
         
-        # 2. Extraire et normaliser les signaux (0-100 scale où 50 est neutre)
-        strategy_score = 50.0
-        risk_score = 50.0
-        tech_score = 50.0
+        # Récupérer les scores (valeurs par défaut neutres)
+        strategy_score = strategy_signal.get("score", 50) / 100.0 if strategy_available else 0.5
+        risk_score = market_risk.get("risk_score", 50) / 100.0 if risk_available else 0.5
+        tech_score = technical_score.get("score", 50) / 100.0 if technical_available else 0.5
+        ai_score = ai_signal.get("score", 0.5) if ai_available else 0.5
         
-        # 2.1 Score de stratégie
-        if strategy_available:
-            direction = strategy_signal.get("direction", "NEUTRAL")
-            confidence = strategy_signal.get("confidence", 0.0)
-            
-            if direction == "BUY":
-                strategy_score = 50 + (confidence * 50)
-            elif direction == "SELL":
-                strategy_score = 50 - (confidence * 50)
+        # Définir les poids de chaque source
+        strategy_weight = 0.35  # Stratégie technique: 35%
+        risk_weight = 0.20      # Risque du marché: 20%
+        technical_weight = 0.20 # Indicateurs techniques: 20%
+        ai_weight = 0.25        # Intelligence Artificielle: 25%
         
-        # 2.2 Score de risque
-        if risk_available:
-            risk_score = market_risk.get("risk_score", 50.0)
-            # Inverser le score de risque car un risque élevé signifie une position prudente
-            risk_score = 100 - risk_score
-        elif "fallback" in market_risk:
-            risk_score = 100 - market_risk["fallback"].get("score", 50.0)
+        # Normaliser les poids si certaines sources ne sont pas disponibles
+        available_weight = 0
+        if strategy_available: available_weight += strategy_weight
+        if risk_available: available_weight += risk_weight
+        if technical_available: available_weight += technical_weight
+        if ai_available: available_weight += ai_weight
         
-        # 2.3 Score technique
-        if technical_available:
-            tech_score = technical_score.get("score", 50.0)
-        
-        # 3. Appliquer les poids pour obtenir un score combiné
-        strategy_weight = self.decision_weights.get("strategy_signal", 0.5)
-        risk_weight = self.decision_weights.get("market_risk", 0.3)
-        technical_weight = self.decision_weights.get("technical_score", 0.2)
-        
-        # Recalculer les poids si certaines données ne sont pas disponibles
-        total_weight = 0.0
-        
-        if strategy_available:
-            total_weight += strategy_weight
-        else:
-            strategy_weight = 0.0
-            
-        if risk_available or "fallback" in market_risk:
-            total_weight += risk_weight
-        else:
-            risk_weight = 0.0
-            
-        if technical_available:
-            total_weight += technical_weight
-        else:
-            technical_weight = 0.0
-        
-        # Éviter la division par zéro
-        if total_weight == 0.0:
-            return {
-                "should_trade": False,
-                "reason": "Données insuffisantes pour la prise de décision",
-                "direction": "NEUTRAL",
-                "confidence": 0.0,
-                "weighted_score": 50.0
-            }
-        
-        # Normaliser les poids restants
-        strategy_weight /= total_weight
-        risk_weight /= total_weight
-        technical_weight /= total_weight
+        if available_weight > 0:
+            factor = 1.0 / available_weight
+            if strategy_available: strategy_weight *= factor
+            if risk_available: risk_weight *= factor
+            if technical_available: technical_weight *= factor
+            if ai_available: ai_weight *= factor
         
         # Calculer le score pondéré
-        weighted_score = (
-            (strategy_score * strategy_weight) +
-            (risk_score * risk_weight) +
-            (tech_score * technical_weight)
-        )
+        weighted_score = 0
         
-        # 4. Interpréter le score pour obtenir une décision
+        if strategy_available:
+            # Convertir le signal stratégique en valeur numérique (-1 à +1)
+            if strategy_signal.get("signal") == "BUY":
+                strategy_value = 1.0
+            elif strategy_signal.get("signal") == "SELL":
+                strategy_value = -1.0
+            else:
+                strategy_value = 0.0
+                
+            weighted_score += strategy_weight * strategy_value
+        
+        if risk_available:
+            # Pour le risque, un risque plus faible favorise le trading (1 - risk_score)
+            weighted_score += risk_weight * (0.5 - risk_score)
+        
+        if technical_available:
+            # Pour le score technique, convertir de 0-1 à -1 à +1
+            weighted_score += technical_weight * (tech_score - 0.5) * 2.0
+        
+        if ai_available:
+            # Pour le signal IA, convertir en valeur de -1 à +1
+            if ai_signal.get("direction") == "BUY":
+                ai_value = ai_score  # Déjà pondéré par la probabilité
+            elif ai_signal.get("direction") == "SELL":
+                ai_value = -ai_score  # Négatif pour vendre
+            else:
+                ai_value = 0.0  # Neutre
+                
+            weighted_score += ai_weight * ai_value
+        
+        # Déterminer la direction et la confiance
         direction = "NEUTRAL"
-        signal_type = "NEUTRAL"
-        should_trade = False
-        confidence = abs(weighted_score - 50) / 50.0  # 0 à 1 où 1 est la confiance maximale
-        reason = "Score neutre"
+        confidence = abs(weighted_score)
+        signal_type = "mixed"
         
-        # Décision d'achat
-        if weighted_score > 50:
-            if confidence >= self.decision_thresholds["strong_buy"]:
-                direction = "BUY"
-                signal_type = "STRONG_BUY"
-                should_trade = True
-                reason = "Signal d'achat fort"
-            elif confidence >= self.decision_thresholds["buy"]:
-                direction = "BUY"
-                signal_type = "BUY"
-                should_trade = True
-                reason = "Signal d'achat"
-        # Décision de vente
-        elif weighted_score < 50:
-            if confidence >= self.decision_thresholds["strong_sell"]:
-                direction = "SELL"
-                signal_type = "STRONG_SELL"
-                should_trade = True
-                reason = "Signal de vente fort"
-            elif confidence >= self.decision_thresholds["sell"]:
-                direction = "SELL"
-                signal_type = "SELL"
-                should_trade = True
-                reason = "Signal de vente"
+        # Définir des seuils pour les décisions
+        if weighted_score >= 0.15:
+            direction = "BUY"
+            signal_type = "bullish"
+        elif weighted_score <= -0.15:
+            direction = "SELL"
+            signal_type = "bearish"
         
-        # 5. Vérifier si le risque de marché n'est pas trop élevé
-        if risk_available and market_risk.get("level") == "extreme" and should_trade:
-            should_trade = False
-            reason = "Risque de marché extrême, trading suspendu"
+        # Normaliser le score final pour l'interface utilisateur (0-100)
+        # Transformer de [-1, 1] à [0, 100]
+        normalized_score = (weighted_score + 1) * 50
         
-        # 6. Créer la décision finale
+        # Générer une explication de la décision
+        reason = f"Décision basée sur {len([x for x in [strategy_available, risk_available, technical_available, ai_available] if x])} facteurs. "
+        
+        if strategy_available:
+            reason += f"Stratégie: {strategy_signal.get('signal')}. "
+        if risk_available:
+            reason += f"Risque: {market_risk.get('risk_score')}. "
+        if technical_available:
+            reason += f"Score technique: {technical_score.get('score')}. "
+        if ai_available:
+            reason += f"IA: {ai_signal.get('direction')} ({ai_signal.get('score'):.2f}). "
+        
+        # Créer la décision finale
         decision = {
-            "should_trade": should_trade,
             "direction": direction,
-            "signal_type": signal_type,
+            "should_trade": direction != "NEUTRAL",
+            "composite_score": normalized_score,
             "confidence": confidence,
-            "weighted_score": weighted_score,
+            "signal_type": signal_type,
             "reason": reason,
             "timestamp": datetime.now().isoformat(),
             "contributors": {
                 "strategy": {
                     "available": strategy_available,
-                    "score": strategy_score,
-                    "weight": strategy_weight * 100
+                    "score": strategy_score * 100 if strategy_available else None,
+                    "weight": strategy_weight * 100,
+                    "signal": strategy_signal.get("signal") if strategy_available else None
                 },
                 "risk": {
                     "available": risk_available,
-                    "score": risk_score,
+                    "score": risk_score * 100 if risk_available else None,
                     "weight": risk_weight * 100
                 },
                 "technical": {
                     "available": technical_available,
-                    "score": tech_score,
+                    "score": tech_score * 100 if technical_available else None,
                     "weight": technical_weight * 100
+                },
+                "ai": {
+                    "available": ai_available,
+                    "score": ai_score * 100 if ai_available else None,
+                    "weight": ai_weight * 100,
+                    "signal": ai_signal.get("direction") if ai_available else None
                 }
             }
         }
@@ -505,7 +514,8 @@ class DecisionEngine:
     
     def _record_decision(self, symbol: str, timeframe: str, 
                        decision: Dict, strategy_signal: Dict,
-                       market_risk: Dict, technical_score: Dict) -> str:
+                       market_risk: Dict, technical_score: Dict,
+                       ai_signal: Dict = None) -> str:
         """
         Enregistre une décision de trading pour analyse ultérieure
         
@@ -516,6 +526,7 @@ class DecisionEngine:
             strategy_signal: Signal de stratégie
             market_risk: Risque du marché
             technical_score: Score technique
+            ai_signal: Signal du modèle IA (nouveau)
             
         Returns:
             ID de la décision (timestamp)
@@ -533,7 +544,8 @@ class DecisionEngine:
             "inputs": {
                 "strategy": strategy_signal,
                 "risk": market_risk,
-                "technical": technical_score
+                "technical": technical_score,
+                "ai": ai_signal  # Ajouter le signal IA
             },
             "result": {
                 "actual_outcome": None,  # À remplir plus tard
@@ -557,7 +569,7 @@ class DecisionEngine:
         self._save_decision_history()
         
         return decision_id
-    
+
     def _execute_trade(self, symbol: str, decision: Dict) -> Dict:
         """
         Exécute un trade basé sur la décision
@@ -966,3 +978,41 @@ class DecisionEngine:
             "success": True,
             "weights": self.decision_weights
         }
+    
+    def record_trade_execution(self, decision_id: str, trade_result: Dict) -> bool:
+        """
+        Enregistre l'exécution d'un trade suite à une décision
+        
+        Args:
+            decision_id: ID de la décision
+            trade_result: Résultat de l'exécution du trade
+            
+        Returns:
+            Succès de l'enregistrement
+        """
+        found = False
+        
+        # Rechercher la décision dans l'historique
+        for symbol, decisions in self.decision_history.items():
+            for decision in decisions:
+                if decision["id"] == decision_id:
+                    # Enregistrer les détails de l'exécution
+                    decision["execution"] = {
+                        "time": datetime.now().isoformat(),
+                        "success": trade_result.get("success", False),
+                        "position_id": trade_result.get("position_id"),
+                        "entry_price": trade_result.get("entry_price"),
+                        "position_size": trade_result.get("position_size"),
+                        "stop_loss": trade_result.get("stop_loss_price"),
+                        "take_profit": trade_result.get("take_profit_price")
+                    }
+                    
+                    # Sauvegarder les modifications
+                    self._save_decision_history()
+                    found = True
+                    break
+            
+            if found:
+                break
+        
+        return found

@@ -1,0 +1,123 @@
+2025-03-22 08:49:35,308 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 08:49:35,308 - enhanced_lstm_model - INFO - Last optimization: 2025-03-21 15:55:21 with F1 score: 0.6770
+2025-03-22 08:49:35,308 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 08:49:35,309 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 08:54:52,549 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 08:54:52,549 - enhanced_lstm_model - INFO - Last optimization: 2025-03-21 15:55:21 with F1 score: 0.6770
+2025-03-22 08:54:52,550 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 08:54:52,550 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 09:00:06,549 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 09:00:06,549 - enhanced_lstm_model - INFO - Last optimization: 2025-03-21 15:55:21 with F1 score: 0.6770
+2025-03-22 09:00:06,550 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 09:00:06,550 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 09:05:22,800 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 09:05:22,800 - enhanced_lstm_model - INFO - Last optimization: 2025-03-21 15:55:21 with F1 score: 0.6770
+2025-03-22 09:05:22,801 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 09:05:22,801 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 09:10:35,945 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 09:10:35,945 - enhanced_lstm_model - INFO - Last optimization: 2025-03-21 15:55:21 with F1 score: 0.6770
+2025-03-22 09:10:35,946 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 09:10:35,946 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 09:16:09,186 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 09:16:09,187 - enhanced_lstm_model - INFO - Last optimization: 2025-03-21 15:55:21 with F1 score: 0.6770
+2025-03-22 09:16:09,187 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 09:16:09,188 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 09:21:29,604 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 09:21:29,604 - enhanced_lstm_model - INFO - Last optimization: 2025-03-21 15:55:21 with F1 score: 0.6770
+2025-03-22 09:21:29,605 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 09:21:29,605 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 09:29:32,148 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 09:29:32,148 - enhanced_lstm_model - INFO - Last optimization: 2025-03-21 15:55:21 with F1 score: 0.6770
+2025-03-22 09:29:32,149 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 09:29:32,149 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 09:37:19,700 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 09:37:19,701 - enhanced_lstm_model - INFO - Last optimization: 2025-03-21 15:55:21 with F1 score: 0.6770
+2025-03-22 09:37:19,701 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 09:37:19,702 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 09:46:15,905 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 09:46:15,906 - enhanced_lstm_model - INFO - Last optimization: 2025-03-21 15:55:21 with F1 score: 0.6770
+2025-03-22 09:46:15,907 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 09:46:15,908 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 09:54:46,290 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 09:54:46,291 - enhanced_lstm_model - INFO - Last optimization: 2025-03-21 15:55:21 with F1 score: 0.6770
+2025-03-22 09:54:46,291 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 09:54:46,292 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 10:03:59,391 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 10:03:59,392 - enhanced_lstm_model - INFO - Last optimization: 2025-03-21 15:55:21 with F1 score: 0.6770
+2025-03-22 10:03:59,392 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 10:03:59,392 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 10:12:50,655 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 10:12:50,655 - enhanced_lstm_model - INFO - Last optimization: 2025-03-21 15:55:21 with F1 score: 0.6770
+2025-03-22 10:12:50,656 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 10:12:50,657 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 10:21:44,413 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 10:21:44,414 - enhanced_lstm_model - INFO - Last optimization: 2025-03-21 15:55:21 with F1 score: 0.6770
+2025-03-22 10:21:44,415 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 10:21:44,416 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 10:30:24,109 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 10:30:24,110 - enhanced_lstm_model - INFO - Last optimization: 2025-03-21 15:55:21 with F1 score: 0.6770
+2025-03-22 10:30:24,110 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 10:30:24,111 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 10:39:05,061 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 10:39:05,062 - enhanced_lstm_model - INFO - Last optimization: 2025-03-21 15:55:21 with F1 score: 0.6770
+2025-03-22 10:39:05,062 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 10:39:05,063 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 10:49:17,335 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 10:49:17,336 - enhanced_lstm_model - INFO - Last optimization: 2025-03-21 15:55:21 with F1 score: 0.6770
+2025-03-22 10:49:17,337 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 10:49:17,337 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 10:58:12,857 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 10:58:12,857 - enhanced_lstm_model - INFO - Last optimization: 2025-03-21 15:55:21 with F1 score: 0.6770
+2025-03-22 10:58:12,858 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 10:58:12,858 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 11:08:44,112 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 11:08:44,112 - enhanced_lstm_model - INFO - Last optimization: 2025-03-21 15:55:21 with F1 score: 0.6770
+2025-03-22 11:08:44,113 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 11:08:44,114 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 11:18:39,972 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 11:18:39,972 - enhanced_lstm_model - INFO - Last optimization: 2025-03-21 15:55:21 with F1 score: 0.6770
+2025-03-22 11:18:39,973 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 11:18:39,973 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 11:27:03,137 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 11:27:03,137 - enhanced_lstm_model - INFO - Last optimization: 2025-03-21 15:55:21 with F1 score: 0.6770
+2025-03-22 11:27:03,138 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 11:27:03,138 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 11:39:08,809 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 11:39:08,810 - enhanced_lstm_model - INFO - Last optimization: 2025-03-22 08:54:52 with F1 score: 0.6770
+2025-03-22 11:39:08,810 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 11:39:08,810 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 11:41:03,352 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 11:41:03,353 - enhanced_lstm_model - INFO - Last optimization: 2025-03-22 08:54:52 with F1 score: 0.6770
+2025-03-22 11:41:03,353 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 11:41:03,353 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 11:41:03,771 - enhanced_lstm_model - INFO - Modèle principal chargé: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
+2025-03-22 11:51:16,407 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 11:51:16,407 - enhanced_lstm_model - INFO - Last optimization: 2025-03-22 08:54:52 with F1 score: 0.6770
+2025-03-22 11:51:16,408 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 11:51:16,408 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 11:51:16,787 - enhanced_lstm_model - INFO - Modèle principal chargé: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
+2025-03-22 11:56:01,448 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 11:56:01,448 - enhanced_lstm_model - INFO - Last optimization: 2025-03-22 08:54:52 with F1 score: 0.6770
+2025-03-22 11:56:01,449 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 11:56:01,449 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 11:56:01,862 - enhanced_lstm_model - INFO - Modèle principal chargé: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
+2025-03-22 12:10:08,927 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 12:10:08,927 - enhanced_lstm_model - INFO - Last optimization: 2025-03-22 08:54:52 with F1 score: 0.6770
+2025-03-22 12:10:08,928 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 12:10:08,928 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 12:10:09,292 - enhanced_lstm_model - INFO - Modèle principal chargé: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
+2025-03-22 12:13:18,941 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 12:13:18,941 - enhanced_lstm_model - INFO - Last optimization: 2025-03-22 08:54:52 with F1 score: 0.6770
+2025-03-22 12:13:18,941 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 12:13:18,942 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 12:13:19,327 - enhanced_lstm_model - INFO - Modèle principal chargé: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
+2025-03-22 12:17:56,474 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 12:17:56,474 - enhanced_lstm_model - INFO - Last optimization: 2025-03-22 08:54:52 with F1 score: 0.6770
+2025-03-22 12:17:56,475 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 12:17:56,475 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 13:45:06,600 - enhanced_lstm_model - INFO - Using optimized parameters for 15m from config.model_params
+2025-03-22 13:45:06,600 - enhanced_lstm_model - INFO - Last optimization: 2025-03-22 08:54:52 with F1 score: 0.6770
+2025-03-22 13:45:06,601 - enhanced_lstm_model - INFO - Reloaded optimized parameters for 15m from config: sequence_length=60, lstm_units=[136, 68, 68]
+2025-03-22 13:45:06,601 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=0.0008123245085588687, l2_reg=0.0003142880890840109
+2025-03-22 13:45:07,003 - enhanced_lstm_model - INFO - Modèle principal chargé: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
+2025-03-23 09:13:45,001 - enhanced_lstm_model - INFO - Model parameters: sequence_length=90, lstm_units=[128, 64, 32], dropout=None, learning_rate=None, l1_reg=None, l2_reg=None

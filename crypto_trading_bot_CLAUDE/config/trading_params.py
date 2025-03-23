@@ -19,6 +19,10 @@ MAX_DRAWDOWN_LIMIT = 30.0     # Ajout d'une limite de drawdown
 # Délais et cooldown
 MIN_TIME_BETWEEN_TRADES = 4  # Minutes minimum entre trades (3-5 minutes)
 MARKET_COOLDOWN_PERIOD = 60  # Minutes de cooldown après détection de marché défavorable
+EXTREME_PRICE_CHANGE_THRESHOLD = 5.0  # Pourcentage de variation de prix considéré comme extrême
+EXTREME_VOLUME_THRESHOLD = 3.0  # Volume multiplié par ce facteur considéré comme anormal
+EXTREME_VOLATILITY_THRESHOLD = 2.5  # Volatilité multipliée par ce facteur considérée comme anormale
+MIN_WINRATE_THRESHOLD = 40.0  # Pourcentage minimum de winrate avant d'activer le cooldown
 
 # Paramètres des indicateurs techniques (valeurs par défaut, ajustables par l'IA)
 # RSI
@@ -47,3 +51,7 @@ MINIMUM_SCORE_TO_TRADE = 72  # Score minimum pour entrer en position (0-100)
 
 # Facteurs d'adaptation de l'IA
 LEARNING_RATE = 0.05  # Taux d'apprentissage pour l'ajustement des paramètres
+
+# Position management
+MAX_TOTAL_POSITIONS = 5    # Maximum total open positions across all symbols
+POSITION_SIZING_METHOD = "risk_based"  # Options: fixed, risk_based, kelly

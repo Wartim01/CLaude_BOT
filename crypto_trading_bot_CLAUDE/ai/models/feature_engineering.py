@@ -27,6 +27,7 @@ from indicators.volume import calculate_obv, calculate_vwap
 from config.config import DATA_DIR
 from utils.logger import setup_logger
 from config.feature_config import get_optimal_feature_count, update_optimal_feature_count
+from config.feature_config import FEATURE_COLUMNS
 
 logger = setup_logger("feature_engineering")
 
@@ -272,24 +273,83 @@ class FeatureEngineering:
             
             if missing_cols:
                 logger.warning(f"Caractéristiques manquantes: {len(missing_cols)}. Ajout de colonnes de remplacement.")
+                
+                # Mapping for columns that need specific calculations
+                calc_map = {
+                    "open": lambda d: d["open"],
+                    "high": lambda d: d["high"],
+                    "low": lambda d: d["low"],
+                    "close": lambda d: d["close"],
+                    "volume": lambda d: d["volume"],
+                    "ema_9": lambda d: calculate_ema(d, [9])[9],
+                    "ema_21": lambda d: calculate_ema(d, [21])[21],
+                    "ema_50": lambda d: calculate_ema(d, [50])[50],
+                    "ema_200": lambda d: calculate_ema(d, [200])[200],
+                    "dist_to_ema_9": lambda d: (d["close"] - calculate_ema(d, [9])[9]) / calculate_ema(d, [9])[9] * 100,
+                    "dist_to_ema_21": lambda d: (d["close"] - calculate_ema(d, [21])[21]) / calculate_ema(d, [21])[21] * 100,
+                    "dist_to_ema_50": lambda d: (d["close"] - calculate_ema(d, [50])[50]) / calculate_ema(d, [50])[50] * 100,
+                    "dist_to_ema_200": lambda d: (d["close"] - calculate_ema(d, [200])[200]) / calculate_ema(d, [200])[200] * 100,
+                    "macd": lambda d: calculate_macd(d)["macd"],
+                    "macd_signal": lambda d: calculate_macd(d)["signal"],
+                    "macd_hist": lambda d: calculate_macd(d)["histogram"],
+                    "adx": lambda d: calculate_adx(d)["adx"],
+                    "plus_di": lambda d: calculate_adx(d)["plus_di"],
+                    "minus_di": lambda d: calculate_adx(d)["minus_di"],
+                    "rsi": lambda d: calculate_rsi(d),
+                    "stoch_k": lambda d: calculate_stochastic(d)["k"],
+                    "stoch_d": lambda d: calculate_stochastic(d)["d"],
+                    "roc_5": lambda d: d["close"].pct_change(5) * 100,
+                    "roc_10": lambda d: d["close"].pct_change(10) * 100,
+                    "roc_21": lambda d: d["close"].pct_change(21) * 100,
+                    "bb_upper": lambda d: calculate_bollinger_bands(d)["upper"],
+                    "bb_middle": lambda d: calculate_bollinger_bands(d)["middle"],
+                    "bb_lower": lambda d: calculate_bollinger_bands(d)["lower"],
+                    "bb_width": lambda d: calculate_bollinger_bands(d)["bandwidth"],
+                    "bb_percent_b": lambda d: calculate_bollinger_bands(d)["percent_b"],
+                    "atr": lambda d: calculate_atr(d),
+                    "atr_percent": lambda d: calculate_atr(d) / d["close"] * 100,
+                    "obv": lambda d: calculate_obv(d),
+                    "rel_volume_5": lambda d: d["volume"] / d["volume"].rolling(5).mean(),
+                    "rel_volume_10": lambda d: d["volume"] / d["volume"].rolling(10).mean(),
+                    "rel_volume_21": lambda d: d["volume"] / d["volume"].rolling(21).mean(),
+                    "vwap": lambda d: calculate_vwap(d),
+                    "vwap_dist": lambda d: (d["close"] - calculate_vwap(d)) / calculate_vwap(d) * 100,
+                    "return_1": lambda d: d["close"].pct_change(1) * 100,
+                    "return_3": lambda d: d["close"].pct_change(3) * 100,
+                    "return_5": lambda d: d["close"].pct_change(5) * 100,
+                    "return_10": lambda d: d["close"].pct_change(10) * 100,
+                    "body_size": lambda d: abs(d["close"] - d["open"]),
+                    "body_size_percent": lambda d: abs(d["close"] - d["open"]) / d["open"] * 100,
+                    "upper_wick": lambda d: d["high"] - d[["open", "close"]].max(axis=1),
+                    "lower_wick": lambda d: d[["open", "close"]].min(axis=1) - d["low"],
+                    "upper_wick_percent": lambda d: (d["high"] - d[["open", "close"]].max(axis=1)) / d["open"] * 100,
+                    "lower_wick_percent": lambda d: (d[["open", "close"]].min(axis=1) - d["low"]) / d["open"] * 100,
+                    "gap_up": lambda d: (d["low"] > d["high"].shift(1)).astype(int),
+                    "gap_down": lambda d: (d["high"] < d["low"].shift(1)).astype(int),
+                    "hour_sin": lambda d: np.sin(2 * np.pi * d.index.hour / 24),
+                    "hour_cos": lambda d: np.cos(2 * np.pi * d.index.hour / 24),
+                    "day_sin": lambda d: np.sin(2 * np.pi * d.index.dayofweek / 7),
+                    "day_cos": lambda d: np.cos(2 * np.pi * d.index.dayofweek / 7),
+                    "day_of_month_sin": lambda d: np.sin(2 * np.pi * d.index.day / 31),
+                    "day_of_month_cos": lambda d: np.cos(2 * np.pi * d.index.day / 31),
+                    "is_high": lambda d: (d["high"] > d["high"].shift(1)) & (d["high"] > d["high"].shift(-1)),
+                    "is_low": lambda d: (d["low"] < d["low"].shift(1)) & (d["low"] < d["low"].shift(-1)),
+                    "dist_to_high": lambda d: (d["close"] - d["high"].rolling(50).max()) / d["high"].rolling(50).max() * 100,
+                    "dist_to_low": lambda d: (d["close"] - d["low"].rolling(50).min()) / d["low"].rolling(50).min() * 100,
+                    "rsi_bb": lambda d: (d["rsi"] - 50) * d["bb_percent_b"],
+                    "price_volume_trend": lambda d: d["return_1"] * d["rel_volume_5"],
+                    "reversal_signal": lambda d: ((d["adx"] > 25) & (d["rsi"] < 30)) | ((d["adx"] > 25) & (d["rsi"] > 70))
+                }
+
                 for col in missing_cols:
-                    # Si la colonne est une feature PCA, utiliser des zéros
-                    if col.startswith("pca_feature_"):
-                        df[col] = 0
-                    else:
-                        # Sinon, essayer d'utiliser une méthode de substitution plus intelligente
-                        try:
-                            if "ema" in col or "ma" in col:
-                                # Pour les moyennes mobiles, utiliser la valeur close
-                                df[col] = df["close"] if "close" in df else 0
-                            elif "rsi" in col or "stoch" in col:
-                                # Pour les oscillateurs, utiliser une valeur neutre
-                                df[col] = 50
-                            else:
-                                # Valeur par défaut
-                                df[col] = 0
-                        except Exception:
+                    try:
+                        if col in calc_map:
+                            df[col] = calc_map[col](df)
+                        else:
+                            # Default filler for columns without specific logic
                             df[col] = 0
+                    except Exception:
+                        df[col] = 0
             
             if extra_cols:
                 logger.warning(f"Caractéristiques supplémentaires ignorées: {len(extra_cols)}")
@@ -356,9 +416,12 @@ class FeatureEngineering:
         if enforce_consistency:
             self.fixed_features = df.columns.tolist()
 
+        if enforce_consistency and force_feature_count == 66:
+            logger.info("Forcing features to 66 for consistent sequence dimensions.")
+
         # Vérification finale du nombre de colonnes
         if df.shape[1] != target_feature_count:
-            raise ValueError(f"Nombre de features attendu: {target_feature_count}, obtenu: {df.shape[1]}")
+            raise ValueError(f"Expected {target_feature_count} features, got {df.shape[1]}")
 
         logger.info(f"Nombre de features utilisé pour l'entraînement: {df.shape[1]}")
         
@@ -366,7 +429,13 @@ class FeatureEngineering:
         if enforce_consistency:
             # Enregistrer la configuration pour utilisation future
             self._save_feature_metadata(df)
-            
+
+        # Ensure these columns are included in the final DataFrame
+        df = df.reindex(columns=df.columns.union([
+            "ema_9", "ema_21", "ema_50", "ema_200",
+            "dist_to_ema_9", "dist_to_ema_21", "dist_to_ema_50", "dist_to_ema_200"
+        ]), fill_value=0)
+
         return df
 
     def _save_feature_metadata(self, df: pd.DataFrame) -> None:
@@ -552,13 +621,8 @@ class FeatureEngineering:
         Returns:
             Dictionnaire avec les résultats d'optimisation
         """
-        # Si optimization est appelée explicitement avec une valeur, l'utiliser directement
-        if self.optimal_feature_count is not None:
-            optimal_count = self.optimal_feature_count
-            logger.info(f"Utilisation du nombre de caractéristiques prédéfini: {optimal_count}")
-        else:
-            # Trouver le nombre optimal de caractéristiques
-            optimal_count = self.optimize_feature_count(data)
+        # Forcer la ré-optimisation, ignorer self.optimal_feature_count
+        optimal_count = self.optimize_feature_count(data)
         
         # Mettre à jour les paramètres de la classe et la configuration centralisée
         self.expected_feature_count = optimal_count
@@ -853,8 +917,13 @@ class FeatureEngineering:
             is_training: Indique si c'est pour l'entraînement ou la prédiction
             
         Returns:
-            Tuple (X, y_list) pour l'entraînement ou X pour la prédiction
+            Tuple (X, y_list) pour l'entraînement ou (X, None) pour la prédiction
         """
+        # Force columns to match FEATURE_COLUMNS
+        data = data.reindex(columns=FEATURE_COLUMNS, fill_value=0).copy()
+        if data.shape[1] != len(FEATURE_COLUMNS):
+            logger.warning(f"Feature mismatch: expected {len(FEATURE_COLUMNS)}, found {data.shape[1]}")
+        
         # Sélectionner les colonnes de caractéristiques
         feature_cols = data.select_dtypes(include=['float64', 'int64']).columns.tolist()
         cols_to_exclude = ['timestamp', 'date']
@@ -870,11 +939,13 @@ class FeatureEngineering:
         # Créer les séquences d'entrée avec num_samples
         X = []
         for i in range(num_samples):
-            X.append(data[feature_cols].iloc[i:i+sequence_length].values)
+            X.append(data[feature_cols].iloc[i:i+sequence_length].values.astype(np.float32))
         X = np.array(X)
         
         if not is_training:
-            return X
+            # Instead of just returning X, return a tuple (X, None) for consistency
+            logger.debug(f"Returning prediction data without labels: X shape {X.shape}")
+            return X, None
         
         # Créer les labels pour chaque horizon avec the same num_samples
         y_list = []
@@ -911,8 +982,16 @@ class FeatureEngineering:
         
         # Validate dimensions before return
         if len(X.shape) != 3:
-            raise ValueError(f"Expected X to be 3D, but got shape {X.shape} with dimensions {len(X.shape)}")
+            error_msg = f"Expected X to be 3D, but got shape {X.shape} with dimensions {len(X.shape)}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         
+        # Verify we have data to return
+        if len(X) == 0:
+            logger.warning("No sequences were generated - input data may be too short")
+            
+        # Log the return shape
+        logger.debug(f"Returning training data: X shape {X.shape}, y_list length {len(y_list)}")
         return X, y_list
 
     def evaluate_feature_impact(self, data: pd.DataFrame, target_variable: str = None) -> pd.DataFrame:

@@ -21,6 +21,28 @@ DEFAULT_MAX_FEATURES = 100
 DEFAULT_STEP_SIZE = 10
 DEFAULT_CV_FOLDS = 3
 
+FEATURE_COLUMNS = [
+    "open", "high", "low", "close", "volume",
+    "ema_9", "ema_21", "ema_50", "ema_200",
+    "dist_to_ema_9", "dist_to_ema_21", "dist_to_ema_50", "dist_to_ema_200",
+    "macd", "macd_signal", "macd_hist",
+    "adx", "plus_di", "minus_di",
+    "rsi", "stoch_k", "stoch_d",
+    "roc_5", "roc_10", "roc_21",
+    "bb_upper", "bb_middle", "bb_lower", "bb_width", "bb_percent_b",
+    "atr", "atr_percent", "obv",
+    "rel_volume_5", "rel_volume_10", "rel_volume_21",
+    "vwap", "vwap_dist",
+    "return_1", "return_3", "return_5", "return_10",
+    "body_size", "body_size_percent", "upper_wick", "lower_wick",
+    "upper_wick_percent", "lower_wick_percent",
+    "gap_up", "gap_down",
+    "hour_sin", "hour_cos", "day_sin", "day_cos",
+    "day_of_month_sin", "day_of_month_cos",
+    "is_high", "is_low", "dist_to_high", "dist_to_low",
+    "rsi_bb", "price_volume_trend", "reversal_signal"
+]
+
 def load_config():
     """
     Charge la configuration depuis le fichier JSON.

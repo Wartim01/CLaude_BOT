@@ -23,13 +23,12 @@ from config.model_params import LSTM_DEFAULT_PARAMS
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
     try:
-        # Limiter la mémoire GPU utilisée
         for gpu in gpus:
             tf.config.experimental.set_memory_growth(gpu, True)
         logical_gpus = tf.config.experimental.list_logical_devices('GPU')
-        print(f"{len(gpus)} GPU(s) physiques et {len(logical_gpus)} GPU(s) logiques détectés")
+        logger.info(f"{len(gpus)} GPU(s) physiques et {len(logical_gpus)} GPU(s) logiques détectés")
     except RuntimeError as e:
-        print(f"Erreur lors de la configuration GPU: {e}")
+        logger.error(f"Erreur lors de la configuration GPU: {e}")
 
 logger = setup_logger("model_trainer")
 
@@ -174,15 +173,25 @@ class ModelTrainer:
         # Create default callbacks if none provided
         if callbacks is None:
             callbacks = self._get_default_callbacks()
+            
+        # Ajouter un callback pour afficher les métriques détaillées à la fin de chaque époque
+        from tensorflow.keras.callbacks import Callback
+        class DetailedMetricLogger(Callback):
+            def on_epoch_end(self, epoch, logs=None):
+                logs = logs or {}
+                metrics_str = ' - '.join([f"{k}: {v:.4f}" for k, v in logs.items()])
+                print(f"\nÉpoque {epoch+1}/{self.params['epochs']} - {metrics_str}")
+                
+        callbacks.append(DetailedMetricLogger())
         
-        # Train the model
+        # Train the model with verbose=2 for detailed metrics per epoch
         history = self.model.model.fit(
             X_train, y_train,
             validation_data=(X_val, y_val),
             epochs=epochs,
             batch_size=batch_size,
             callbacks=callbacks,
-            verbose=1
+            verbose=2  # Change to 2 for detailed metrics per epoch without progress bar
         )
         
         return history
@@ -209,12 +218,25 @@ class ModelTrainer:
         
         # Create sequences
         horizons = self.model_params.get('prediction_horizons', [4])
-        return self.feature_engineering.create_multi_horizon_data(
+        result = self.feature_engineering.create_multi_horizon_data(
             normalized_data,
             sequence_length=self.model_params.get('input_length', 60),
             horizons=horizons,
             is_training=is_training
         )
+        
+        # Check feature dimensions for debugging
+        if is_training and isinstance(result, tuple) and len(result) >= 1:
+            X = result[0]
+            if isinstance(X, np.ndarray) and len(X.shape) == 3:
+                logger.info(f"Generated training data with shape: {X.shape}, features: {X.shape[2]}")
+                
+                # Update model params with actual feature dimension
+                if self.model_params.get('feature_dim', 0) != X.shape[2]:
+                    logger.info(f"Updating model feature dimension from {self.model_params.get('feature_dim')} to {X.shape[2]}")
+                    self.model_params['feature_dim'] = X.shape[2]
+        
+        return result
     
     def _get_default_callbacks(self):
         """

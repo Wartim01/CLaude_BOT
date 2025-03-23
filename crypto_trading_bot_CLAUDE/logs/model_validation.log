@@ -1,3 +1,0 @@
-2025-03-14 15:26:47,603 — model_validation — INFO — Loading model from data/models/lstm_BTCUSDT_15m.h5
-2025-03-14 15:26:47,604 — model_validation — ERROR — Error loading model: [Errno 2] Unable to synchronously open file (unable to open file: name = 'data/models/lstm_BTCUSDT_15m.h5', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0)
-2025-03-14 15:26:47,605 — model_validation — ERROR — Error during model validation: [Errno 2] Unable to synchronously open file (unable to open file: name = 'data/models/lstm_BTCUSDT_15m.h5', errno = 2, error message = 'No such file or directory', flags = 0, o_flags = 0)

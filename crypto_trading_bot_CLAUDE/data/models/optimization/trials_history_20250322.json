@@ -1,0 +1,365 @@
+[
+  {
+    "trial_number": 0,
+    "params": {
+      "input_length": 60,
+      "feature_dim": 66,
+      "lstm_units": [
+        136,
+        68,
+        34
+      ],
+      "dropout_rate": 0.4195981825434215,
+      "learning_rate": 0.00015751320499779721,
+      "l1_reg": 0.0008123245085588687,
+      "l2_reg": 0.0003142880890840109,
+      "use_attention": false,
+      "use_residual": false,
+      "prediction_horizons": [
+        4
+      ],
+      "batch_size": 128,
+      "sequence_length": 60,
+      "l1_regularization": 0.0008123245085588687,
+      "l2_regularization": 0.0003142880890840109,
+      "epochs": 100,
+      "early_stopping_patience": 15,
+      "reduce_lr_patience": 7
+    },
+    "batch_size": 128,
+    "val_loss": 1.2683014869689941,
+    "val_accuracy": 0.5117488503456116,
+    "f1_score": 0.677028920881641,
+    "class_weights": {
+      "0": 1.0117019517036057,
+      "1": 0.9885656565656565
+    },
+    "timestamp": "2025-03-22T08:54:52.393644"
+  },
+  {
+    "trial_number": 4,
+    "params": {
+      "input_length": 60,
+      "feature_dim": 66,
+      "lstm_units": [
+        139
+      ],
+      "dropout_rate": 0.4486212527455788,
+      "learning_rate": 5.170191786366994e-05,
+      "l1_reg": 3.9459088110999995e-06,
+      "l2_reg": 1.0388823104027941e-06,
+      "use_attention": false,
+      "use_residual": false,
+      "prediction_horizons": [
+        4
+      ],
+      "batch_size": 128,
+      "sequence_length": 60,
+      "l1_regularization": 0.0008123245085588687,
+      "l2_regularization": 0.0003142880890840109,
+      "epochs": 100,
+      "early_stopping_patience": 15,
+      "reduce_lr_patience": 7
+    },
+    "batch_size": 128,
+    "val_loss": 1.267406702041626,
+    "val_accuracy": 0.5117488503456116,
+    "f1_score": 0.677028920881641,
+    "class_weights": {
+      "0": 1.0117019517036057,
+      "1": 0.9885656565656565
+    },
+    "timestamp": "2025-03-22T09:16:09.037190"
+  },
+  {
+    "trial_number": 6,
+    "params": {
+      "input_length": 60,
+      "feature_dim": 66,
+      "lstm_units": [
+        87,
+        43,
+        21
+      ],
+      "dropout_rate": 0.42823551458506925,
+      "learning_rate": 0.0001326033192269654,
+      "l1_reg": 8.11392957263784e-05,
+      "l2_reg": 8.771380343280564e-06,
+      "use_attention": false,
+      "use_residual": false,
+      "prediction_horizons": [
+        4
+      ],
+      "batch_size": 128,
+      "sequence_length": 60,
+      "l1_regularization": 0.0008123245085588687,
+      "l2_regularization": 0.0003142880890840109,
+      "epochs": 100,
+      "early_stopping_patience": 15,
+      "reduce_lr_patience": 7
+    },
+    "batch_size": 16,
+    "val_loss": 1.0853759050369263,
+    "val_accuracy": 0.5117488503456116,
+    "f1_score": 0.677028920881641,
+    "class_weights": {
+      "0": 1.0117019517036057,
+      "1": 0.9885656565656565
+    },
+    "timestamp": "2025-03-22T09:29:31.982548"
+  },
+  {
+    "trial_number": 8,
+    "params": {
+      "input_length": 60,
+      "feature_dim": 66,
+      "lstm_units": [
+        219,
+        109,
+        54
+      ],
+      "dropout_rate": 0.2954010424915592,
+      "learning_rate": 1.6599837974449204e-05,
+      "l1_reg": 4.637921903458029e-06,
+      "l2_reg": 2.288738114460097e-06,
+      "use_attention": false,
+      "use_residual": false,
+      "prediction_horizons": [
+        4
+      ],
+      "batch_size": 128,
+      "sequence_length": 60,
+      "l1_regularization": 0.0008123245085588687,
+      "l2_regularization": 0.0003142880890840109,
+      "epochs": 100,
+      "early_stopping_patience": 15,
+      "reduce_lr_patience": 7
+    },
+    "batch_size": 128,
+    "val_loss": 1.2661408185958862,
+    "val_accuracy": 0.5117488503456116,
+    "f1_score": 0.677028920881641,
+    "class_weights": {
+      "0": 1.0117019517036057,
+      "1": 0.9885656565656565
+    },
+    "timestamp": "2025-03-22T09:46:15.677651"
+  },
+  {
+    "trial_number": 10,
+    "params": {
+      "input_length": 60,
+      "feature_dim": 66,
+      "lstm_units": [
+        246,
+        123,
+        61
+      ],
+      "dropout_rate": 0.4908611332363598,
+      "learning_rate": 0.0004156230899243229,
+      "l1_reg": 0.0008302952415590684,
+      "l2_reg": 0.0008425592512000587,
+      "use_attention": false,
+      "use_residual": false,
+      "prediction_horizons": [
+        4
+      ],
+      "batch_size": 128,
+      "sequence_length": 60,
+      "l1_regularization": 0.0008123245085588687,
+      "l2_regularization": 0.0003142880890840109,
+      "epochs": 100,
+      "early_stopping_patience": 15,
+      "reduce_lr_patience": 7
+    },
+    "batch_size": 64,
+    "val_loss": 1.2130913734436035,
+    "val_accuracy": 0.5117488503456116,
+    "f1_score": 0.677028920881641,
+    "class_weights": {
+      "0": 1.0117019517036057,
+      "1": 0.9885656565656565
+    },
+    "timestamp": "2025-03-22T10:03:59.188392"
+  },
+  {
+    "trial_number": 11,
+    "params": {
+      "input_length": 60,
+      "feature_dim": 66,
+      "lstm_units": [
+        153,
+        76
+      ],
+      "dropout_rate": 0.4866135884962616,
+      "learning_rate": 0.00021978618850803785,
+      "l1_reg": 1.2077166060023854e-05,
+      "l2_reg": 0.000396038523062933,
+      "use_attention": false,
+      "use_residual": false,
+      "prediction_horizons": [
+        4
+      ],
+      "batch_size": 128,
+      "sequence_length": 60,
+      "l1_regularization": 0.0008123245085588687,
+      "l2_regularization": 0.0003142880890840109,
+      "epochs": 100,
+      "early_stopping_patience": 15,
+      "reduce_lr_patience": 7
+    },
+    "batch_size": 128,
+    "val_loss": 1.2643202543258667,
+    "val_accuracy": 0.5117488503456116,
+    "f1_score": 0.677028920881641,
+    "class_weights": {
+      "0": 1.0117019517036057,
+      "1": 0.9885656565656565
+    },
+    "timestamp": "2025-03-22T10:12:50.437339"
+  },
+  {
+    "trial_number": 12,
+    "params": {
+      "input_length": 60,
+      "feature_dim": 66,
+      "lstm_units": [
+        144
+      ],
+      "dropout_rate": 0.40130594905817457,
+      "learning_rate": 0.0002633779924921928,
+      "l1_reg": 1.0477302080295903e-06,
+      "l2_reg": 0.00013675191184068174,
+      "use_attention": false,
+      "use_residual": false,
+      "prediction_horizons": [
+        4
+      ],
+      "batch_size": 128,
+      "sequence_length": 60,
+      "l1_regularization": 0.0008123245085588687,
+      "l2_regularization": 0.0003142880890840109,
+      "epochs": 100,
+      "early_stopping_patience": 15,
+      "reduce_lr_patience": 7
+    },
+    "batch_size": 128,
+    "val_loss": 1.2530043125152588,
+    "val_accuracy": 0.5117488503456116,
+    "f1_score": 0.677028920881641,
+    "class_weights": {
+      "0": 1.0117019517036057,
+      "1": 0.9885656565656565
+    },
+    "timestamp": "2025-03-22T10:21:44.183224"
+  },
+  {
+    "trial_number": 13,
+    "params": {
+      "input_length": 60,
+      "feature_dim": 66,
+      "lstm_units": [
+        66,
+        33
+      ],
+      "dropout_rate": 0.45262870269359906,
+      "learning_rate": 2.7484164254840425e-05,
+      "l1_reg": 0.0009053295614251942,
+      "l2_reg": 9.286944170907635e-06,
+      "use_attention": false,
+      "use_residual": false,
+      "prediction_horizons": [
+        4
+      ],
+      "batch_size": 128,
+      "sequence_length": 60,
+      "l1_regularization": 0.0008123245085588687,
+      "l2_regularization": 0.0003142880890840109,
+      "epochs": 100,
+      "early_stopping_patience": 15,
+      "reduce_lr_patience": 7
+    },
+    "batch_size": 128,
+    "val_loss": 1.258663296699524,
+    "val_accuracy": 0.5117488503456116,
+    "f1_score": 0.677028920881641,
+    "class_weights": {
+      "0": 1.0117019517036057,
+      "1": 0.9885656565656565
+    },
+    "timestamp": "2025-03-22T10:30:23.889152"
+  },
+  {
+    "trial_number": 14,
+    "params": {
+      "input_length": 60,
+      "feature_dim": 66,
+      "lstm_units": [
+        135,
+        67
+      ],
+      "dropout_rate": 0.30985399878818576,
+      "learning_rate": 0.0001815853292274659,
+      "l1_reg": 2.4616463011721712e-05,
+      "l2_reg": 0.00024206728116622897,
+      "use_attention": false,
+      "use_residual": false,
+      "prediction_horizons": [
+        4
+      ],
+      "batch_size": 128,
+      "sequence_length": 60,
+      "l1_regularization": 0.0008123245085588687,
+      "l2_regularization": 0.0003142880890840109,
+      "epochs": 100,
+      "early_stopping_patience": 15,
+      "reduce_lr_patience": 7
+    },
+    "batch_size": 64,
+    "val_loss": 1.214682698249817,
+    "val_accuracy": 0.5117488503456116,
+    "f1_score": 0.677028920881641,
+    "class_weights": {
+      "0": 1.0117019517036057,
+      "1": 0.9885656565656565
+    },
+    "timestamp": "2025-03-22T10:39:04.859961"
+  },
+  {
+    "trial_number": 15,
+    "params": {
+      "input_length": 60,
+      "feature_dim": 66,
+      "lstm_units": [
+        172,
+        86,
+        43
+      ],
+      "dropout_rate": 0.3827779868631538,
+      "learning_rate": 0.0004982647874006541,
+      "l1_reg": 8.492935741365948e-06,
+      "l2_reg": 1.1489825817393994e-05,
+      "use_attention": false,
+      "use_residual": false,
+      "prediction_horizons": [
+        4
+      ],
+      "batch_size": 128,
+      "sequence_length": 60,
+      "l1_regularization": 0.0008123245085588687,
+      "l2_regularization": 0.0003142880890840109,
+      "epochs": 100,
+      "early_stopping_patience": 15,
+      "reduce_lr_patience": 7
+    },
+    "batch_size": 128,
+    "val_loss": 1.2714829444885254,
+    "val_accuracy": 0.5117488503456116,
+    "f1_score": 0.677028920881641,
+    "class_weights": {
+      "0": 1.0117019517036057,
+      "1": 0.9885656565656565
+    },
+    "timestamp": "2025-03-22T10:49:17.071789"
+  }
+]

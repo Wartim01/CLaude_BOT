@@ -1,0 +1,98 @@
+2025-03-22 11:41:03,349 - model_evaluation - INFO - Loaded 35041 data points from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-03-22 11:41:03,350 - model_evaluation - INFO - Data shape: (35041, 11)
+2025-03-22 11:41:03,351 - model_evaluation - INFO - Data index type: <class 'pandas.core.indexes.datetimes.DatetimeIndex'>
+2025-03-22 11:41:03,351 - model_evaluation - INFO - Data date range: 2024-01-01 00:00:00 to 2024-12-30 23:00:00
+2025-03-22 11:41:03,352 - model_evaluation - INFO - Using model from: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
+2025-03-22 11:41:03,772 - model_evaluation - INFO - Loaded LSTM model from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
+2025-03-22 11:41:03,772 - model_evaluation - INFO - Creating model validator...
+2025-03-22 11:41:03,774 - model_evaluation - INFO - Starting model evaluation, results will be saved to: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\evaluation\BTCUSDT_15m
+2025-03-22 11:45:06,708 - model_evaluation - ERROR - Error during evaluation: Input 0 of layer "functional_1" is incompatible with the layer: expected shape=(None, 30, 66), found shape=(32, 60, 69)
+2025-03-22 11:45:06,708 - model_evaluation - INFO - ----- Model Evaluation Results -----
+2025-03-22 11:45:06,709 - model_evaluation - WARNING - No metrics available in evaluation results. This may indicate an issue with the model or data.
+2025-03-22 11:51:16,404 - model_evaluation - INFO - Loaded 35041 data points from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-03-22 11:51:16,405 - model_evaluation - INFO - Data shape: (35041, 11)
+2025-03-22 11:51:16,405 - model_evaluation - INFO - Data index type: <class 'pandas.core.indexes.datetimes.DatetimeIndex'>
+2025-03-22 11:51:16,406 - model_evaluation - INFO - Data date range: 2024-01-01 00:00:00 to 2024-12-30 23:00:00
+2025-03-22 11:51:16,406 - model_evaluation - INFO - Using model from: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
+2025-03-22 11:51:16,788 - model_evaluation - INFO - Loaded LSTM model from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
+2025-03-22 11:51:16,788 - model_evaluation - INFO - Creating model validator...
+2025-03-22 11:51:16,790 - model_evaluation - INFO - Starting model evaluation, results will be saved to: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\evaluation\BTCUSDT_15m
+2025-03-22 11:56:01,445 - model_evaluation - INFO - Loaded 35041 data points from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-03-22 11:56:01,446 - model_evaluation - INFO - Data shape: (35041, 11)
+2025-03-22 11:56:01,446 - model_evaluation - INFO - Data index type: <class 'pandas.core.indexes.datetimes.DatetimeIndex'>
+2025-03-22 11:56:01,447 - model_evaluation - INFO - Data date range: 2024-01-01 00:00:00 to 2024-12-30 23:00:00
+2025-03-22 11:56:01,447 - model_evaluation - INFO - Using model from: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
+2025-03-22 11:56:01,863 - model_evaluation - INFO - Loaded LSTM model from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
+2025-03-22 11:56:01,863 - model_evaluation - INFO - Creating model validator...
+2025-03-22 11:56:01,864 - model_evaluation - INFO - Starting model evaluation, results will be saved to: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\evaluation\BTCUSDT_15m
+2025-03-22 11:59:57,627 - model_evaluation - ERROR - Error during evaluation: Input 0 of layer "functional_1" is incompatible with the layer: expected shape=(None, 30, 66), found shape=(32, 60, 69)
+2025-03-22 11:59:57,628 - model_evaluation - INFO - ----- Model Evaluation Results -----
+2025-03-22 11:59:57,628 - model_evaluation - WARNING - No metrics available in evaluation results. This may indicate an issue with the model or data.
+2025-03-22 12:10:08,925 - model_evaluation - INFO - Loaded 35041 data points from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-03-22 12:10:08,925 - model_evaluation - INFO - Data shape: (35041, 11)
+2025-03-22 12:10:08,926 - model_evaluation - INFO - Data index type: <class 'pandas.core.indexes.datetimes.DatetimeIndex'>
+2025-03-22 12:10:08,926 - model_evaluation - INFO - Data date range: 2024-01-01 00:00:00 to 2024-12-30 23:00:00
+2025-03-22 12:10:08,927 - model_evaluation - INFO - Using model from: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
+2025-03-22 12:10:09,293 - model_evaluation - INFO - Loaded LSTM model from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
+2025-03-22 12:10:09,293 - model_evaluation - INFO - Creating model validator...
+2025-03-22 12:10:09,295 - model_evaluation - INFO - Starting model evaluation, results will be saved to: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\evaluation\BTCUSDT_15m
+2025-03-22 12:13:18,938 - model_evaluation - INFO - Loaded 35041 data points from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-03-22 12:13:18,939 - model_evaluation - INFO - Data shape: (35041, 11)
+2025-03-22 12:13:18,939 - model_evaluation - INFO - Data index type: <class 'pandas.core.indexes.datetimes.DatetimeIndex'>
+2025-03-22 12:13:18,940 - model_evaluation - INFO - Data date range: 2024-01-01 00:00:00 to 2024-12-30 23:00:00
+2025-03-22 12:13:18,940 - model_evaluation - INFO - Using model from: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
+2025-03-22 12:13:19,328 - model_evaluation - INFO - Loaded LSTM model from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
+2025-03-22 12:13:19,328 - model_evaluation - INFO - Creating model validator...
+2025-03-22 12:13:19,330 - model_evaluation - INFO - Starting model evaluation, results will be saved to: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\evaluation\BTCUSDT_15m
+2025-03-22 13:45:06,597 - model_evaluation - INFO - Loaded 35041 data points from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-03-22 13:45:06,598 - model_evaluation - INFO - Data shape: (35041, 11)
+2025-03-22 13:45:06,598 - model_evaluation - INFO - Data index type: <class 'pandas.core.indexes.datetimes.DatetimeIndex'>
+2025-03-22 13:45:06,599 - model_evaluation - INFO - Data date range: 2024-01-01 00:00:00 to 2024-12-30 23:00:00
+2025-03-22 13:45:06,599 - model_evaluation - INFO - Using model from: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
+2025-03-22 13:45:07,004 - model_evaluation - INFO - Loaded LSTM model from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
+2025-03-22 13:45:07,004 - model_evaluation - INFO - Creating model validator...
+2025-03-22 13:45:07,005 - model_evaluation - INFO - Starting model evaluation, results will be saved to: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\evaluation\BTCUSDT_15m
+2025-03-22 13:49:46,218 - model_evaluation - INFO - ----- Model Evaluation Results -----
+2025-03-22 13:49:46,218 - model_evaluation - WARNING - No labels were available for evaluation - metrics could not be calculated
+2025-03-22 16:53:47,293 - model_evaluation - INFO - Loaded 35041 data points from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-03-22 16:53:47,294 - model_evaluation - INFO - Data shape: (35041, 11)
+2025-03-22 16:53:47,294 - model_evaluation - INFO - Data index type: <class 'pandas.core.indexes.datetimes.DatetimeIndex'>
+2025-03-22 16:53:47,295 - model_evaluation - INFO - Data date range: 2024-01-01 00:00:00 to 2024-12-30 23:00:00
+2025-03-22 16:53:47,295 - model_evaluation - INFO - Using model from: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
+2025-03-22 16:53:47,296 - model_evaluation - ERROR - Error loading model: 'LSTMModel' object has no attribute 'lstm_units'
+2025-03-22 16:53:47,296 - model_evaluation - ERROR - Failed to load model
+2025-03-22 17:04:21,428 - model_evaluation - INFO - Loaded 35041 data points from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-03-22 17:04:21,428 - model_evaluation - INFO - Data shape: (35041, 11)
+2025-03-22 17:04:21,429 - model_evaluation - INFO - Data index type: <class 'pandas.core.indexes.datetimes.DatetimeIndex'>
+2025-03-22 17:04:21,429 - model_evaluation - INFO - Data date range: 2024-01-01 00:00:00 to 2024-12-30 23:00:00
+2025-03-22 17:04:21,430 - model_evaluation - INFO - Using model from: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
+2025-03-22 17:04:21,430 - model_evaluation - ERROR - Error loading model: 'LSTMModel' object has no attribute 'lstm_units'
+2025-03-22 17:04:21,430 - model_evaluation - ERROR - Failed to load model
+2025-03-22 17:08:36,813 - model_evaluation - INFO - Loaded 35041 data points from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-03-22 17:08:36,813 - model_evaluation - INFO - Data shape: (35041, 11)
+2025-03-22 17:08:36,814 - model_evaluation - INFO - Data index type: <class 'pandas.core.indexes.datetimes.DatetimeIndex'>
+2025-03-22 17:08:36,814 - model_evaluation - INFO - Data date range: 2024-01-01 00:00:00 to 2024-12-30 23:00:00
+2025-03-22 17:08:36,815 - model_evaluation - INFO - Using model from: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
+2025-03-22 17:08:36,815 - model_evaluation - ERROR - Error loading model: 'LSTMModel' object has no attribute 'lstm_units'
+2025-03-22 17:08:36,815 - model_evaluation - ERROR - Failed to load model
+2025-03-22 17:13:48,681 - model_evaluation - INFO - Loaded 35041 data points from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-03-22 17:13:48,682 - model_evaluation - INFO - Data shape: (35041, 11)
+2025-03-22 17:13:48,682 - model_evaluation - INFO - Data index type: <class 'pandas.core.indexes.datetimes.DatetimeIndex'>
+2025-03-22 17:13:48,683 - model_evaluation - INFO - Data date range: 2024-01-01 00:00:00 to 2024-12-30 23:00:00
+2025-03-22 17:13:48,683 - model_evaluation - INFO - Using model from: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
+2025-03-22 17:13:48,684 - model_evaluation - ERROR - Error loading model: 'LSTMModel' object has no attribute 'lstm_units'
+2025-03-22 17:13:48,684 - model_evaluation - ERROR - Failed to load model
+2025-03-23 09:00:48,555 - model_evaluation - INFO - Loaded 35041 data points from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-03-23 09:00:48,556 - model_evaluation - INFO - Data shape: (35041, 11)
+2025-03-23 09:00:48,557 - model_evaluation - INFO - Data index type: <class 'pandas.core.indexes.datetimes.DatetimeIndex'>
+2025-03-23 09:00:48,559 - model_evaluation - INFO - Data date range: 2024-01-01 00:00:00 to 2024-12-30 23:00:00
+2025-03-23 09:00:48,560 - model_evaluation - INFO - Using model from: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
+2025-03-23 09:00:48,560 - model_evaluation - ERROR - Error loading model: 'LSTMModel' object has no attribute 'lstm_units'
+2025-03-23 09:00:48,561 - model_evaluation - ERROR - Failed to load model
+2025-03-23 09:13:44,994 - model_evaluation - INFO - Loaded 35041 data points from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-03-23 09:13:44,995 - model_evaluation - INFO - Data shape: (35041, 11)
+2025-03-23 09:13:44,995 - model_evaluation - INFO - Data index type: <class 'pandas.core.indexes.datetimes.DatetimeIndex'>
+2025-03-23 09:13:44,998 - model_evaluation - INFO - Data date range: 2024-01-01 00:00:00 to 2024-12-30 23:00:00
+2025-03-23 09:13:44,999 - model_evaluation - INFO - Using model from: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
+2025-03-23 09:13:45,096 - model_evaluation - ERROR - Error loading model: Shapes used to initialize variables must be fully-defined (no `None` dimensions). Received: shape=(None, 512) for variable path='bidirectional/forward_lstm/lstm_cell/kernel'
+2025-03-23 09:13:45,098 - model_evaluation - ERROR - Failed to load model

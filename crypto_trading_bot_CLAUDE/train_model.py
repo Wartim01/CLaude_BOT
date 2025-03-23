@@ -6,12 +6,25 @@ et d’entraîner le modèle en utilisant les hyperparamètres fournis ou par d�
 """
 
 import os
+import sys
 import argparse
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import json
 import tensorflow as tf
+import optuna
+
+# Fix Unicode encoding issues on Windows
+if sys.platform.startswith('win'):
+    # Force UTF-8 encoding for stdout/stderr
+    import codecs
+    sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
+    sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
+    # Set console code page to UTF-8
+    os.system('chcp 65001')
+    # Set environment variable for child processes
+    os.environ["PYTHONIOENCODING"] = "utf-8"
 
 from config.config import DATA_DIR, MODEL_CHECKPOINTS_DIR
 from utils.logger import setup_logger
@@ -79,6 +92,10 @@ def parse_args():
     parser.add_argument("--learning_rate", type=float, default=None, help="Learning rate for training")
     # New argument for patience
     parser.add_argument("--patience", type=int, default=10, help="Patience for early stopping and learning rate reduction")
+    # Add verbose argument
+    parser.add_argument("--verbose", type=int, default=1, choices=[0, 1, 2], 
+                        help="Niveau de verbosité pour l'entraînement (0=silencieux, 1=barre de progression, 2=une ligne par époque)")
+    parser.add_argument("--sequence_length", type=int, default=60, help="Sequence length for the LSTM input")
     return parser.parse_args()
 
 def load_data(data_path, symbol, timeframe):
@@ -93,6 +110,17 @@ def load_data(data_path, symbol, timeframe):
     Returns:
         DataFrame avec les données
     """
+    data_path = os.path.normpath(data_path)  # Normalize the path to handle mixed slashes
+
+    # Added check for data_path existence and fallback to alternative directory if needed
+    if not os.path.isdir(data_path):
+        alt_data_path = data_path.replace(r"BOT TRADING BIG 2025\data", r"BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data")
+        if os.path.isdir(alt_data_path):
+            logger.info(f"Data directory not found: {data_path}. Using alternative path: {alt_data_path}")
+            data_path = alt_data_path
+        else:
+            raise FileNotFoundError(f"Data directory not found: {data_path}")
+
     # Déterminer le chemin du fichier
     file_path = os.path.join(data_path, f"{symbol}_{timeframe}.csv")
     
@@ -144,6 +172,11 @@ def train_model(args):
     Returns:
         Le modèle entraîné et les métriques
     """
+    # Force the default sequence length to 60 if not provided
+    if not hasattr(args, 'sequence_length') or args.sequence_length is None:
+        args.sequence_length = 60
+    sequence_length = args.sequence_length
+
     # 1. Charger les données
     df = load_data(args.data_path, args.symbol, args.timeframe)
     
@@ -167,12 +200,37 @@ def train_model(args):
         feature_group='lstm'
     )
     
+    normalized_data = normalized_data.astype(np.float32)
+    
     # Diviser en ensembles d'entraînement et de validation (chronologiquement)
     train_size = int(len(normalized_data) * (1 - args.validation_split))
     train_data = normalized_data.iloc[:train_size]
     val_data = normalized_data.iloc[train_size:]
     
     logger.info(f"Division des données: {len(train_data)} échantillons d'entraînement, {len(val_data)} échantillons de validation")
+    
+    # Définir la longueur de séquence (utilise l'argument si fourni, sinon la valeur par défaut)
+    sequence_length = getattr(args, "sequence_length", None) or LSTM_DEFAULT_PARAMS["sequence_length"]
+    
+    # Vérifier que les données sont suffisantes pour créer des séquences
+    try:
+        from config.model_params import PREDICTION_HORIZONS
+        if args.timeframe in PREDICTION_HORIZONS:
+            horizons = [h[0] for h in PREDICTION_HORIZONS[args.timeframe]]
+    except ImportError:
+        pass
+    if 'horizons' not in locals():
+        horizons = [12, 24, 96]
+
+    if not hasattr(args, 'sequence_length') or args.sequence_length is None:
+        args.sequence_length = 60
+    sequence_length = args.sequence_length
+
+    required_samples = sequence_length + max(horizons)
+    if len(train_data) < required_samples:
+        logger.error(f"Données insuffisantes pour générer des séquences: besoin de {required_samples} échantillons, obtenu {len(train_data)}")
+        import sys
+        sys.exit(1)
     
     # 3. Créer les séquences et les cibles
     # Utiliser un seul horizon de prédiction (1h)
@@ -204,19 +262,25 @@ def train_model(args):
     
     # Start with default parameters
     params_source = LSTM_DEFAULT_PARAMS
+    # Override defaults if not supplied by args
+    params_source["lstm_units"] = [136, 68, 34]
+    params_source["dropout_rate"] = 0.42
+    params_source["learning_rate"] = 0.0001575
+    params_source["l1_regularization"] = 0.0008123
+    params_source["l2_regularization"] = 0.0003143
     
     # Override with optimized params if available
     if optimized_params:
         params_source = optimized_params
     
     # Override with command line args if provided
-    lstm_units = args.lstm_units if args.lstm_units else params_source["lstm_units"]
-    dropout_rate = getattr(args, "dropout", None) if getattr(args, "dropout", None) is not None else params_source["dropout_rate"]
-    learning_rate = getattr(args, "learning_rate", None) if getattr(args, "learning_rate", None) is not None else params_source["learning_rate"]
-    sequence_length = getattr(args, "sequence_length", None) if getattr(args, "sequence_length", None) is not None else params_source["sequence_length"]
-    l1_reg = getattr(args, "l1_reg", None) if getattr(args, "l1_reg", None) is not None else params_source["l1_regularization"]
-    l2_reg = getattr(args, "l2_reg", None) if getattr(args, "l2_reg", None) is not None else params_source["l2_regularization"]
-    batch_size = args.batch_size if args.batch_size is not None else params_source["batch_size"]
+    lstm_units = args.lstm_units if hasattr(args, "lstm_units") and args.lstm_units else params_source["lstm_units"]
+    dropout_rate = getattr(args, "dropout", None) if hasattr(args, "dropout") and getattr(args, "dropout", None) is not None else params_source["dropout_rate"]
+    learning_rate = getattr(args, "learning_rate", None) if hasattr(args, "learning_rate") and getattr(args, "learning_rate", None) is not None else params_source["learning_rate"]
+    sequence_length = getattr(args, "sequence_length", None) if hasattr(args, "sequence_length") and getattr(args, "sequence_length", None) is not None else params_source["sequence_length"]  # Par défaut, cela vaudra 90
+    l1_reg = getattr(args, "l1_reg", None) if hasattr(args, "l1_reg") and getattr(args, "l1_reg", None) is not None else params_source["l1_regularization"]
+    l2_reg = getattr(args, "l2_reg", None) if hasattr(args, "l2_reg") and getattr(args, "l2_reg", None) is not None else params_source["l2_regularization"]
+    batch_size = args.batch_size if hasattr(args, "batch_size") and args.batch_size is not None else params_source["batch_size"]
     
     # Log the parameters being used
     logger.info(f"Training with parameters: lstm_units={lstm_units}, dropout={dropout_rate}, "
@@ -227,10 +291,15 @@ def train_model(args):
     logger.info("Création des séquences pour l'entraînement...")
     X_train, y_train = feature_engineering.create_multi_horizon_data(
         train_data, 
-        sequence_length=sequence_length,  # Use the sequence length from params
+        sequence_length=args.sequence_length,  # Use the sequence length from params
         horizons=horizons,
         is_training=True
     )
+    # Vérifier que X_train a bien 3 dimensions
+    if X_train.ndim != 3:
+        logger.error(f"Dimension inattendue pour X_train : {X_train.shape}. Essai pruned.")
+        raise optuna.exceptions.TrialPruned()
+    
     logger.info(f"Dimensions de X_train: {X_train.shape} (attendu: (*, {sequence_length}, 80))")
     
     logger.info("Création des séquences pour la validation...")
@@ -240,6 +309,9 @@ def train_model(args):
         horizons=horizons,
         is_training=True
     )
+    if X_val.ndim != 3:
+        logger.error(f"Dimension inattendue pour X_val : {X_val.shape}. Essai pruned.")
+        raise optuna.exceptions.TrialPruned()
     
     # Add dimension check - ensure X_train and X_val are 3D
     logger.info(f"Vérification des dimensions: X_train = {X_train.shape}, X_val = {X_val.shape}")
@@ -252,9 +324,24 @@ def train_model(args):
     
     # 5. Créer et compiler le modèle with parameters from config/args
     logger.info(f"Création du modèle LSTM avec unités: {lstm_units}")
+    
+    # Process a small batch of data to determine the actual feature dimension
+    logger.info("Determining actual feature dimension from processed data...")
+    X_sample, _ = feature_engineering.create_multi_horizon_data(
+        normalized_data.iloc[:100],  # Use a small sample
+        sequence_length=sequence_length,
+        horizons=horizons,
+        is_training=True
+    )
+    
+    # Get the actual feature dimension from the processed data
+    actual_feature_dim = X_sample.shape[2]
+    logger.info(f"Detected actual feature dimension: {actual_feature_dim}")
+    
+    # Create model with the actual feature dimension
     model = LSTMModel(
-        input_length=sequence_length,  # Use the sequence length from params
-        feature_dim=X_train.shape[2],
+        input_length=sequence_length,
+        feature_dim=actual_feature_dim,  # Use detected dimension instead of hard-coded value
         lstm_units=lstm_units,
         dropout_rate=dropout_rate,
         learning_rate=learning_rate,
@@ -281,7 +368,7 @@ def train_model(args):
     
     # Model checkpoint - UPDATED to use .keras extension
     checkpoint_path = os.path.join(MODEL_CHECKPOINTS_DIR, f"lstm_{args.symbol}_{args.timeframe}_checkpoint.keras")
-    from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
+    from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau # type: ignore
     
     callbacks.append(
         ModelCheckpoint(
@@ -315,8 +402,26 @@ def train_model(args):
         )
     )
     
+    # Use the verbose parameter from args instead of hardcoding it
+    verbose_level = args.verbose if hasattr(args, "verbose") else 1
+    
     # 7. Entraîner le modèle with batch_size from params
     logger.info(f"Début de l'entraînement pour {args.epochs} époques avec batch_size={batch_size}...")
+    
+    # Ajouter un callback personnalisé pour afficher les performances à chaque époque
+    from tensorflow.keras.callbacks import Callback # type: ignore
+    class DetailedEpochLogger(Callback):
+        def on_epoch_end(self, epoch, logs=None):
+            logs = logs or {}
+            metrics_str = ' - '.join([f"{k}: {v:.4f}" for k, v in logs.items()])
+            print(f"\nÉpoque {epoch+1}/{self.params['epochs']} - {metrics_str}")
+    
+    # Only add the custom logger if verbose level is not already 2
+    if verbose_level != 2:
+        # Ajouter notre callback à la liste existante
+        callbacks.append(DetailedEpochLogger())
+    
+    # Use the verbose level from arguments
     history = model.model.fit(
         x=X_train,
         y=y_train,
@@ -324,11 +429,16 @@ def train_model(args):
         batch_size=batch_size,
         validation_data=(X_val, y_val),
         callbacks=callbacks,
-        verbose=getattr(args, "verbose", 1)
+        verbose=verbose_level  # Use the command line argument value
     )
     
     # 8. Sauvegarder le modèle
     logger.info(f"Sauvegarde du modèle dans {model_path}...")
+    # Modify model_path assignment to use default if args.output is None
+    if getattr(args, "output", None):
+        model_path = args.output
+    else:
+        model_path = os.path.join(DATA_DIR, "models", f"lstm_{args.symbol}_{args.timeframe}.keras")
     model.save(model_path)
     
     # 9. Sauvegarder l'historique d'entraînement
@@ -505,75 +615,45 @@ def create_evaluation_plots(model, X_val, y_val, predictions, symbol, timeframe,
     
     logger.info(f"Visualisations sauvegardées dans {viz_dir}")
 
-def main():
-    """Point d'entrée principal"""
-    args = parse_args()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Train LSTM Model")
+    subparsers = parser.add_subparsers(dest="command")  # Remove required=True
     
-    try:
-        # Entraîner le modèle
-        model, history = train_model(args)
-        
-        logger.info("Entraînement terminé avec succès!")
-        
-    except Exception as e:
-        logger.error(f"Erreur lors de l'entraînement: {str(e)}")
-        import traceback
-        traceback.print_exc()
+    train_parser = subparsers.add_parser("train", help="Train the model")
+    train_parser.add_argument("--symbol", required=True)
+    train_parser.add_argument("--timeframe", required=True)
+    train_parser.add_argument("--start-date", required=True)
+    train_parser.add_argument("--end-date", required=True)
+    train_parser.add_argument("--data_path", required=True)
+    # Ajoutons également les paramètres optionnels
+    train_parser.add_argument("--epochs", type=int, default=100)
+    train_parser.add_argument("--batch_size", type=int, default=64)
+    train_parser.add_argument("--validation_split", type=float, default=0.2)
+    train_parser.add_argument("--patience", type=int, default=10)
+    train_parser.add_argument("--use_attention", action="store_true", help="Use attention mechanism")
+    train_parser.add_argument("--use_early_stopping", action="store_true", default=True, help="Use early stopping")
+    train_parser.add_argument("--evaluate_after", action="store_true", default=True, help="Evaluate after training")
+    train_parser.add_argument("--verbose", type=int, default=1, choices=[0, 1, 2],
+                           help="Niveau de verbosité (0=silencieux, 1=barre de progression, 2=une ligne par époque)")
+    train_parser.add_argument("--sequence_length", type=int, default=60, help="Sequence length for the LSTM input")
+    
+    args = parser.parse_args()
+    
+    # Check if command is provided (replacement for required=True)
+    if args.command is None:
+        parser.print_help()
         import sys
         sys.exit(1)
-
-if __name__ == "__main__":
-    main()
-
-def create_model(input_shape, lstm_units):
-    """
-    Creates a model with the specified input shape and LSTM units
-    
-    Args:
-        input_shape: Shape of input data
-        lstm_units: Number of units in LSTM layers
         
-    Returns:
-        Compiled Keras model
-    """
-    from tensorflow.keras.layers import Input, Bidirectional, LSTM, Dropout, Dense
-    from tensorflow.keras.models import Model
-    from tensorflow.keras.optimizers import Adam
-    # Start with input shape
-    inputs = Input(shape=input_shape)
-    x = inputs
-    
-    # Add LSTM layers
-    for i, units in enumerate(lstm_units):
-        return_sequences = i < len(lstm_units) - 1
-        x = Bidirectional(LSTM(units, return_sequences=return_sequences))(x)
-        x = Dropout(0.3)(x)
-    
-    # Dense layers
-    x = Dense(64, activation='relu')(x)
-    x = Dropout(0.2)(x)
-    
-    # Output layers
-    outputs = []
-    for horizon in range(3):  # for 3 different prediction horizons
-        name = f'direction_{horizon+1}'
-        outputs.append(Dense(1, activation='sigmoid', name=name)(x))
-    
-    # Create the model
-    model = Model(inputs=inputs, outputs=outputs)
-    
-    # Compile with proper loss and metrics
-    loss_functions = ['binary_crossentropy'] * len(outputs)
-    
-    # Create optimizer
-    optimizer = Adam(learning_rate=0.001)
-    
-    # Fix the metrics format - use a simple string metric for all outputs
-    model.compile(
-        optimizer=optimizer,
-        loss=loss_functions,
-        metrics='accuracy'  # Apply accuracy to all outputs
-    )
-    
-    return model
+    if args.command == "train":
+        try:
+            # Appel direct à la fonction d'entraînement
+            model, history = train_model(args)
+            logger.info("Entraînement terminé avec succès!")
+        except Exception as e:
+            logger.error(f"Erreur lors de l'entraînement: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            import sys
+            sys.exit(1)
 

@@ -310,22 +310,57 @@ class BacktestEngine:
                 
                 # Update trailing stop if enabled
                 if not close_position and trailing_stop_pct is not None:
-                    if idx not in trailing_stops:
-                        # Initialize trailing stop at entry
-                        trailing_stops[idx] = position.entry_price
+                    # Check if we need to initialize tracking variables
+                    if not hasattr(position, 'trailing_activated'):
+                        position.trailing_activated = False
+                        position.trailing_activation_threshold = 0.05  # 5% activation threshold
+                        position.trailing_step = trailing_stop_pct
+                        if position.direction == 'long':
+                            position.highest_price = position.entry_price
+                        else:
+                            position.lowest_price = position.entry_price
                     
+                    # For long positions
                     if position.direction == 'long':
-                        # Update trailing stop if price moves higher
-                        if current_candle['high'] > trailing_stops[idx]:
-                            trailing_stops[idx] = current_candle['high']
-                            # Update stop loss based on new trailing stop level
-                            position.stop_loss = trailing_stops[idx] * (1 - trailing_stop_pct)
-                    else:  # Short position
-                        # Update trailing stop if price moves lower
-                        if current_candle['low'] < trailing_stops[idx]:
-                            trailing_stops[idx] = current_candle['low']
-                            # Update stop loss based on new trailing stop level
-                            position.stop_loss = trailing_stops[idx] * (1 + trailing_stop_pct)
+                        # Calculate current profit percentage
+                        current_profit_pct = (current_candle['high'] - position.entry_price) / position.entry_price
+                        
+                        # Check if trailing stop should be activated
+                        if not position.trailing_activated and current_profit_pct >= position.trailing_activation_threshold:
+                            # Activate trailing stop
+                            position.trailing_activated = True
+                            # Set initial trailing stop to lock in some profit
+                            new_stop = position.entry_price + (current_candle['high'] - position.entry_price) * 0.5
+                            position.stop_loss = max(position.stop_loss, new_stop)
+                            position.highest_price = current_candle['high']
+                        
+                        # Update trailing stop if already activated
+                        elif position.trailing_activated and current_candle['high'] > position.highest_price:
+                            position.highest_price = current_candle['high']
+                            # Calculate new stop loss level based on trailing step
+                            new_stop = position.highest_price * (1 - position.trailing_step)
+                            position.stop_loss = max(position.stop_loss, new_stop)
+                    
+                    # For short positions
+                    else:
+                        # Calculate current profit percentage
+                        current_profit_pct = (position.entry_price - current_candle['low']) / position.entry_price
+                        
+                        # Check if trailing stop should be activated
+                        if not position.trailing_activated and current_profit_pct >= position.trailing_activation_threshold:
+                            # Activate trailing stop
+                            position.trailing_activated = True
+                            # Set initial trailing stop to lock in some profit
+                            new_stop = position.entry_price - (position.entry_price - current_candle['low']) * 0.5
+                            position.stop_loss = min(position.stop_loss, new_stop) if position.stop_loss else new_stop
+                            position.lowest_price = current_candle['low']
+                        
+                        # Update trailing stop if already activated
+                        elif position.trailing_activated and current_candle['low'] < position.lowest_price:
+                            position.lowest_price = current_candle['low']
+                            # Calculate new stop loss level based on trailing step
+                            new_stop = position.lowest_price * (1 + position.trailing_step)
+                            position.stop_loss = min(position.stop_loss, new_stop) if position.stop_loss else new_stop
                 
                 if close_position:
                     positions_to_close.append((idx, exit_reason, exit_price))

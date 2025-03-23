@@ -1,64 +1,43 @@
-2025-03-18 10:06:10,815 — feature_config — INFO — Utilisation des valeurs par défaut pour la configuration des caractéristiques
-2025-03-18 10:06:10,816 — feature_config — INFO — Utilisation des valeurs par défaut pour la configuration des caractéristiques
-2025-03-18 10:06:10,817 — feature_config — INFO — Configuration des caractéristiques sauvegardée dans c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:10,818 — feature_config — INFO — Nombre optimal de caractéristiques mis à jour: 50
-2025-03-18 10:06:10,824 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:10,918 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:10,919 — feature_config — INFO — Configuration des caractéristiques sauvegardée dans c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:10,920 — feature_config — INFO — Nombre optimal de caractéristiques mis à jour: 78
-2025-03-18 10:06:11,170 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:11,325 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:11,334 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:11,335 — feature_config — INFO — Configuration des caractéristiques sauvegardée dans c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:11,335 — feature_config — INFO — Nombre optimal de caractéristiques mis à jour: 78
-2025-03-18 10:06:11,406 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:11,416 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:11,417 — feature_config — INFO — Configuration des caractéristiques sauvegardée dans c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:11,418 — feature_config — INFO — Nombre optimal de caractéristiques mis à jour: 78
-2025-03-18 10:06:11,553 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:11,554 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:11,555 — feature_config — INFO — Configuration des caractéristiques sauvegardée dans c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:11,555 — feature_config — INFO — Nombre optimal de caractéristiques mis à jour: 42
-2025-03-18 10:06:11,561 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:11,571 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:11,572 — feature_config — INFO — Configuration des caractéristiques sauvegardée dans c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:11,572 — feature_config — INFO — Nombre optimal de caractéristiques mis à jour: 78
-2025-03-18 10:06:12,856 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:12,857 — feature_config — INFO — Configuration des caractéristiques sauvegardée dans c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:12,858 — feature_config — INFO — Nombre optimal de caractéristiques mis à jour: 40
-2025-03-18 10:06:12,867 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:12,868 — feature_config — INFO — Configuration des caractéristiques sauvegardée dans c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:12,868 — feature_config — INFO — Nombre optimal de caractéristiques mis à jour: 40
-2025-03-18 10:06:12,927 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:12,929 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:12,930 — feature_config — INFO — Configuration des caractéristiques sauvegardée dans c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:12,931 — feature_config — INFO — Nombre optimal de caractéristiques mis à jour: 78
-2025-03-18 10:06:12,939 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:12,941 — feature_config — INFO — Configuration des caractéristiques sauvegardée dans c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:12,941 — feature_config — INFO — Nombre optimal de caractéristiques mis à jour: 78
-2025-03-18 10:06:12,951 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:12,953 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:12,954 — feature_config — INFO — Configuration des caractéristiques sauvegardée dans c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:12,954 — feature_config — INFO — Nombre optimal de caractéristiques mis à jour: 78
-2025-03-18 10:06:14,210 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:14,211 — feature_config — INFO — Configuration des caractéristiques sauvegardée dans c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:06:14,212 — feature_config — INFO — Nombre optimal de caractéristiques mis à jour: 40
-2025-03-18 10:13:38,305 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:13:38,306 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:13:38,307 — feature_config — INFO — Configuration des caractéristiques sauvegardée dans c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:13:38,307 — feature_config — INFO — Nombre optimal de caractéristiques mis à jour: 50
-2025-03-18 10:13:38,313 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:13:38,369 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:13:38,370 — feature_config — INFO — Configuration des caractéristiques sauvegardée dans c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:13:38,371 — feature_config — INFO — Nombre optimal de caractéristiques mis à jour: 40
-2025-03-18 10:13:38,534 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:13:38,676 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:13:38,738 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:13:38,856 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:13:38,856 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:13:38,857 — feature_config — INFO — Configuration des caractéristiques sauvegardée dans c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:13:38,858 — feature_config — INFO — Nombre optimal de caractéristiques mis à jour: 42
-2025-03-18 10:13:38,886 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:13:39,537 — feature_config — INFO — Configuration des caractéristiques chargée depuis c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:13:39,538 — feature_config — INFO — Configuration des caractéristiques sauvegardée dans c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\feature_config.json
-2025-03-18 10:13:39,538 — feature_config — INFO — Nombre optimal de caractéristiques mis à jour: 40
+2025-03-22 08:49:31,664 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 08:49:35,306 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 08:54:52,548 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 09:00:06,548 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 09:05:22,799 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 09:10:35,944 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 09:16:09,186 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 09:21:29,603 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 09:29:32,147 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 09:37:19,700 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 09:46:15,905 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 09:54:46,289 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 10:03:59,390 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 10:12:50,654 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 10:21:44,413 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 10:30:24,108 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 10:39:05,060 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 10:49:17,335 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 10:58:12,856 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 11:08:44,111 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 11:18:39,971 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 11:27:03,136 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 11:39:04,902 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 11:39:08,808 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 11:40:54,936 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 11:41:03,773 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 11:51:09,239 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 11:51:16,789 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 11:55:54,295 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 11:56:01,863 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 12:10:01,743 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 12:10:09,294 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 12:13:11,545 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 12:13:19,329 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 12:14:41,052 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 13:45:07,005 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 16:53:39,914 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 17:04:13,773 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 17:08:29,540 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-22 17:13:41,434 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-23 08:49:08,907 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-23 08:59:45,980 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques
+2025-03-23 09:12:38,519 - feature_config - INFO - Utilisation des valeurs par défaut pour la configuration des caractéristiques

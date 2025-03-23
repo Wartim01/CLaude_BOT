@@ -155,15 +155,32 @@ def load_best_hyperparameters(symbol="BTCUSDT", timeframe="15m"):
 # Import the model parameters
 from config.model_params import LSTM_DEFAULT_PARAMS, LSTM_OPTIMIZED_PARAMS
 
-class LSTMModel:
+class LSTMModel(Model):
     """
     Modèle LSTM avancé pour prédictions multi-horizon et multi-facteur.
     Intègre éventuellement attention et connexions résiduelles.
     """
-    def __init__(self, input_length=None, feature_dim=78, lstm_units=None,
-                 dropout_rate=None, learning_rate=None, use_attention=None, use_residual=None,
-                 prediction_horizons=[12, 24, 96], l1_reg=None, l2_reg=None,
-                 symbol="BTCUSDT", timeframe="15m", use_optimized_params=True):
+    def __init__(self, input_length=None, feature_dim=None, lstm_units=None, dropout_rate=None, learning_rate=None, *args, **kwargs):
+        # Extract missing parameters from kwargs with default values
+        timeframe = kwargs.get("timeframe", "15m")
+        symbol = kwargs.get("symbol", "BTCUSDT")
+        l1_reg = kwargs.get("l1_reg", None)
+        l2_reg = kwargs.get("l2_reg", None)
+        use_optimized_params = kwargs.get("use_optimized_params", False)
+        use_attention = kwargs.get("use_attention", None)
+        use_residual = kwargs.get("use_residual", None)
+        prediction_horizons = kwargs.get("prediction_horizons", [(12, "3h", True), (48, "12h", True), (192, "48h", True)])
+        
+        self.input_length = input_length if input_length is not None else 60
+        self.feature_dim = feature_dim if feature_dim is not None else 66
+        self.lstm_units = lstm_units or [128, 64, 32]
+        self.dropout_rate = dropout_rate
+        self.learning_rate = learning_rate
+        self.l1_reg = l1_reg
+        self.l2_reg = l2_reg
+        self.use_attention = use_attention
+        self.use_residual = use_residual
+        self.prediction_horizons = prediction_horizons
         
         # First check if there are optimized parameters for this timeframe
         optimized_params = None
@@ -190,19 +207,18 @@ class LSTMModel:
         # Set parameters, with explicitly provided params taking precedence
         self.input_length = input_length if input_length is not None else params_source["sequence_length"]
         self.feature_dim = feature_dim  # Feature dimension updated to 78
-        # Simplify architecture: default to 2 layers [64, 32] instead of [128,64,32]
-        self.lstm_units = lstm_units if lstm_units is not None else [64, 32]
-        self.dropout_rate = dropout_rate if dropout_rate is not None else params_source["dropout_rate"]
-        # Lower the learning rate from 0.000625 to 0.001 for faster convergence
-        self.learning_rate = learning_rate if learning_rate is not None else 0.001
-        # Increase regularization: l1 from 0.00039 to 0.001, l2 from 0.00006 to 0.0001
-        self.l1_reg = l1_reg if l1_reg is not None else 0.001
-        self.l2_reg = l2_reg if l2_reg is not None else 0.0001
-        self.use_attention = use_attention if use_attention is not None else params_source["use_attention"]
-        self.use_residual = use_residual if use_residual is not None else params_source["use_residual"]
+        from config.model_params import LSTM_OPTIMIZED_PARAMS as latest_params
+        if use_optimized_params and timeframe in latest_params and latest_params[timeframe].get("last_optimized") is not None:
+            optimized_params = latest_params[timeframe]
+            self.input_length = optimized_params.get("sequence_length", self.input_length)
+            self.lstm_units = optimized_params.get("lstm_units", self.lstm_units)
+            self.dropout_rate = optimized_params.get("dropout_rate", self.dropout_rate)
+            self.learning_rate = optimized_params.get("learning_rate", self.learning_rate)
+            self.l1_reg = optimized_params.get("l1_regularization", self.l1_reg)
+            self.l2_reg = optimized_params.get("l2_regularization", self.l2_reg)
+            logger.info(f"Reloaded optimized parameters for {timeframe} from config: sequence_length={self.input_length}, lstm_units={self.lstm_units}")
         self.prediction_horizons = prediction_horizons
         
-        # Then, if use_optimized_params and no optimized params in config, try to load from files as before
         if use_optimized_params and optimized_params is None:
             best_params = load_best_hyperparameters(symbol, timeframe)
             
@@ -211,11 +227,11 @@ class LSTMModel:
                 
                 # Extract LSTM units from optimization results
                 if "lstm_units_first" in best_params and "lstm_layers" in best_params:
-                    lstm_units = [best_params["lstm_units_first"]]
+                    lstm_units_list = [best_params["lstm_units_first"]]
                     for i in range(1, best_params["lstm_layers"]):
-                        lstm_units.append(lstm_units[-1] // 2)
-                    self.lstm_units = lstm_units
-                    logger.info(f"  - LSTM units: {lstm_units}")
+                        lstm_units_list.append(lstm_units_list[-1] // 2)
+                    self.lstm_units = lstm_units_list
+                    logger.info(f"  - LSTM units: {lstm_units_list}")
                 
                 # Map other parameters
                 if "sequence_length" in best_params:
@@ -224,6 +240,19 @@ class LSTMModel:
                 
                 if "dropout_rate" in best_params:
                     self.dropout_rate = best_params["dropout_rate"]
+                    logger.info(f"  - Dropout rate: {self.dropout_rate}")
+                
+                if "learning_rate" in best_params:
+                    self.learning_rate = best_params["learning_rate"]
+                    logger.info(f"  - Learning rate: {self.learning_rate}")
+                
+                if "l1_reg" in best_params:
+                    self.l1_reg = best_params["l1_reg"]
+                    logger.info(f"  - L1 regularization: {self.l1_reg}")
+                
+                if "l2_reg" in best_params:
+                    self.l2_reg = best_params["l2_reg"]
+                    logger.info(f"  - L2 regularization: {self.l2_reg}")
                     logger.info(f"  - Dropout rate: {self.dropout_rate}")
                 
                 if "learning_rate" in best_params:
@@ -251,6 +280,22 @@ class LSTMModel:
         
         # Build the model with the parameters
         self.build_model()
+
+    def get_config(self):
+        config = super(LSTMModel, self).get_config()
+        config.update({
+            "input_length": self.input_length,
+            "feature_dim": self.feature_dim,
+            "lstm_units": self.lstm_units,
+            "dropout_rate": self.dropout_rate,
+            "learning_rate": self.learning_rate,
+            "l1_reg": self.l1_reg,
+            "l2_reg": self.l2_reg,
+            "use_attention": self.use_attention,
+            "use_residual": self.use_residual,
+            "prediction_horizons": self.prediction_horizons
+        })
+        return config
 
     def build_model(self):
         """
@@ -382,7 +427,8 @@ class LSTMModel:
                 'TemporalAttentionBlock': TemporalAttentionBlock,
                 'TimeSeriesAttention': TimeSeriesAttention,
                 'SpatialDropout1D': SpatialDropout1D,
-                'ResidualBlock': ResidualBlock
+                'ResidualBlock': ResidualBlock,
+                'LSTMModel': LSTMModel
             }
         )
         logger.info(f"Modèle principal chargé: {load_path}")
@@ -402,7 +448,7 @@ class EnhancedLSTMModel:
     """
     def __init__(self, 
                  input_length: int = 60,
-                 feature_dim: int = 80,  # Updated default from 30 to 80
+                 feature_dim: int = 66,  # Updated default to match harmonized features (66)
                  lstm_units: List[int] = [128, 96, 64],
                  dropout_rate: float = 0.3,  # Reduced dropout from 0.5 to 0.3
                  learning_rate: float = 0.001,  # Increased learning rate to 0.001
@@ -1136,7 +1182,7 @@ def test_model():
     """Test simple du modèle pour vérifier qu'il compile correctement"""
     model = EnhancedLSTMModel(
         input_length=60,
-        feature_dim=30,
+        feature_dim=66,
         lstm_units=[64, 48, 32],
         prediction_horizons=[
             (12, "3h", True),

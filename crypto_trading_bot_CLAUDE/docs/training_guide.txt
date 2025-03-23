@@ -28,7 +28,7 @@ Options disponibles:
 3. ENTRAÃ�NEMENT DU MODÃˆLE LSTM
 --------------------------------------------------
 Utilisez le script train_model.py pour entraÃ®ner votre modÃ¨le:
-python hyperparameter_search.py --data_path "c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\data" --symbol "BTCUSDT" --timeframe "15m" --max_evals 100 --output "c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\optimization\best_params.json"
+python hyperparameter_search.py --data_path "c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data" --symbol "BTCUSDT" --timeframe "15m" --max_evals 100 --output "c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\optimization\best_params.json"
 Exemple concret:
   python train_model.py --symbol BTCUSDT --timeframe 15m --data_path data/market_data/BTCUSDT_15m.csv --epochs 100 --batch_size 64 --lstm_units "128,64,32"
   python train_model.py --symbol BTCUSDT --timeframe 15m --data_path data/market_data/BTCUSDT_15mfor2y.csv --epochs 100 --batch_size 64 --lstm_units "128,64,32"
@@ -50,7 +50,7 @@ Options principales:
 Utilisez validate_model.py pour Ã©valuer votre modÃ¨le:
 
 Exemple concret:
-  python ai/models/model_validator.py --model_path data/models/lstm_BTCUSDT_15m.h5 --data_path data/processed/BTCUSDT_15m_val.csv --report_path reports/
+  python ai/models/model_validator.py --model_path data/models/lstm_BTCUSDT_15m.h5 --data_path data/processed/BTCUSDT_15m.csv --report_path reports/
 
 Options principales:
   --model_path   : Chemin du modÃ¨le entraÃ®nÃ©

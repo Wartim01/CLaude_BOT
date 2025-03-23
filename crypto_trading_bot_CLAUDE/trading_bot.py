@@ -15,17 +15,21 @@ from datetime import datetime, timedelta
 import threading
 
 from config.config import load_config, CONFIG_PATH
+from config.trading_params import MINIMUM_SCORE_TO_TRADE, MAX_CONCURRENT_TRADES, MAX_TOTAL_POSITIONS
 from exchanges.exchange_client import ExchangeClient
 from data.data_manager import DataManager
 from strategies.strategy_manager import StrategyManager
 from risk.risk_manager import RiskManager
 from ai.models.model_workflow import ModelWorkflow
 from ai.decision_engine import DecisionEngine
-from utils.logger import setup_logger
+from utils.logger import setup_logger, log_threshold_adjustment, log_adjustment_history
 from utils.notification_handler import NotificationHandler
 from utils.performance_metrics import PerformanceTracker
 from ai.trade_analyzer import TradeAnalyzer
 from core.adaptive_risk_manager import AdaptiveRiskManager
+from ai.market_anomaly_detector import MarketAnomalyDetector
+
+logger = setup_logger("trading_bot")
 
 class TradingBot:
     """
@@ -108,9 +112,30 @@ class TradingBot:
             risk_control_mode=self.bot_config.get("risk_mode", "balanced")
         )
 
-        # Instantiate the advanced RiskManager
+        # Instantiate the advanced RiskManager with threshold management capabilities
         initial_balance = self.config.get("account", {}).get("initial_balance", 10000)
-        self.risk_manager = RiskManager(capital=initial_balance)
+        
+        # Load adaptive threshold config
+        from config.adaptive_threshold_config import get_adaptive_threshold_config
+        adaptive_threshold_config = get_adaptive_threshold_config(
+            self.bot_config.get("adaptive_threshold", {})
+        )
+        
+        # Instantiate the centralized risk manager with threshold management
+        self.logger.info("Initializing centralized risk manager with threshold management")
+        self.risk_manager = RiskManager(
+            capital=initial_balance,
+            default_risk_per_trade=self.trading_config.get("risk_per_trade", 0.01),
+            account_risk_limit=self.trading_config.get("max_risk", 0.15),
+            threshold_config=adaptive_threshold_config,  # Pass threshold configuration to risk manager
+            base_threshold=MINIMUM_SCORE_TO_TRADE,
+            notification_handler=self.notification if hasattr(self, 'notification') else None
+        )
+        
+        # Store reference to the current threshold for convenience
+        self.current_threshold = self.risk_manager.get_current_threshold()
+        
+        logger.info(f"Trading bot initialized with centralized threshold management. Base threshold: {MINIMUM_SCORE_TO_TRADE}")
 
         # Provision for AI: charger le modèle IA si use_ai est True
         if self.config.get("use_ai", False):
@@ -120,7 +145,25 @@ class TradingBot:
             self.logger.info("Modèle IA chargé pour trading en direct.")
         else:
             self.ai_model = None
-    
+
+        # Cooldown state tracking
+        self.in_cooldown = False
+        self.cooldown_start_time = None
+        self.cooldown_duration = timedelta(minutes=self.bot_config.get("market_cooldown_period", 60))
+        self.cooldown_reason = None
+        
+        # Initialize market anomaly detector if not already included
+        self.market_anomaly_detector = MarketAnomalyDetector(
+            data_manager=self.data_manager,
+            config=self.bot_config.get("market_anomaly_settings", {})
+        )
+        
+        # Initialize opportunity tracker
+        from data.opportunity_tracker import OpportunityTracker
+        self.opportunity_tracker = OpportunityTracker()
+        
+        logger.info(f"Trading bot initialized with adaptive threshold adjustment. Base threshold: {MINIMUM_SCORE_TO_TRADE}")
+
     def _initialize_components(self) -> None:
         """Initialize all bot components"""
         try:
@@ -322,33 +365,30 @@ class TradingBot:
                 # Update performance metrics
                 self._update_performance_metrics()
 
+                # Check if we need to adjust strategy thresholds
+                self._check_threshold_adjustment()
+
                 # Ajouter une analyse périodique des trades
                 # Supposons que nous analysons les trades toutes les 60 minutes
                 if not hasattr(self, "_last_trade_analysis") or (current_time - self._last_trade_analysis).seconds > 3600:
                     analysis_report = self.trade_analyzer.analyze_recent_trades(days=30)
                     # Log l'analyse ou utilisez-la pour optimiser les paramètres
                     self.logger.info(f"Trade Analysis Report: {analysis_report}")
-                    # Possibilité de mettre à jour les paramètres ou notifier l'utilisateur
                     self._last_trade_analysis = current_time
+                    
+                    # Check if recent performance should trigger cooldown
+                    if analysis_report.get("recent_winrate", 0) < self.bot_config.get("min_winrate_threshold", 40):
+                        self._activate_cooldown(
+                            f"Poor recent performance detected: Win rate {analysis_report.get('recent_winrate')}% below threshold"
+                        )
                 
                 # Sleep until next check
-                time_to_sleep = max(0, check_interval - (datetime.now() - current_time).total_seconds())
-                if time_to_sleep > 0:
-                    # Use wait instead of sleep to allow for early termination
-                    self.should_stop.wait(time_to_sleep)
+                time.sleep(check_interval)
                 
             except Exception as e:
                 self.logger.error(f"Error in main loop: {str(e)}")
                 self.logger.error(traceback.format_exc())
-                
-                # Notify about the error
-                self.notification.send_message(
-                    "â�Œ Trading bot error",
-                    f"Error in main loop: {str(e)}\nBot will continue running."
-                )
-                
-                # Sleep for a while before continuing
-                time.sleep(30)
+                time.sleep(check_interval)  # Sleep even after error to prevent busy loops
     
     def _monitoring_loop(self) -> None:
         """Separate thread for monitoring system health and performance"""
@@ -376,6 +416,34 @@ class TradingBot:
         Check market conditions for all pairs and timeframes
         and execute trades if conditions are met
         """
+        # First check if we're in cooldown mode
+        if self.in_cooldown:
+            current_time = datetime.now()
+            # Check if cooldown period has elapsed
+            if current_time - self.cooldown_start_time > self.cooldown_duration:
+                # Exit cooldown mode
+                self.in_cooldown = False
+                self.cooldown_start_time = None
+                self.logger.info(f"Exiting cooldown mode. Bot is now active again.")
+                self.notification_handler.send_notification(
+                    "Trading Bot Alert",
+                    f"Bot has exited cooldown mode and is now active again. Cooldown reason: {self.cooldown_reason}"
+                )
+                self.cooldown_reason = None
+            else:
+                # Still in cooldown, log and skip trading
+                remaining = (self.cooldown_start_time + self.cooldown_duration - current_time).total_seconds() / 60
+                self.logger.info(f"Bot in cooldown mode. {remaining:.1f} minutes remaining. Skipping trade check.")
+                return
+        
+        # Check for market anomalies first
+        self._check_for_market_anomalies()
+        
+        # If we've entered cooldown after checking anomalies, exit
+        if self.in_cooldown:
+            return
+            
+        # Continue with normal trading logic if not in cooldown
         # NEW: process only pairs specified in active_pairs if provided
         pairs_to_check = self.active_pairs if self.active_pairs else self.trading_pairs
         
@@ -426,6 +494,17 @@ class TradingBot:
         
         account_balance = self.exchange.get_balance().get("free_usdt", 0)
         
+        # Compute entry price and stop loss using current market data
+        market_data = self.data_manager.get_market_data(symbol)
+        if market_data is not None and not market_data.empty:
+            current_price = market_data['close'].iloc[-1]
+        else:
+            current_price = 0
+        entry_price = current_price
+        stop_loss_pct = self.trading_config.get("stop_loss_percent", 3.0) / 100.0
+        # For BUY trades, stop loss is below the entry price
+        stop_loss = current_price * (1 - stop_loss_pct)
+        
         # Evaluate trade risk using advanced RiskManager
         risk_evaluation = self.risk_manager.evaluate_trade_risk(
             symbol=symbol,
@@ -433,7 +512,7 @@ class TradingBot:
             entry_price=entry_price,
             stop_loss=stop_loss,
             account_balance=account_balance,
-            market_data=self.data_manager.get_market_data(symbol)  # Suppose data_manager provides this
+            market_data=market_data  # Suppose data_manager provides this
         )
         
         if not risk_evaluation.get("approved", False):
@@ -465,6 +544,61 @@ class TradingBot:
                 opportunity["score"] += 5
             elif ai_prediction.get("signal") == "SELL":
                 opportunity["score"] -= 5
+    
+    def _check_for_market_anomalies(self) -> None:
+        """Check for extreme market events that should trigger cooldown"""
+        for symbol in self.trading_pairs:
+            # Get recent market data
+            market_data = self.data_manager.get_recent_data(symbol, self.primary_timeframe, limit=20)
+            if market_data is None or len(market_data) < 10:
+                continue
+                
+            # Check for extreme price movements (>X% in Y candles)
+            # This is a simple detection - use market_anomaly_detector for more complex detection
+            try:
+                # Calculate recent price change percentage
+                close_prices = market_data['close'].values
+                recent_change_pct = (close_prices[-1] / close_prices[-10] - 1) * 100
+                
+                # Define thresholds for extreme movements
+                extreme_threshold = self.bot_config.get("extreme_movement_threshold", 5.0)  # 5% default
+                
+                if abs(recent_change_pct) > extreme_threshold:
+                    direction = "up" if recent_change_pct > 0 else "down"
+                    self._activate_cooldown(
+                        f"Extreme price movement detected: {symbol} moved {recent_change_pct:.2f}% {direction} in short period"
+                    )
+                    return
+                
+                # Use the dedicated anomaly detector for more sophisticated detection
+                anomaly = self.market_anomaly_detector.detect_anomalies(symbol, self.primary_timeframe)
+                if anomaly["is_anomaly"]:
+                    self._activate_cooldown(f"Market anomaly detected: {anomaly['description']}")
+                    return
+                    
+            except Exception as e:
+                self.logger.error(f"Error checking market anomalies for {symbol}: {str(e)}")
+    
+    def _activate_cooldown(self, reason: str) -> None:
+        """Activate the cooldown mode"""
+        if not self.in_cooldown:
+            self.in_cooldown = True
+            self.cooldown_start_time = datetime.now()
+            self.cooldown_reason = reason
+            
+            # Log the event
+            cooldown_minutes = self.cooldown_duration.total_seconds() / 60
+            self.logger.warning(
+                f"ACTIVATING COOLDOWN MODE for {cooldown_minutes} minutes. Reason: {reason}"
+            )
+            
+            # Send notification
+            self.notification_handler.send_notification(
+                "Trading Bot Alert - COOLDOWN ACTIVATED",
+                f"Bot has entered cooldown mode for {cooldown_minutes} minutes.\n"
+                f"Reason: {reason}\n"
+                f"No new trades will be opened until {datetime.now() + self.cooldown_duration}"
+            )
     
     def _should_check_now(self, pair: str, timeframe: str) -> bool:
         """
@@ -512,9 +646,70 @@ class TradingBot:
         else:
             return 3600  # Default to 1h if unknown
     
+    def _count_open_positions_for_symbol(self, symbol: str) -> int:
+        """
+        Count the number of currently open positions for a specific symbol
+        
+        Args:
+            symbol: Trading pair symbol to check
+            
+        Returns:
+            Number of open positions for the given symbol
+        """
+        try:
+            # Get all open positions from the exchange
+            all_positions = self.exchange.get_open_positions()
+            
+            # Filter positions for the specific symbol
+            symbol_positions = [p for p in all_positions if p.get("symbol") == symbol]
+            
+            return len(symbol_positions)
+        except Exception as e:
+            self.logger.error(f"Error counting open positions for {symbol}: {str(e)}")
+            # Return 0 as fallback to avoid blocking trades unnecessarily
+            return 0
+
+    def _check_position_limits(self, symbol: str) -> Dict:
+        """
+        Check if opening a new position would exceed configured limits
+        
+        Args:
+            symbol: Trading pair symbol to check
+            
+        Returns:
+            Dict with 'allowed' flag and 'reason' if not allowed
+        """
+        # Check total open positions limit
+        all_positions = self.exchange.get_open_positions()
+        total_positions = len(all_positions)
+        
+        if total_positions >= MAX_TOTAL_POSITIONS:
+            reason = f"Maximum total positions limit reached ({total_positions}/{MAX_TOTAL_POSITIONS})"
+            self.logger.info(f"Trade blocked: {reason}")
+            return {
+                "allowed": False,
+                "reason": reason
+            }
+        
+        # Check symbol-specific position limit
+        symbol_positions = self._count_open_positions_for_symbol(symbol)
+        
+        if symbol_positions >= MAX_CONCURRENT_TRADES:
+            reason = f"Maximum concurrent trades for {symbol} reached ({symbol_positions}/{MAX_CONCURRENT_TRADES})"
+            self.logger.info(f"Trade blocked: {reason}")
+            return {
+                "allowed": False,
+                "reason": reason
+            }
+        
+        return {
+            "allowed": True
+        }
+
     def _process_trading_opportunity(self, pair: str, timeframe: str, data: pd.DataFrame) -> None:
         """
         Process a potential trading opportunity for a specific pair and timeframe
+        using the AI-enhanced DecisionEngine
         
         Args:
             pair: Trading pair (e.g., 'BTCUSDT')
@@ -527,56 +722,166 @@ class TradingBot:
         account_info = self._get_account_info()
         balance = account_info.get("balance", 0)
         
+        # Create a market data dictionary with all relevant info
+        market_data = {pair: data}
+        
         # 1. Get AI model predictions if enabled
         prediction = None
         if self.model_workflow:
             prediction = self._get_model_prediction(pair, data)
+            self.logger.debug(f"AI model prediction for {pair}: {prediction.get('predictions', 'N/A')}")
         
-        # 2. Get strategy signals
+        # 2. Get strategy signals using the strategy manager
         strategy_signals = self._get_strategy_signals(pair, timeframe, data)
         
-        # 3. Get market risk assessment
-        market_data = {pair: data}
-        market_risk = self.risk_manager.market_risk_analyzer.calculate_market_risk(market_data)
-        
-        # 4. Use decision engine to evaluate the opportunity
+        # 3. Use the centralized DecisionEngine to evaluate all signals and make a decision
         if self.decision_engine is not None:
-            decision = self.decision_engine.decide(pair, data)
+            # Pass all available information to the decision engine
+            decision_result = self.decision_engine.evaluate_trading_opportunity(
+                opportunity={
+                    "symbol": pair,
+                    "timeframe": timeframe,
+                    "strategy_signals": strategy_signals,
+                    "ai_prediction": prediction
+                },
+                market_data=data,
+                symbol=pair
+            )
+            
+            self.logger.info(f"DecisionEngine evaluation for {pair}: {decision_result.get('direction', 'NEUTRAL')} "
+                            f"(score: {decision_result.get('composite_score', 0):.2f})")
+            
+            # Check if the decision meets the trading threshold from risk manager
+            current_threshold = self.risk_manager.get_current_threshold()
+            
+            # Decision should contain direction and should_trade flag
+            direction = decision_result.get("direction", "NEUTRAL")
+            score = decision_result.get("composite_score", 0)
+            should_trade = score >= current_threshold and direction != "NEUTRAL"
+            
+            # Track the opportunity for analysis regardless of execution
+            self.opportunity_tracker.record_opportunity(
+                decision_result,
+                executed=should_trade,
+                current_threshold=current_threshold
+            )
+            
+            # Only proceed with trading if threshold is met
+            if should_trade:
+                self.logger.info(f"Trading signal confirmed for {pair}. Direction: {direction}, Score: {score:.2f}")
+                
+                # Check position limits before proceeding
+                position_limits = self._check_position_limits(pair)
+                if not position_limits["allowed"]:
+                    # Record the opportunity but mark it as not executed due to position limits
+                    self.opportunity_tracker.record_opportunity(
+                        decision_result,
+                        executed=False,
+                        current_threshold=current_threshold,
+                        rejection_reason=position_limits["reason"]
+                    )
+                    
+                    # Notify about the rejected opportunity
+                    if hasattr(self, 'notification') and self.notification:
+                        self.notification.send_message(
+                            "Trade Opportunity Blocked",
+                            f"Trade on {pair} ({direction}) blocked: {position_limits['reason']}"
+                        )
+                    return
+                
+                # Get current market price
+                current_price = data['close'].iloc[-1]
+                
+                # Calculate stop loss based on direction and risk parameters
+                if direction == "BUY":
+                    # For long positions, stop loss is below entry
+                    stop_loss_pct = self.trading_config.get("stop_loss_percent", 3.0) / 100.0
+                    stop_loss = current_price * (1 - stop_loss_pct)
+                else:  # SELL
+                    # For short positions, stop loss is above entry
+                    stop_loss_pct = self.trading_config.get("stop_loss_percent", 3.0) / 100.0
+                    stop_loss = current_price * (1 + stop_loss_pct)
+                
+                # Evaluate trade risk using the risk manager
+                risk_evaluation = self.risk_manager.evaluate_trade_risk(
+                    symbol=pair,
+                    direction=direction,
+                    entry_price=current_price,
+                    stop_loss=stop_loss,
+                    account_balance=balance,
+                    market_data={pair: data}
+                )
+                
+                # Check if the trade is approved based on risk parameters
+                if risk_evaluation.get("approved", False):
+                    # Get the position size from risk evaluation
+                    position_sizing = risk_evaluation.get("position_sizing", {})
+                    position_size = position_sizing.get("position_size", 0)
+                    risk_percentage = position_sizing.get("risk_percentage", 0) / 100.0  # Convert to decimal
+                    
+                    self.logger.info(f"Trade approved by risk manager. Position size: {position_size:.4f}")
+                    
+                    # Execute the trade via OrderManager
+                    trade_result = self._execute_trade(
+                        pair=pair,
+                        direction=direction,
+                        entry_price=current_price,
+                        stop_loss=stop_loss,
+                        position_size=position_size,
+                        risk_percentage=risk_percentage,
+                        timeframe=timeframe
+                    )
+                    
+                    # Log the trade decision and outcome
+                    self.logger.info(f"Trade execution result: {trade_result}")
+                    
+                    # If the decision engine has a method to record trade execution, call it
+                    if hasattr(self.decision_engine, "record_trade_execution"):
+                        self.decision_engine.record_trade_execution(
+                            decision_result.get("id", "unknown"),
+                            trade_result
+                        )
+                else:
+                    reason = risk_evaluation.get("reason", "Unknown risk constraint violation")
+                    self.logger.info(f"Trade rejected by risk manager: {reason}")
+            else:
+                self.logger.debug(
+                    f"No trade signal for {pair}. Direction: {direction}, "
+                    f"Score: {score:.2f}, Threshold: {current_threshold}"
+                )
         else:
-            decision = "NEUTRAL"  # Stub decision in absence of an integrated engine
+            self.logger.warning("Decision engine not available, skipping opportunity evaluation")
+
+    def _create_opportunity_from_decision(self, decision: str, pair: str, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        Create an opportunity object from decision engine output
         
-        self.logger.info(f"Opportunity processed, DecisionEngine returned: {decision}")
+        Args:
+            decision: Decision string (BUY, SELL, NEUTRAL)
+            pair: Trading pair symbol
+            data: Market data
+            
+        Returns:
+            Opportunity dictionary or None
+        """
+        if decision == "NEUTRAL" or not self.strategy_manager:
+            return None
         
-        # NEW: adjust risk if AdaptiveRiskManager is available
-        if self.adaptive_risk_manager is not None:
-            risk_setting = self.adaptive_risk_manager.get_current_risk()
-            self.logger.info(f"Adaptive risk adjusted: {risk_setting}")
-        else:
-            risk_setting = None
+        # Get signals from strategy manager
+        signals = self.strategy_manager.run_strategies(data, pair, self.primary_timeframe)
         
-        # Vérifier via le gestionnaire de risque adaptatif si l'ouverture d'une position est autorisée
-        risk_decision = self.adaptive_risk_manager.can_open_new_position(self.position_tracker)
-        if not risk_decision.get("can_open", False):
-            self.logger.info(f"Pas d'ouverture de position: {risk_decision.get('reason')}")
-            return
+        if not signals or signals["signal"] == "NEUTRAL":
+            return None
         
-        # Utiliser AdaptiveRiskManager pour calculer la taille de position
-        position_size = self.adaptive_risk_manager.calculate_position_size(
-            pair, decision, lstm_prediction=prediction.get("predictions") if prediction else None
-        )
-        
-        self.logger.info(f"Position size calculée: {position_size}")
-        
-        # ...existing processing logic based on decision...
-        # For example:
-        if decision == "BUY":
-            # Execute buy trade logic...
-            pass
-        elif decision == "SELL":
-            # Execute sell trade logic...
-            pass
-        else:
-            self.logger.debug("No actionable signal received (NEUTRAL)")
+        return {
+            "symbol": pair,
+            "score": signals["score"],
+            "direction": signals["signal"],
+            "type": signals.get("strategy", "hybrid"),
+            "timestamp": datetime.now().isoformat(),
+            "indicators": signals.get("details", {}).get("indicators", {}),
+            "factors": signals.get("details", {}).get("factors", {})
+        }
     
     def _get_model_prediction(self, pair: str, data: pd.DataFrame) -> Dict:
         """Get prediction from AI model"""
@@ -614,7 +919,7 @@ class TradingBot:
                          stop_loss: float, position_size: float, risk_percentage: float,
                          timeframe: str) -> Dict:
         """
-        Execute a trade
+        Execute a trade using OrderManager
         
         Args:
             pair: Trading pair (e.g., 'BTCUSDT')
@@ -630,17 +935,52 @@ class TradingBot:
         """
         self.logger.info(f"Executing {direction} trade for {pair} with position size {position_size}")
         
-        # Au lieu d'appeler directement self.exchange.create_order(),
-        # déléguez la création d'ordre à OrderManager.
+        # Calculate take profit based on risk:reward ratio
+        risk_reward_ratio = self.trading_config.get("risk_reward_ratio", 1.5)
+        price_movement_to_stop = abs(entry_price - stop_loss)
+        
+        if direction == "BUY":
+            take_profit_price = entry_price + (price_movement_to_stop * risk_reward_ratio)
+        else:  # SELL
+            take_profit_price = entry_price - (price_movement_to_stop * risk_reward_ratio)
+        
+        # Use OrderManager to place the entry order with stop loss and take profit
         order_result = self.order_manager.place_entry_order(
             symbol=pair,
             side=direction,
             quantity=position_size,
-            price=None,  # ou transmettre un prix si nécessaire
+            price=None,  # Use market order for immediate execution
             stop_loss_price=stop_loss,
-            take_profit_price=None  # laisser OrderManager calculer si None
+            take_profit_price=take_profit_price
         )
-        # ...existing code pour traiter order_result...
+        
+        # If trade is successful, record it and send notification
+        if order_result.get("success", False):
+            trade_id = order_result.get("position_id", "unknown")
+            
+            # Send notification about the new trade
+            self._send_trade_notification(
+                trade_id=trade_id,
+                pair=pair,
+                direction=direction,
+                entry_price=entry_price,
+                stop_loss=stop_loss,
+                position_size=position_size,
+                timeframe=timeframe
+            )
+            
+            # Register the trade with the risk manager
+            self.risk_manager.register_new_trade(
+                trade_id=trade_id,
+                symbol=pair,
+                direction=direction,
+                entry_price=entry_price,
+                stop_loss=stop_loss,
+                position_size=position_size,
+                risk_percentage=risk_percentage,
+                account_balance=self._get_account_info().get("balance", 0)
+            )
+        
         return order_result
     
     def _set_stop_loss(self, pair: str, direction: str, stop_price: float, amount: float) -> Dict:
@@ -714,16 +1054,13 @@ class TradingBot:
         return health_metrics
     
     def _attempt_reconnect(self) -> bool:
-        """Attempt to reconnect to the exchange"""
         try:
             self.logger.info("Attempting to reconnect to exchange")
             connection = self.exchange.reconnect()
-            
             if connection:
-                self.logger.info("Successfully reconnected to exchange")
                 return True
             else:
-                self.logger.error("Failed to reconnect to exchange")
+                self.logger.error("Reconnect failed")
                 return False
         except Exception as e:
             self.logger.error(f"Error reconnecting to exchange: {str(e)}")
@@ -828,6 +1165,60 @@ class TradingBot:
             "performance": self.performance_tracker.get_summary(),
             "timestamp": datetime.now().isoformat()
         }
+
+    def _check_threshold_adjustment(self) -> None:
+        """
+        Delegate threshold adjustment check to the centralized risk manager
+        """
+        # Check if risk manager has threshold adjustment capability
+        if hasattr(self.risk_manager, 'check_threshold_adjustment'):
+            # Get opportunity statistics from all strategies
+            opportunity_stats = []
+            
+            # Collect stats from technical_bounce_strategy if available
+            if hasattr(self.strategy_manager, "technical_bounce_strategy"):
+                strategy = self.strategy_manager.technical_bounce_strategy
+                if hasattr(strategy, "get_opportunities_stats"):
+                    stats = strategy.get_opportunities_stats()
+                    opportunity_stats.append(stats)
+            
+            # Collect stats from other strategies
+            # ...
+            
+            # Delegate the analysis and adjustment to the risk manager
+            adjustment = self.risk_manager.check_threshold_adjustment(
+                opportunity_stats=opportunity_stats,
+                recent_trades=self.position_tracker.get_closed_positions(hours=24) if hasattr(self, 'position_tracker') else []
+            )
+            
+            # Update local reference if an adjustment was made
+            if adjustment and adjustment.get("adjusted", False):
+                self.current_threshold = adjustment.get("new_threshold")
+                self.logger.info(f"Threshold adjusted by risk manager to {self.current_threshold}")
+
+    def run(self):
+        """
+        Execute the trading bot logic
+        """
+        # ...existing code...
+        
+        while self.running:
+            try:
+                # ...existing code...
+                
+                # Periodically check for opportunity threshold adjustment via risk manager
+                current_time = datetime.now()
+                
+                # Let the risk manager handle threshold adjustments
+                self._check_threshold_adjustment()
+                
+                # ...existing code...
+                
+            except Exception as e:
+                self.logger.error(f"Error in main loop: {str(e)}")
+                time.sleep(5)  # Short delay before retrying
+                
+        # ...existing code...
 
 if __name__ == "__main__":
     # Create and start the trading bot

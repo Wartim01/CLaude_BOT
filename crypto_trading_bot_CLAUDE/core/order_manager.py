@@ -63,7 +63,8 @@ class OrderManager:
             return False
     
     def place_entry_order(self, symbol: str, side: str, quantity: float, price: Optional[float] = None,
-                       stop_loss_price: Optional[float] = None, take_profit_price: Optional[float] = None) -> Dict:
+                       stop_loss_price: Optional[float] = None, take_profit_price: Optional[float] = None,
+                       trailing_activation: float = 0.05, trailing_step: float = 0.02) -> Dict:
         """
         Place un ordre d'entrée avec stop-loss et take-profit
         
@@ -74,6 +75,8 @@ class OrderManager:
             price: Prix d'entrée (None pour un ordre au marché)
             stop_loss_price: Prix du stop-loss (calculé automatiquement si None)
             take_profit_price: Prix du take-profit (calculé automatiquement si None)
+            trailing_activation: Seuil d'activation du stop suiveur
+            trailing_step: Taille du pas du stop suiveur
             
         Returns:
             Résultat de l'opération
@@ -177,6 +180,8 @@ class OrderManager:
                     "take_profit_order_id": take_profit_order.get("orderId"),
                     "entry_time": datetime.now(),
                     "trailing_stop_activated": False,
+                    "trailing_activation_threshold": trailing_activation,
+                    "trailing_step_size": trailing_step,
                     "highest_price": entry_price if side == "BUY" else float('inf'),
                     "lowest_price": entry_price if side == "SELL" else float('-inf')
                 }
@@ -217,47 +222,121 @@ class OrderManager:
                 logger.warning(f"Position {position_id} not found for trailing stop update")
                 return False
             
-            # Validate that trailing stop is active
-            if not position.get("trailing_stop_active", False):
-                return True  # Not an error - position doesn't use trailing stop
-                
             # Get current stop parameters
             current_stop_price = position.get("stop_loss_price")
             if not current_stop_price:
                 logger.warning(f"Position {position_id} has no stop loss price set")
                 return False
-                
-            trailing_callback = position.get("trailing_callback", 0.01)  # 1% default callback
             
-            # Calculate new stop price based on current price
-            if position["side"] == "BUY":  # Long position
-                # Only move stop up for long positions
-                price_diff = current_price * (1 - trailing_callback)
-                if price_diff > current_stop_price:
-                    new_stop_price = price_diff
-                    logger.info(f"Updating trailing stop for position {position_id} from {current_stop_price} to {new_stop_price}")
+            # Get position-specific trailing settings
+            activation_threshold = position.get("trailing_activation_threshold", 0.05)  # Default 5%
+            step_size = position.get("trailing_step_size", 0.02)  # Default 2%
+            entry_price = position.get("entry_price", current_price)
+            side = position.get("side", "BUY")
+            
+            # Check if trailing stop is already activated
+            is_activated = position.get("trailing_stop_activated", False)
+            
+            # For long positions
+            if side == "BUY":
+                # First check if trailing stop should be activated
+                if not is_activated:
+                    # Activate if price has moved up by the activation threshold
+                    profit_pct = (current_price - entry_price) / entry_price
+                    if profit_pct >= activation_threshold:
+                        # Calculate initial trailing stop level - lock in portion of profit
+                        new_stop_price = entry_price + (current_price - entry_price) * 0.5  # Lock in 50% of current profit
+                        
+                        # Make sure the new stop is higher than current stop
+                        if new_stop_price > current_stop_price:
+                            logger.info(f"Activating trailing stop for position {position_id} at {new_stop_price}")
+                            success = self._update_stop_loss_order(position_id, new_stop_price)
+                            if success:
+                                # Update position data
+                                self.position_tracker.update_position(position_id, {
+                                    "stop_loss_price": new_stop_price,
+                                    "trailing_stop_activated": True,
+                                    "highest_price": current_price
+                                })
+                                return True
+                        return False
+                else:
+                    # Trailing stop already activated - update highest price seen
+                    highest_price = position.get("highest_price", current_price)
                     
-                    # Update stop loss order
-                    success = self._update_stop_loss_order(position_id, new_stop_price)
-                    if success:
-                        # Update position data
-                        self.position_tracker.update_position(position_id, {"stop_loss_price": new_stop_price})
-                    return success
+                    # Only update if current price is higher than highest price seen
+                    if current_price > highest_price:
+                        # Update highest price
+                        highest_price = current_price
+                        
+                        # Calculate new stop price based on step_size
+                        price_diff = current_price * (1 - step_size)
+                        
+                        # Only move stop up if new stop is higher than current stop
+                        if price_diff > current_stop_price:
+                            new_stop_price = price_diff
+                            logger.info(f"Updating trailing stop for position {position_id} from {current_stop_price} to {new_stop_price}")
+                            
+                            # Update stop loss order
+                            success = self._update_stop_loss_order(position_id, new_stop_price)
+                            if success:
+                                # Update position data
+                                self.position_tracker.update_position(position_id, {
+                                    "stop_loss_price": new_stop_price,
+                                    "highest_price": highest_price
+                                })
+                            return success
+                
+            # For short positions
+            else:  # side == "SELL"
+                # First check if trailing stop should be activated
+                if not is_activated:
+                    # Activate if price has moved down by the activation threshold
+                    profit_pct = (entry_price - current_price) / entry_price
+                    if profit_pct >= activation_threshold:
+                        # Calculate initial trailing stop level - lock in portion of profit
+                        new_stop_price = entry_price - (entry_price - current_price) * 0.5  # Lock in 50% of current profit
+                        
+                        # Make sure the new stop is lower than current stop
+                        if new_stop_price < current_stop_price:
+                            logger.info(f"Activating trailing stop for position {position_id} at {new_stop_price}")
+                            success = self._update_stop_loss_order(position_id, new_stop_price)
+                            if success:
+                                # Update position data
+                                self.position_tracker.update_position(position_id, {
+                                    "stop_loss_price": new_stop_price,
+                                    "trailing_stop_activated": True,
+                                    "lowest_price": current_price
+                                })
+                                return True
+                        return False
+                else:
+                    # Trailing stop already activated - update lowest price seen
+                    lowest_price = position.get("lowest_price", current_price)
                     
-            else:  # Short position
-                # Only move stop down for short positions
-                price_diff = current_price * (1 + trailing_callback)
-                if price_diff < current_stop_price:
-                    new_stop_price = price_diff
-                    logger.info(f"Updating trailing stop for position {position_id} from {current_stop_price} to {new_stop_price}")
-                    
-                    # Update stop loss order
-                    success = self._update_stop_loss_order(position_id, new_stop_price)
-                    if success:
-                        # Update position data
-                        self.position_tracker.update_position(position_id, {"stop_loss_price": new_stop_price})
-                    return success
-                    
+                    # Only update if current price is lower than lowest price seen
+                    if current_price < lowest_price:
+                        # Update lowest price
+                        lowest_price = current_price
+                        
+                        # Calculate new stop price based on step_size
+                        price_diff = current_price * (1 + step_size)
+                        
+                        # Only move stop down if new stop is lower than current stop
+                        if price_diff < current_stop_price:
+                            new_stop_price = price_diff
+                            logger.info(f"Updating trailing stop for position {position_id} from {current_stop_price} to {new_stop_price}")
+                            
+                            # Update stop loss order
+                            success = self._update_stop_loss_order(position_id, new_stop_price)
+                            if success:
+                                # Update position data
+                                self.position_tracker.update_position(position_id, {
+                                    "stop_loss_price": new_stop_price,
+                                    "lowest_price": lowest_price
+                                })
+                            return success
+            
             # No update needed
             return True
             
@@ -293,9 +372,9 @@ class OrderManager:
             symbol = position.get("symbol")
                 
             # Cancel existing stop loss
-            cancel_result = self.client.cancel_order(
+            cancel_result = self.api.cancel_order(
                 symbol=symbol,
-                orderId=stop_order_id
+                order_id=stop_order_id
             )
             
             if not cancel_result:
@@ -306,13 +385,13 @@ class OrderManager:
             quantity = position.get("quantity")
             side = "SELL" if position.get("side") == "BUY" else "BUY"
             
-            new_order = self.client.create_order(
+            new_order = self.api.create_order(
                 symbol=symbol,
                 side=side,
-                type="STOP_LOSS",
-                timeInForce="GTC",
+                order_type="STOP_LOSS",
+                time_in_force="GTC",
                 quantity=quantity,
-                stopPrice=new_price,
+                stop_price=new_price,
                 price=new_price  # For stop limit orders
             )
             
@@ -394,26 +473,30 @@ class OrderManager:
             quantity: Amount to trade
             price: Price for limit orders (ignored in market orders)
             params: Additional parameters
-        
+            
         Returns:
             Order response dictionary.
         """
         params = params or {}
         attempts = 3
+        
         for attempt in range(1, attempts + 1):
             try:
                 if order_type.lower() == "market":
                     response = self.api.create_order(symbol, order_type, side, quantity, params=params)
                 else:
                     response = self.api.create_order(symbol, order_type, side, quantity, price, params=params)
+                    
+                logger.info(f"Order placed: {response}")
+                
                 order_id = response.get("id")
                 if order_id:
                     self.pending_orders[order_id] = response
-                logger.info(f"Order placed: {response}")
                 return response
             except Exception as e:
                 logger.error(f"Error placing order (attempt {attempt}): {e}")
                 time.sleep(1)
+                
         return {"error": "Order placement failed after retries"}
 
     def cancel_order(self, symbol: str, order_id: str) -> dict:
@@ -422,9 +505,11 @@ class OrderManager:
         """
         try:
             response = self.api.cancel_order(symbol, order_id)
+            logger.info(f"Order cancelled: {order_id}")
+            
             if order_id in self.pending_orders:
                 del self.pending_orders[order_id]
-            logger.info(f"Order cancelled: {order_id}")
+                
             return response
         except Exception as e:
             logger.error(f"Error cancelling order {order_id}: {e}")
@@ -451,4 +536,3 @@ class OrderManager:
             if status.get("status") in ["canceled", "rejected"]:
                 logger.info(f"Pending order {order_id} failed, removing from queue.")
                 del self.pending_orders[order_id]
-            # ...existing code for additional retry logic if needed...

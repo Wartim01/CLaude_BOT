@@ -33,52 +33,20 @@ logger.setLevel(logging.INFO)
 
 def update_model_params_file(best_params, timeframe, f1_score):
     """
-    Updates the parameters in config.model_params.py with the best parameters
-    found during hyperparameter optimization
-    
-    Args:
-        best_params: Dictionary containing the best hyperparameters
-        timeframe: Current timeframe (e.g. 15m, 1h)
-        f1_score: F1 score achieved by the best parameters
+    Updates the parameters in config.model_params.py with the best parameters.
     """
-    # Path to the model_params.py file
     params_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config', 'model_params.py')
-
-    
     if not os.path.exists(params_file):
         logger.error(f"Configuration file not found: {params_file}")
         return False
-    
     try:
-        # Read the current file content
         with open(params_file, 'r') as file:
             content = file.read()
-        
-        # Update both LSTM_DEFAULT_PARAMS and LSTM_OPTIMIZED_PARAMS
-        
-        # 1. First update the default params as before
-        new_params = {
-            "lstm_units": [best_params.get("lstm_units_first", 128)] + 
-                         [best_params.get("lstm_units_first", 128) // 2] * (best_params.get("lstm_layers", 2) - 1),
-            "dropout_rate": best_params.get("dropout_rate", 0.3),
-            "learning_rate": best_params.get("learning_rate", 0.001),
-            "batch_size": best_params.get("batch_size", 64),
-            "sequence_length": best_params.get("sequence_length", 60),
-            "l1_regularization": best_params.get("l1_reg", 0.0001),
-            "l2_regularization": best_params.get("l2_reg", 0.0001)
-        }
-        
-        # 2. Now update the optimized params for this specific timeframe
+        # Update optimized params for the current timeframe
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
-        # Convert the lstm_units to a proper string representation for the config file
-        lstm_units_str = str([best_params.get("lstm_units_first", 128)] + 
-                            [best_params.get("lstm_units_first", 128) // 2] * (best_params.get("lstm_layers", 2) - 1))
-        
-        # Create pattern to find and replace the relevant timeframe section inside LSTM_OPTIMIZED_PARAMS
-        pattern = rf'"{timeframe}":\s*\{{[^}}]*\}}'
-        
-        # Create the replacement text
+        lstm_units_str = str([best_params.get("lstm_units_first", 128)] +
+                             [best_params.get("lstm_units_first", 128)//2]*(best_params.get("lstm_layers", 2)-1))
+        pattern = rf'"{timeframe}":\s*\{{[\s\S]*?\}}'
         replacement = f'"{timeframe}": {{\n'
         replacement += f'        "lstm_units": {lstm_units_str},\n'
         replacement += f'        "dropout_rate": {best_params.get("dropout_rate", 0.3)},\n'
@@ -92,40 +60,37 @@ def update_model_params_file(best_params, timeframe, f1_score):
         replacement += f'        "last_optimized": "{timestamp}",\n'
         replacement += f'        "f1_score": {f1_score}\n'
         replacement += f'    }}'
-        
-        # Update the LSTM_OPTIMIZED_PARAMS section
-        updated_content = re.sub(pattern, replacement, content)
-        
-        # Also update the "Last optimization" comment
+        updated_content = re.sub(pattern, replacement, content, flags=re.DOTALL)
+        logger.debug(f"Updated config content:\n{updated_content}")
         updated_content = re.sub(r'# Last optimization: .*', f'# Last optimization: {timestamp} (timeframe: {timeframe}, F1: {f1_score:.4f})', updated_content)
-        
-        # Also update the default params as before
-        default_pattern = r'LSTM_DEFAULT_PARAMS\s*=\s*\{[^}]*\}'
+        # Update LSTM_DEFAULT_PARAMS section similarly
+        default_pattern = r'LSTM_DEFAULT_PARAMS\s*=\s*\{[\s\S]*?\}'
         new_params_str = "LSTM_DEFAULT_PARAMS = {\n"
+        new_params = {
+            "lstm_units": [best_params.get("lstm_units_first", 128)] +
+                          [best_params.get("lstm_units_first", 128)//2]*(best_params.get("lstm_layers", 2)-1),
+            "dropout_rate": best_params.get("dropout_rate", 0.3),
+            "learning_rate": best_params.get("learning_rate", 0.001),
+            "batch_size": best_params.get("batch_size", 64),
+            "sequence_length": best_params.get("sequence_length", 60),
+            "l1_regularization": best_params.get("l1_reg", 0.0001),
+            "l2_regularization": best_params.get("l2_reg", 0.0001)
+        }
         for key, value in new_params.items():
-            if isinstance(value, str):
-                new_params_str += f'    "{key}": "{value}",\n'
-            else:
-                new_params_str += f'    "{key}": {value},\n'
-        new_params_str += "    # Other parameters preserved\n"
+            new_params_str += f'    "{key}": {value},\n'
         new_params_str += '    "use_attention": True,\n'
         new_params_str += '    "use_residual": True,\n'
         new_params_str += '    "epochs": 100,\n'
         new_params_str += '    "early_stopping_patience": 15,\n'
         new_params_str += '    "reduce_lr_patience": 7\n'
         new_params_str += "}"
-        
         updated_content = re.sub(default_pattern, new_params_str, updated_content, flags=re.DOTALL)
-        
-        # Write the updated content back to the file
         with open(params_file, 'w') as file:
             file.write(updated_content)
-        
         logger.info(f"Parameters in {params_file} updated successfully with F1 score: {f1_score:.4f}")
         return True
-        
     except Exception as e:
-        logger.error(f"Error updating model parameters file: {str(e)}")
+        logger.error(f"Error updating model parameters file: {e}")
         return False
 
 class BestModelCallback:
@@ -138,6 +103,7 @@ class BestModelCallback:
         self.timeframe = timeframe
     
     def __call__(self, study, trial):
+        logger.debug(f"Callback __call__ invoked for trial {trial.number}")
         # Check if we found a new best trial
         if study.best_value > self.best_value:
             self.best_value = study.best_value
@@ -211,16 +177,19 @@ class LSTMHyperparameterOptimizer:
         # Utilise l'ensemble de validation fixe initialisé dans __init__
         
         try:
-            # Configuration des paramètres
+            # Configuration des paramètres avec les nouvelles plages recommandées
             lstm_units_first = trial.suggest_int("lstm_units_first", 64, 256)
             lstm_layers = trial.suggest_int("lstm_layers", 1, 3)
-            dropout_rate = trial.suggest_float("dropout_rate", 0.1, 0.5)
-            learning_rate = trial.suggest_float("learning_rate", 1e-5, 1e-2, log=True)
-            
-            # Construction des unités LSTM en fonction du nombre de couches
             lstm_units = [lstm_units_first]
             for i in range(1, lstm_layers):
                 lstm_units.append(lstm_units[-1] // 2)
+            
+            dropout_rate = trial.suggest_float("dropout_rate", 0.2, 0.5)  # Recommandé: [0.2, 0.5]
+            learning_rate = trial.suggest_float("learning_rate", 1e-5, 1e-3, log=True)
+            
+            # Taille du batch parmi des valeurs fixes
+            batch_size = trial.suggest_categorical("batch_size", [16, 32, 64, 128])
+            sequence_length = trial.suggest_categorical("sequence_length", [90])
             
             # Process a small batch of data to determine the actual feature dimension
             X_sample, _ = self.feature_engineering.create_multi_horizon_data(
@@ -234,10 +203,12 @@ class LSTMHyperparameterOptimizer:
             actual_feature_dim = X_sample.shape[2]
             logger.info(f"Detected actual feature dimension: {actual_feature_dim}")
             
-            # Paramètres du modèle with dynamic feature dimension
+            # Force the sequence length to 60 for consistency
+            seq_length = 60
+
             model_params = {
-                "input_length": trial.suggest_categorical("sequence_length", [30, 60, 90]),
-                "feature_dim": actual_feature_dim,  # Use actual dimension
+                "input_length": seq_length,
+                "feature_dim": actual_feature_dim,
                 "lstm_units": lstm_units,
                 "dropout_rate": dropout_rate,
                 "learning_rate": learning_rate,
@@ -275,6 +246,9 @@ class LSTMHyperparameterOptimizer:
             y_train = y_lists[0]  # Direction pour le premier horizon
             y_val = y_val_lists[0]  # Direction pour le premier horizon
             
+            # Vérification immédiate de la cohérence de la dimension temporelle
+            assert X_train.shape[1] == sequence_length, f"Mismatch: séquence attendue {sequence_length} vs données {X_train.shape[1]}"
+            
             # Calculer les poids des classes pour l'équilibrage
             class_counts = np.bincount(y_train.flatten())
             class_weights = {
@@ -282,29 +256,48 @@ class LSTMHyperparameterOptimizer:
                 1: len(y_train) / (2 * class_counts[1])
             }
             
-            # Définir les callbacks
+            # Build training callbacks: early stopping and learning rate reducer
+            from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau # type: ignore
             callbacks = [
-                tf.keras.callbacks.EarlyStopping(
-                    monitor='val_accuracy',
-                    patience=5,
+                EarlyStopping(
+                    monitor='val_loss',
+                    patience=trial.suggest_int("early_stopping_patience", 5, 15),
                     restore_best_weights=True
                 ),
-                tf.keras.callbacks.ReduceLROnPlateau(
+                ReduceLROnPlateau(
                     monitor='val_loss',
                     factor=0.5,
-                    patience=3,
-                    min_lr=1e-6
+                    patience=trial.suggest_int("reduce_lr_patience", 3, 7),
+                    min_lr=1e-6,
+                    verbose=1
                 )
             ]
             
-            # Entraîner le modèle
-            batch_size = trial.suggest_categorical("batch_size", [16, 32, 64, 128])
+            # Création des séquences complètes
+            X_train_full, y_train_list = trainer.feature_engineering.create_multi_horizon_data(
+                self.normalized_train,
+                sequence_length=model_params["input_length"],
+                horizons=model_params["prediction_horizons"],
+                is_training=True
+            )
+            X_val_full, y_val_list = trainer.feature_engineering.create_multi_horizon_data(
+                self.normalized_val,
+                sequence_length=model_params["input_length"],
+                horizons=model_params["prediction_horizons"],
+                is_training=True
+            )
+            # Utilisation d’un sous-échantillon pour l’optimisation
+            X_train_sample = X_train_full[:1000]
+            y_train_sample = y_train_list[0][:1000]
+            X_val_sample = X_val_full[:200]
+            y_val_sample = y_val_list[0][:200]
+            
             history = single_model.fit(
-                x=X_train,
-                y=y_train,
-                epochs=30,  # Réduit pour l'optimisation
+                x=X_train_sample,
+                y=y_train_sample,
+                epochs=10,  # Nombre réduit pour l’optimisation
                 batch_size=batch_size,
-                validation_data=(X_val, y_val),  # Validation fixe pour stabilité
+                validation_data=(X_val_sample, y_val_sample),
                 class_weight=class_weights,
                 callbacks=callbacks,
                 verbose=0
@@ -450,7 +443,7 @@ class LSTMHyperparameterOptimizer:
         except Exception as e:
             logger.error(f"Erreur lors de la visualisation de l'importance des hyperparamètres: {str(e)}")
 
-def download_data_if_needed(symbol, timeframe, start_date, end_date):
+def download_data_if_needed(symbol, timeframe, start_date=None, end_date=None):
     """
     Check if data file exists and return True if it does
     
@@ -496,10 +489,10 @@ def main():
     parser.add_argument("--timeframe", type=str, default="15m", help="Intervalle de temps")
     
     # Support flexible argument naming (both hyphen and underscore)
-    parser.add_argument("--start-date", "--start_date", "--start", type=str, required=True, 
-                      help="Date de début (YYYY-MM-DD)")
-    parser.add_argument("--end-date", "--end_date", "--end", type=str, required=True, 
-                      help="Date de fin (YYYY-MM-DD)")
+    # parser.add_argument("--start-date", "--start_date", "--start", type=str, required=True, 
+    #                   help="Date de début (YYYY-MM-DD)")
+    # parser.add_argument("--end-date", "--end_date", "--end", type=str, required=True, 
+    #                   help="Date de fin (YYYY-MM-DD)")
     parser.add_argument("--data_path", "--data-path", type=str, default="data/market_data/", 
                       help="Répertoire des données de marché")
     
@@ -512,11 +505,13 @@ def main():
                       help="Ratio des données d'entraînement")
     parser.add_argument("--val-ratio", "--val_ratio", type=float, default=0.15, 
                       help="Ratio des données de validation")
+    parser.add_argument("--max_evals", type=int, default=100, help="Maximum evaluations for hyperparameter search")
+    parser.add_argument("--output", type=str, required=True, help="Output path for best parameters")
     
     args = parser.parse_args()
     
     # Check for data availability
-    if not download_data_if_needed(args.symbol, args.timeframe, args.start_date, args.end_date):
+    if not download_data_if_needed(args.symbol, args.timeframe):
         logger.error("Impossible de continuer sans données")
         return
     
@@ -524,13 +519,6 @@ def main():
     # load_data prend data_path, symbol et timeframe comme paramètres
     data_path = os.path.join(DATA_DIR, "market_data") if args.data_path == "data/market_data/" else args.data_path
     data = load_data(data_path, args.symbol, args.timeframe)
-    
-    # Filtrer les données selon les dates si spécifiées
-    if args.start_date and args.end_date:
-        start_date = pd.to_datetime(args.start_date)
-        end_date = pd.to_datetime(args.end_date)
-        logger.info(f"Filtrage des données entre {start_date} et {end_date}")
-        data = data[(data.index >= start_date) & (data.index <= end_date)]
     
     if data.empty:
         logger.error("Données vides, impossible de continuer")
@@ -572,7 +560,6 @@ def main():
     lstm_units = best_params.get("lstm_units_first", 128)
     
     cmd = f"python train_model.py train --symbol {args.symbol} --timeframe {args.timeframe} "
-    cmd += f"--start-date {args.start_date} --end-date {args.end_date} "
     cmd += f"--sequence-length {best_params.get('sequence_length', 60)} "
     cmd += f"--lstm-units {lstm_units} "
     cmd += f"--dropout {best_params.get('dropout_rate', 0.3)} "
