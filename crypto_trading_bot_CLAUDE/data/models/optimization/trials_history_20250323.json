@@ -1,0 +1,362 @@
+[
+  {
+    "val_accuracy": 0.5117488503456116,
+    "val_loss": 0.7289296984672546,
+    "f1_score": 0.677028920881641,
+    "params": {
+      "input_length": 60,
+      "feature_dim": 67,
+      "lstm_units": [
+        136,
+        68,
+        68
+      ],
+      "dropout_rate": 0.4195981825434215,
+      "learning_rate": 0.00015751320499779721,
+      "l1_reg": 6.358358856676247e-05,
+      "l2_reg": 0.000133112160807369,
+      "use_attention": false,
+      "use_residual": false,
+      "prediction_horizons": [
+        [
+          4,
+          "1h",
+          true
+        ]
+      ],
+      "batch_size": 128,
+      "sequence_length": 60,
+      "l1_regularization": 6.358358856676247e-05,
+      "l2_regularization": 0.000133112160807369,
+      "epochs": 100,
+      "early_stopping_patience": 15,
+      "reduce_lr_patience": 7
+    }
+  },
+  {
+    "val_accuracy": 0.4884437620639801,
+    "val_loss": 0.7187406420707703,
+    "f1_score": 0.0,
+    "params": {
+      "input_length": 60,
+      "feature_dim": 67,
+      "lstm_units": [
+        224
+      ],
+      "dropout_rate": 0.2545474901621302,
+      "learning_rate": 2.3270677083837777e-05,
+      "l1_reg": 6.847920095574779e-05,
+      "l2_reg": 2.62108787826544e-06,
+      "use_attention": false,
+      "use_residual": false,
+      "prediction_horizons": [
+        [
+          4,
+          "1h",
+          true
+        ]
+      ],
+      "batch_size": 128,
+      "sequence_length": 60,
+      "l1_regularization": 6.358358856676247e-05,
+      "l2_regularization": 0.000133112160807369,
+      "epochs": 100,
+      "early_stopping_patience": 15,
+      "reduce_lr_patience": 7
+    }
+  },
+  {
+    "val_accuracy": 0.5117488503456116,
+    "val_loss": 0.7136044502258301,
+    "f1_score": 0.677028920881641,
+    "params": {
+      "input_length": 60,
+      "feature_dim": 67,
+      "lstm_units": [
+        152,
+        76,
+        76
+      ],
+      "dropout_rate": 0.25990213464750794,
+      "learning_rate": 0.00010677482709481354,
+      "l1_reg": 1.5673095467235414e-06,
+      "l2_reg": 0.0007025166339242157,
+      "use_attention": false,
+      "use_residual": false,
+      "prediction_horizons": [
+        [
+          4,
+          "1h",
+          true
+        ]
+      ],
+      "batch_size": 128,
+      "sequence_length": 60,
+      "l1_regularization": 6.358358856676247e-05,
+      "l2_regularization": 0.000133112160807369,
+      "epochs": 100,
+      "early_stopping_patience": 15,
+      "reduce_lr_patience": 7
+    }
+  },
+  {
+    "val_accuracy": 0.4882511496543884,
+    "val_loss": 0.7031216621398926,
+    "f1_score": 0.0,
+    "params": {
+      "input_length": 60,
+      "feature_dim": 67,
+      "lstm_units": [
+        122
+      ],
+      "dropout_rate": 0.40526990795364704,
+      "learning_rate": 7.591104805282687e-05,
+      "l1_reg": 5.975027999960295e-06,
+      "l2_reg": 9.717775305059631e-05,
+      "use_attention": false,
+      "use_residual": false,
+      "prediction_horizons": [
+        [
+          4,
+          "1h",
+          true
+        ]
+      ],
+      "batch_size": 128,
+      "sequence_length": 60,
+      "l1_regularization": 6.358358856676247e-05,
+      "l2_regularization": 0.000133112160807369,
+      "epochs": 100,
+      "early_stopping_patience": 15,
+      "reduce_lr_patience": 7
+    }
+  },
+  {
+    "val_accuracy": 0.5117488503456116,
+    "val_loss": 0.6935491561889648,
+    "f1_score": 0.677028920881641,
+    "params": {
+      "input_length": 60,
+      "feature_dim": 67,
+      "lstm_units": [
+        169
+      ],
+      "dropout_rate": 0.49087538832936756,
+      "learning_rate": 0.0003550304858128307,
+      "l1_reg": 1.8427970406864558e-06,
+      "l2_reg": 3.87211803217458e-06,
+      "use_attention": false,
+      "use_residual": false,
+      "prediction_horizons": [
+        [
+          4,
+          "1h",
+          true
+        ]
+      ],
+      "batch_size": 128,
+      "sequence_length": 60,
+      "l1_regularization": 6.358358856676247e-05,
+      "l2_regularization": 0.000133112160807369,
+      "epochs": 100,
+      "early_stopping_patience": 15,
+      "reduce_lr_patience": 7
+    }
+  },
+  {
+    "val_accuracy": 0.4882511496543884,
+    "val_loss": 0.7316663861274719,
+    "f1_score": 0.0,
+    "params": {
+      "input_length": 60,
+      "feature_dim": 67,
+      "lstm_units": [
+        139
+      ],
+      "dropout_rate": 0.4486212527455788,
+      "learning_rate": 5.170191786366994e-05,
+      "l1_reg": 1.6736010167825795e-06,
+      "l2_reg": 0.0009133995846860973,
+      "use_attention": false,
+      "use_residual": false,
+      "prediction_horizons": [
+        [
+          4,
+          "1h",
+          true
+        ]
+      ],
+      "batch_size": 128,
+      "sequence_length": 60,
+      "l1_regularization": 6.358358856676247e-05,
+      "l2_regularization": 0.000133112160807369,
+      "epochs": 100,
+      "early_stopping_patience": 15,
+      "reduce_lr_patience": 7
+    }
+  },
+  {
+    "val_accuracy": 0.5117488503456116,
+    "val_loss": 0.6931966543197632,
+    "f1_score": 0.677028920881641,
+    "params": {
+      "input_length": 60,
+      "feature_dim": 67,
+      "lstm_units": [
+        65,
+        32,
+        32
+      ],
+      "dropout_rate": 0.4120572031542852,
+      "learning_rate": 0.0002870875348195468,
+      "l1_reg": 0.00038842777547031416,
+      "l2_reg": 7.411299781083242e-05,
+      "use_attention": false,
+      "use_residual": false,
+      "prediction_horizons": [
+        [
+          4,
+          "1h",
+          true
+        ]
+      ],
+      "batch_size": 128,
+      "sequence_length": 60,
+      "l1_regularization": 6.358358856676247e-05,
+      "l2_regularization": 0.000133112160807369,
+      "epochs": 100,
+      "early_stopping_patience": 15,
+      "reduce_lr_patience": 7
+    }
+  },
+  {
+    "val_accuracy": 0.5117488503456116,
+    "val_loss": 0.7185901999473572,
+    "f1_score": 0.0,
+    "params": {
+      "input_length": 60,
+      "feature_dim": 67,
+      "lstm_units": [
+        124
+      ],
+      "dropout_rate": 0.41888185350141927,
+      "learning_rate": 0.00018841476921545086,
+      "l1_reg": 0.00019158219548093185,
+      "l2_reg": 4.8287152161792064e-05,
+      "use_attention": false,
+      "use_residual": false,
+      "prediction_horizons": [
+        [
+          4,
+          "1h",
+          true
+        ]
+      ],
+      "batch_size": 128,
+      "sequence_length": 60,
+      "l1_regularization": 6.358358856676247e-05,
+      "l2_regularization": 0.000133112160807369,
+      "epochs": 100,
+      "early_stopping_patience": 15,
+      "reduce_lr_patience": 7
+    }
+  },
+  {
+    "val_accuracy": 0.5117488503456116,
+    "val_loss": 0.9665053486824036,
+    "f1_score": 0.0,
+    "params": {
+      "input_length": 60,
+      "feature_dim": 67,
+      "lstm_units": [
+        164,
+        82
+      ],
+      "dropout_rate": 0.20762573802322856,
+      "learning_rate": 1.6435497475111308e-05,
+      "l1_reg": 0.0005280796376895364,
+      "l2_reg": 5.595986878006084e-06,
+      "use_attention": false,
+      "use_residual": false,
+      "prediction_horizons": [
+        [
+          4,
+          "1h",
+          true
+        ]
+      ],
+      "batch_size": 128,
+      "sequence_length": 60,
+      "l1_regularization": 6.358358856676247e-05,
+      "l2_regularization": 0.000133112160807369,
+      "epochs": 100,
+      "early_stopping_patience": 15,
+      "reduce_lr_patience": 7
+    }
+  },
+  {
+    "val_accuracy": 0.5117488503456116,
+    "val_loss": 0.7550874352455139,
+    "f1_score": 0.0,
+    "params": {
+      "input_length": 60,
+      "feature_dim": 67,
+      "lstm_units": [
+        108
+      ],
+      "dropout_rate": 0.28692543587413044,
+      "learning_rate": 2.101079931010355e-05,
+      "l1_reg": 0.0002576417442523316,
+      "l2_reg": 3.6283583803549183e-06,
+      "use_attention": false,
+      "use_residual": false,
+      "prediction_horizons": [
+        [
+          4,
+          "1h",
+          true
+        ]
+      ],
+      "batch_size": 128,
+      "sequence_length": 60,
+      "l1_regularization": 6.358358856676247e-05,
+      "l2_regularization": 0.000133112160807369,
+      "epochs": 100,
+      "early_stopping_patience": 15,
+      "reduce_lr_patience": 7
+    }
+  },
+  {
+    "val_accuracy": 0.5117488503456116,
+    "val_loss": 0.6986556649208069,
+    "f1_score": 0.677028920881641,
+    "params": {
+      "input_length": 60,
+      "feature_dim": 67,
+      "lstm_units": [
+        214,
+        107
+      ],
+      "dropout_rate": 0.3386932542828202,
+      "learning_rate": 0.0007321173243252607,
+      "l1_reg": 2.4710919036977514e-05,
+      "l2_reg": 0.0002159443193873176,
+      "use_attention": false,
+      "use_residual": false,
+      "prediction_horizons": [
+        [
+          4,
+          "1h",
+          true
+        ]
+      ],
+      "batch_size": 128,
+      "sequence_length": 60,
+      "l1_regularization": 6.358358856676247e-05,
+      "l2_regularization": 0.000133112160807369,
+      "epochs": 100,
+      "early_stopping_patience": 15,
+      "reduce_lr_patience": 7
+    }
+  }
+]

@@ -1,23 +1,25 @@
-# config/model_params.py
 """
-Configuration parameters for various model architectures
-This file centralizes hyperparameters for different models to ensure consistency
+Configuration des hyperparamètres pour le modèle LSTM.
+Ces paramètres doivent être cohérents avec ceux utilisés dans l'entraînement et l'évaluation.
 """
 
-# LSTM model parameters
+# Paramètres par défaut
 LSTM_DEFAULT_PARAMS = {
-    "lstm_units": [128, 64, 32],
-    "dropout_rate": 0.5,
-    "learning_rate": 0.001,
-    "sequence_length": 90,  # Valeur par défaut mise à jour à 90
-    "l1_regularization": 1e-4,
-    "l2_regularization": 1e-4,
-    "batch_size": 64
+    "lstm_units": [136, 68, 68],
+    "dropout_rate": 0.4195981825434215,
+    "learning_rate": 0.00015751320499779721,
+    "batch_size": 128,
+    "sequence_length": 60,
+    "l1_regularization": 6.358358856676247e-05,
+    "l2_regularization": 0.000133112160807369,
+    "use_attention": True,
+    "use_residual": True,
+    "epochs": 100,
+    "early_stopping_patience": 15,
+    "reduce_lr_patience": 7
 }
 
-# [AUTO-UPDATE SECTION] - DO NOT EDIT MANUALLY
-# This section is automatically updated by hyperparameter_search.py
-# Last optimization: 2025-03-22 08:54:52 (timeframe: 15m, F1: 0.6770)
+# Paramètres optimisés (mis à jour par le module d'optimisation des hyperparamètres)
 LSTM_OPTIMIZED_PARAMS = {
     "15m": {
         "lstm_units": [136, 68, 68],
@@ -25,13 +27,13 @@ LSTM_OPTIMIZED_PARAMS = {
         "learning_rate": 0.00015751320499779721,
         "batch_size": 128,
         "sequence_length": 60,
-        "l1_regularization": 0.0008123245085588687,
-        "l2_regularization": 0.0003142880890840109,
+        "l1_regularization": 6.358358856676247e-05,
+        "l2_regularization": 0.000133112160807369,
         "use_attention": True,
         "use_residual": True,
-        "last_optimized": "2025-03-22 08:54:52",
+        "last_optimized": "2025-03-23 12:21:01",
         "f1_score": 0.677028920881641
-    },
+    }
 }
 
 # Transformer model parameters
@@ -44,7 +46,7 @@ TRANSFORMER_DEFAULT_PARAMS = {
     "learning_rate": 0.0001,
     "batch_size": 64,
     "epochs": 100,
-    "sequence_length": 60,
+    "sequence_length": 60,  # Updated from 60 to 60
     "early_stopping_patience": 10,
     "reduce_lr_patience": 5
 }
@@ -56,8 +58,8 @@ CNN_LSTM_DEFAULT_PARAMS = {
     "learning_rate": 0.00015751320499779721,
     "batch_size": 128,
     "sequence_length": 60,
-    "l1_regularization": 0.0008123245085588687,
-    "l2_regularization": 0.0003142880890840109,
+    "l1_regularization": 6.358358856676247e-05,
+    "l2_regularization": 0.000133112160807369,
     "use_attention": True,
     "use_residual": True,
     "epochs": 100,
@@ -101,15 +103,15 @@ FEATURE_GROUPS = {
     "full": "all"  # Use all available features
 }
 
-# Training horizons for different timeframes - Modified for single horizon focus
+# Training horizons for different timeframes - Modified for 15min timeframe focus
 PREDICTION_HORIZONS = {
     # Format: (periods, name, is_main)
-    "1m": [(4, "1h", True)],  # 1 hour ahead only
-    "5m": [(12, "1h", True)], # 1 hour ahead only
-    "15m": [(4, "1h", True)], # 1 hour ahead only (4 periods of 15min = 1h)
-    "1h": [(1, "1h", True)],  # 1 hour ahead only
-    "4h": [(6, "24h", True)], # 24 hours ahead only
-    "1d": [(7, "7d", True)]   # 7 days ahead only
+    "1m": [(15, "15m", True)],  # 15 minutes ahead
+    "5m": [(3, "15m", True)],   # 15 minutes ahead (3 periods of 5min = 15min)
+    "15m": [(1, "15m", True)],  # 15 minutes ahead (1 period of 15min = 15min)
+    "1h": [(1, "1h", True)],    # 1 hour ahead
+    "4h": [(6, "24h", True)],   # 24 hours ahead
+    "1d": [(7, "7d", True)]     # 7 days ahead
 }
 
 # Model optimization settings

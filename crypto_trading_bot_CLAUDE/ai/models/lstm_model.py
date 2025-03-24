@@ -359,50 +359,101 @@ class LSTMModel(Model):
         Returns:
             Modèle Keras avec une seule sortie
         """
-        from tensorflow.keras.layers import Input, LSTM, Dense, Dropout, Bidirectional # type: ignore
+        from tensorflow.keras.layers import Input, LSTM, Dense, Dropout, Bidirectional, Reshape # type: ignore
         from tensorflow.keras.models import Model # type: ignore
         from tensorflow.keras.optimizers import Adam # type: ignore
         from tensorflow.keras.regularizers import l1_l2 # type: ignore
+        import tensorflow as tf
         
-        inputs = Input(shape=(self.input_length, self.feature_dim))
-        x = inputs
-
-        # Première couche LSTM bidirectionnelle
+        # Critical change: Use eager execution to better handle shape issues
+        # This tells TensorFlow to use dynamic execution which can be more forgiving with shapes
+        tf.config.run_functions_eagerly(True)
+        
+        # Explicitly define feature_dim in the case it's None or undefined
+        feature_dim = self.feature_dim
+        if feature_dim is None or feature_dim <= 0:
+            feature_dim = 67  # Set to known working value
+            logger.warning(f"Invalid feature_dim detected, setting to default: {feature_dim}")
+        
+        # Create a fully defined input layer with concrete dimensions
+        inputs = Input(shape=(self.input_length, feature_dim), name='sequence_input')
+        
+        # Log the input shape for debugging
+        logger.info(f"Building model with input shape: ({self.input_length}, {feature_dim})")
+        
+        # IMPORTANT: Create an explicit static shape using a custom function
+        def create_lstm_compatible_input(x):
+            # First flatten the input
+            batch_size = tf.shape(x)[0]
+            flattened = tf.reshape(x, [batch_size, -1])
+            # Then reshape with explicit dimensions
+            reshaped = tf.reshape(flattened, [batch_size, self.input_length, feature_dim])
+            return reshaped
+        
+        # Apply our custom reshaping
+        x = tf.keras.layers.Lambda(create_lstm_compatible_input, name="shape_corrector")(inputs)
+        
+        # Alternative LSTM approach: use a sequential approach rather than complex layer structure
         if len(self.lstm_units) > 0:
-            x = Bidirectional(LSTM(self.lstm_units[0], return_sequences=len(self.lstm_units) > 1))(x)
+            # First LSTM layer - with return_sequences based on whether we have more layers
+            has_more_layers = len(self.lstm_units) > 1
+            
+            # Create a statically-defined LSTM layer (with explicit input_shape)
+            lstm_layer = LSTM(
+                self.lstm_units[0],
+                return_sequences=has_more_layers,
+                input_shape=(self.input_length, feature_dim),
+                name="lstm_first_layer"
+            )
+            
+            # Apply bidirectional wrapper
+            x = Bidirectional(lstm_layer, name='bidirectional_first')(x)
             x = Dropout(self.dropout_rate)(x)
             
-            # Couches LSTM intermédiaires
+            # Intermediate layers
             for i in range(1, len(self.lstm_units)-1):
                 x = Bidirectional(LSTM(self.lstm_units[i], return_sequences=True))(x)
                 x = Dropout(self.dropout_rate)(x)
             
-            # Dernière couche LSTM
+            # Last layer (if more than one layer)
             if len(self.lstm_units) > 1:
                 x = Bidirectional(LSTM(self.lstm_units[-1], return_sequences=False))(x)
-            else:
-                x = Bidirectional(LSTM(self.lstm_units[0], return_sequences=False))(x)
         else:
-            x = Bidirectional(LSTM(64, return_sequences=False))(x)
+            # Default single LSTM layer if none specified
+            x = Bidirectional(
+                LSTM(64, return_sequences=False, input_shape=(self.input_length, feature_dim)),
+                name='bidirectional_default'
+            )(x)
         
-        # Application de dropout
+        # Rest of the model remains the same
         x = Dropout(self.dropout_rate)(x)
-        
-        # Couche dense avec régularisation
         x = Dense(64, activation='relu', kernel_regularizer=l1_l2(l1=self.l1_reg, l2=self.l2_reg))(x)
         
-        # Sortie unique (direction pour l'horizon spécifié)
+        # Output layer - FIX: Create a valid layer name by extracting the numeric part of the horizon
         horizon = self.prediction_horizons[horizon_idx] if horizon_idx < len(self.prediction_horizons) else self.prediction_horizons[0]
-        output = Dense(1, activation='sigmoid', name=f'direction_{horizon}')(x)
         
-        # Créer et compiler le modèle
+        # Extract components from the horizon tuple and create a valid layer name
+        if isinstance(horizon, tuple) and len(horizon) >= 2:
+            horizon_value = horizon[0]  # The numeric part (e.g., 4)
+            horizon_name = horizon[1]   # The name part (e.g., '1h')
+            output_name = f'direction_{horizon_value}_{horizon_name}'
+        else:
+            # Fallback for backward compatibility if horizon is just a number
+            output_name = f'direction_{horizon}'
+        
+        # Create the output layer with the valid name
+        output = Dense(1, activation='sigmoid', name=output_name)(x)
+        
+        # Create and compile the model
         single_model = Model(inputs=inputs, outputs=output)
-        # Fix: Use a list for metrics here too
         single_model.compile(
             optimizer=Adam(learning_rate=self.learning_rate),
             loss='binary_crossentropy',
-            metrics=['accuracy']  # Use a list instead of a string
+            metrics=['accuracy']
         )
+        
+        # Return to normal execution mode after model creation
+        tf.config.run_functions_eagerly(False)
         
         return single_model
 

@@ -1,103 +1,158 @@
-2025-03-22 08:49:33,041 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-22 08:49:33,042 - feature_engineering - INFO - Utilisation du nombre de features par défaut: 78
-2025-03-22 08:49:33,043 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 78
-2025-03-22 08:49:33,079 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
-2025-03-22 08:49:34,487 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-22 08:49:34,488 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
-2025-03-22 08:49:34,494 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 78 colonnes
-2025-03-22 08:49:34,883 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-22 08:49:34,884 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
-2025-03-22 08:49:34,886 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 78 colonnes
-2025-03-22 08:49:35,224 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-22 08:49:35,225 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
-2025-03-22 08:49:35,227 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 78 colonnes
-2025-03-22 11:39:06,389 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-22 11:39:06,390 - feature_engineering - INFO - Utilisation du nombre de features par défaut: 78
-2025-03-22 11:39:06,391 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 78
-2025-03-22 11:39:06,425 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
-2025-03-22 11:39:07,959 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-22 11:39:07,959 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
-2025-03-22 11:39:07,965 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 78 colonnes
-2025-03-22 11:39:08,390 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-22 11:39:08,391 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
-2025-03-22 11:39:08,393 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 78 colonnes
-2025-03-22 11:39:08,722 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-22 11:39:08,723 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
-2025-03-22 11:39:08,725 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 78 colonnes
-2025-03-22 11:40:56,996 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-22 11:40:56,997 - feature_engineering - INFO - Utilisation du nombre de features par défaut: 78
-2025-03-22 11:40:56,997 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 78
-2025-03-22 11:40:57,038 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
-2025-03-22 11:41:05,731 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-22 11:41:05,731 - feature_engineering - INFO - Utilisation du nombre de features par défaut: 78
-2025-03-22 11:41:05,732 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 78
-2025-03-22 11:41:05,773 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
-2025-03-22 11:45:08,683 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-22 11:45:08,684 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
-2025-03-22 11:45:08,692 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 78 colonnes
-2025-03-22 11:51:11,273 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-22 11:51:11,273 - feature_engineering - INFO - Utilisation du nombre de features par défaut: 78
-2025-03-22 11:51:11,273 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 78
-2025-03-22 11:51:11,316 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
-2025-03-22 11:51:18,783 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-22 11:51:18,784 - feature_engineering - INFO - Utilisation du nombre de features par défaut: 78
-2025-03-22 11:51:18,784 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 78
-2025-03-22 11:51:18,825 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
-2025-03-22 11:55:56,280 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-22 11:55:56,280 - feature_engineering - INFO - Utilisation du nombre de features par défaut: 78
-2025-03-22 11:55:56,281 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 78
-2025-03-22 11:55:56,325 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
-2025-03-22 11:56:03,873 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-22 11:56:03,874 - feature_engineering - INFO - Utilisation du nombre de features par défaut: 78
-2025-03-22 11:56:03,874 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 78
-2025-03-22 11:56:03,918 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
-2025-03-22 11:59:59,583 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-22 11:59:59,584 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
-2025-03-22 11:59:59,592 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 78 colonnes
-2025-03-22 12:10:03,747 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-22 12:10:03,747 - feature_engineering - INFO - Utilisation du nombre de features par défaut: 78
-2025-03-22 12:10:03,748 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 78
-2025-03-22 12:10:03,789 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
-2025-03-22 12:13:13,699 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-22 12:13:13,700 - feature_engineering - INFO - Utilisation du nombre de features par défaut: 78
-2025-03-22 12:13:13,700 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 78
-2025-03-22 12:13:13,742 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
-2025-03-22 12:14:43,132 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-22 12:14:43,133 - feature_engineering - INFO - Utilisation du nombre de features par défaut: 78
-2025-03-22 12:14:43,133 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 78
-2025-03-22 12:14:43,174 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
-2025-03-22 13:45:09,023 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-22 13:45:09,024 - feature_engineering - INFO - Utilisation du nombre de features par défaut: 78
-2025-03-22 13:45:09,024 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 78
-2025-03-22 13:45:09,066 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
-2025-03-22 13:49:48,183 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-22 13:49:48,184 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
-2025-03-22 13:49:48,195 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 78 colonnes
-2025-03-22 16:53:41,972 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-22 16:53:41,972 - feature_engineering - INFO - Utilisation du nombre de features par défaut: 78
-2025-03-22 16:53:41,973 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 78
-2025-03-22 16:53:42,016 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
-2025-03-22 17:04:15,951 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-22 17:04:15,952 - feature_engineering - INFO - Utilisation du nombre de features par défaut: 78
-2025-03-22 17:04:15,953 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 78
-2025-03-22 17:04:15,996 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
-2025-03-22 17:08:31,544 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-22 17:08:31,544 - feature_engineering - INFO - Utilisation du nombre de features par défaut: 78
-2025-03-22 17:08:31,545 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 78
-2025-03-22 17:08:31,587 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
-2025-03-22 17:13:43,490 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-22 17:13:43,490 - feature_engineering - INFO - Utilisation du nombre de features par défaut: 78
-2025-03-22 17:13:43,491 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 78
-2025-03-22 17:13:43,533 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
-2025-03-23 08:49:10,989 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-23 08:49:10,990 - feature_engineering - INFO - Utilisation du nombre de features par défaut: 78
-2025-03-23 08:49:10,991 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 78
-2025-03-23 08:49:11,032 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
-2025-03-23 08:59:48,049 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-23 08:59:48,051 - feature_engineering - INFO - Utilisation du nombre de features par défaut: 78
-2025-03-23 08:59:48,052 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 78
-2025-03-23 08:59:48,093 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
-2025-03-23 09:12:40,551 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 78
-2025-03-23 09:12:40,551 - feature_engineering - INFO - Utilisation du nombre de features par défaut: 78
-2025-03-23 09:12:40,552 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 78
-2025-03-23 09:12:40,617 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-23 09:51:39,186 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 09:51:39,187 - feature_engineering - INFO - Nombre de features obtenu (83) supérieur à 66; sélection des features.
+2025-03-23 09:51:39,214 - feature_engineering - INFO - Sélection basée sur la variance des caractéristiques.
+2025-03-23 09:51:39,215 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 66
+2025-03-23 09:51:39,245 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-23 09:51:40,693 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 09:51:40,694 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 09:51:40,694 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 09:51:40,699 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 09:51:41,076 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 09:51:41,077 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 09:51:41,077 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 09:51:41,079 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 09:51:41,415 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 09:51:41,416 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 09:51:41,416 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 09:51:41,418 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 09:59:48,162 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 09:59:48,163 - feature_engineering - INFO - Nombre de features obtenu (83) supérieur à 66; sélection des features.
+2025-03-23 09:59:48,193 - feature_engineering - INFO - Sélection basée sur la variance des caractéristiques.
+2025-03-23 09:59:48,193 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 66
+2025-03-23 09:59:48,232 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-23 09:59:49,730 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 09:59:49,731 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 09:59:49,732 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 09:59:49,736 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 09:59:50,131 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 09:59:50,132 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 09:59:50,132 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 09:59:50,134 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 09:59:50,475 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 09:59:50,476 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 09:59:50,477 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 09:59:50,478 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 10:01:48,656 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 10:01:48,657 - feature_engineering - INFO - Nombre de features obtenu (83) supérieur à 66; sélection des features.
+2025-03-23 10:01:48,685 - feature_engineering - INFO - Sélection basée sur la variance des caractéristiques.
+2025-03-23 10:01:48,686 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 66
+2025-03-23 10:01:48,718 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-23 10:01:50,177 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 10:01:50,178 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 10:01:50,178 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 10:01:50,183 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 10:01:50,619 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 10:01:50,620 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 10:01:50,620 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 10:01:50,622 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 10:01:50,961 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 10:01:50,962 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 10:01:50,962 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 10:01:50,964 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 10:05:19,220 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 10:05:19,221 - feature_engineering - INFO - Nombre de features obtenu (83) supérieur à 66; sélection des features.
+2025-03-23 10:05:19,276 - feature_engineering - INFO - Sélection basée sur la variance des caractéristiques.
+2025-03-23 10:05:19,277 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 66
+2025-03-23 10:05:19,321 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-23 10:05:21,023 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 10:05:21,024 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 10:05:21,024 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 10:05:21,028 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 10:05:21,472 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 10:05:21,473 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 10:05:21,473 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 10:05:21,475 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 10:05:21,854 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 10:05:21,855 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 10:05:21,855 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 10:05:21,857 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 10:21:58,715 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 10:21:58,716 - feature_engineering - INFO - Nombre de features obtenu (83) supérieur à 66; sélection des features.
+2025-03-23 10:21:58,742 - feature_engineering - INFO - Sélection basée sur la variance des caractéristiques.
+2025-03-23 10:21:58,743 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 66
+2025-03-23 10:21:58,772 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-23 10:22:00,204 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 10:22:00,205 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 10:22:00,206 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 10:22:00,210 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 10:22:00,585 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 10:22:00,586 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 10:22:00,586 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 10:22:00,588 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 10:22:00,915 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 10:22:00,915 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 10:22:00,916 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 10:22:00,918 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 10:37:28,097 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 10:37:28,097 - feature_engineering - INFO - Nombre de features obtenu (83) supérieur à 66; sélection des features.
+2025-03-23 10:37:28,127 - feature_engineering - INFO - Sélection basée sur la variance des caractéristiques.
+2025-03-23 10:37:28,128 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 66
+2025-03-23 10:37:28,164 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-23 10:37:29,670 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 10:37:29,671 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 10:37:29,672 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 10:37:29,676 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 10:37:30,071 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 10:37:30,072 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 10:37:30,073 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 10:37:30,074 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 10:37:30,405 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 10:37:30,405 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 10:37:30,406 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 10:37:30,408 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 10:40:24,080 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 10:40:24,081 - feature_engineering - INFO - Nombre de features obtenu (83) supérieur à 66; sélection des features.
+2025-03-23 10:40:24,113 - feature_engineering - INFO - Sélection basée sur la variance des caractéristiques.
+2025-03-23 10:40:24,114 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 66
+2025-03-23 10:40:24,146 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-23 10:40:25,562 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 10:40:25,562 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 10:40:25,562 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 10:40:25,566 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 10:40:25,940 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 10:40:25,941 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 10:40:25,941 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 10:40:25,942 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 10:40:26,274 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 10:40:26,274 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 10:40:26,275 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 10:40:26,277 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 10:45:19,444 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 10:45:19,445 - feature_engineering - INFO - Nombre de features obtenu (83) supérieur à 66; sélection des features.
+2025-03-23 10:45:19,471 - feature_engineering - INFO - Sélection basée sur la variance des caractéristiques.
+2025-03-23 10:45:19,472 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 66
+2025-03-23 10:45:19,502 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-23 10:45:20,952 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 10:45:20,953 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 10:45:20,954 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 10:45:20,958 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 10:45:21,342 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 10:45:21,343 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 10:45:21,344 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 10:45:21,345 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 10:45:21,682 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 10:45:21,683 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 10:45:21,683 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 10:45:21,685 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 12:11:28,181 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 12:11:28,182 - feature_engineering - INFO - Nombre de features obtenu (83) supérieur à 66; sélection des features.
+2025-03-23 12:11:28,208 - feature_engineering - INFO - Sélection basée sur la variance des caractéristiques.
+2025-03-23 12:11:28,209 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 66
+2025-03-23 12:11:28,243 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
+2025-03-23 12:11:29,799 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 12:11:29,799 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 12:11:29,800 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 12:11:29,805 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 12:11:30,202 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 12:11:30,202 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 12:11:30,203 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 12:11:30,205 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 12:11:30,560 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 12:11:30,561 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-03-23 12:11:30,562 - feature_engineering - WARNING - Caractéristiques supplémentaires ignorées: 17
+2025-03-23 12:11:30,565 - feature_engineering - INFO - DataFrame harmonisé selon la configuration précédente: 66 colonnes
+2025-03-23 13:52:39,215 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 83
+2025-03-23 13:52:39,215 - feature_engineering - INFO - Nombre de features obtenu (83) supérieur à 66; sélection des features.
+2025-03-23 13:52:39,264 - feature_engineering - INFO - Sélection basée sur la variance des caractéristiques.
+2025-03-23 13:52:39,265 - feature_engineering - INFO - Nombre de features utilisé pour l'entraînement: 66
+2025-03-23 13:52:39,320 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json

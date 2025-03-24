@@ -3,13 +3,17 @@ Directory structure:
     └── crypto_trading_bot_CLAUDE/
         ├── README.md
         ├── backtest.py
+        ├── bot_cli.py
+        ├── concigne.txt
         ├── download_data.py
         ├── evaluate_model.py
         ├── hyperparameter_search.py
         ├── install.py
         ├── main.py
         ├── requirements.txt
+        ├── run_training_pipeline.py
         ├── structure globale.txt
+        ├── trading_bot.py
         ├── train_model.py
         ├── .env
         ├── __pycache__/
@@ -17,14 +21,11 @@ Directory structure:
         │   ├── __init__.py
         │   ├── decision_engine.py
         │   ├── market_anomaly_detector.py
-        │   ├── news_sentiment_analyzer.py
         │   ├── parameter_optimizer.py
         │   ├── prediction_orchestrator.py
         │   ├── reasoning_engine.py
-        │   ├── scoring_engine.py
         │   ├── strategy_integrator.py
         │   ├── trade_analyzer.py
-        │   ├── trading_agent.py
         │   ├── __pycache__/
         │   └── models/
         │       ├── __init__.py
@@ -35,10 +36,14 @@ Directory structure:
         │       ├── lstm_model.py
         │       ├── model_trainer.py
         │       ├── model_validator.py
+        │       ├── model_workflow.py
+        │       ├── transformer_model.py
         │       └── __pycache__/
         ├── config/
         │   ├── __init__.py
+        │   ├── adaptive_threshold_config.py
         │   ├── config.py
+        │   ├── feature_config.py
         │   ├── model_params.py
         │   ├── trading_params.py
         │   └── __pycache__/
@@ -50,45 +55,35 @@ Directory structure:
         │   ├── data_fetcher.py
         │   ├── order_manager.py
         │   ├── position_tracker.py
-        │   ├── risk_manager.py
         │   └── __pycache__/
         ├── dashboard/
         │   ├── __init__.py
-        │   ├── app.py
-        │   ├── model_dashboard.py
-        │   ├── model_monitor.py
-        │   └── trade_dashboard.py
+        │   └── model_monitor.py
         ├── data/
-        │   ├── ai_weights.json
-        │   ├── scoring_history.json
-        │   ├── backtest_results/
-        │   │   ├── BTCUSDT_technical_bounce_2023-01-01_2023-06-30.json
-        │   │   ├── BTCUSDT_technical_bounce_2023-01-01_2024-12-30.json
-        │   │   ├── BTCUSDT_technical_bounce_2023-01-01_2025-02-28.json
-        │   │   ├── BTCUSDT_technical_bounce_2024-01-01_2025-02-28.json
-        │   │   └── charts/
+        │   ├── data_manager.py
+        │   ├── opportunity_tracker.py
         │   └── models/
         │       ├── checkpoints/
         │       │   └── lstm_BTCUSDT_15m_checkpoint.keras
-        │       ├── evaluation/
-        │       │   ├── BTCUSDT_evaluation_20250304.json
-        │       │   └── figures/
         │       ├── optimization/
-        │       │   └── best_params_20250305.json
-        │       ├── production/
-        │       │   ├── lstm_best.keras
-        │       │   └── lstm_final.h5
-        │       ├── scalers/
-        │       │   ├── lstm_optim_standard_scaler.pkl
-        │       │   └── lstm_standard_scaler.pkl
-        │       ├── training_history/
-        │       │   ├── final_model_history_20250304_110305.json
-        │       │   └── final_model_history_20250304_124731.json
-        │       └── visualizations/
+        │       │   └── trials_history_20250322.json
+        │       └── scalers/
+        │           ├── feature_config.json
+        │           ├── feature_metadata.json
+        │           ├── lstm_optim_standard_scaler.pkl
+        │           └── lstm_standard_scaler.pkl
         ├── docs/
+        │   ├── a faire.txt
+        │   ├── feature_optimization.md
         │   └── training_guide.txt
         ├── examples/
-        │   └── sentiment_analysis_demo.py
+        │   ├── optimize_features.py
+        │   └── training_pipeline_with_consistency_check.py
+        ├── exchanges/
+        │   ├── binance_client.py
+        │   ├── exchange_client.py
+        │   ├── exchange_factory.py
+        │   └── paper_trading.py
         ├── indicators/
         │   ├── __init__.py
         │   ├── advanced_features.py
@@ -99,42 +94,54 @@ Directory structure:
         │   ├── volume.py
         │   └── __pycache__/
         ├── logs/
+        ├── risk/
+        │   ├── market_risk_analyzer.py
+        │   ├── position_sizer.py
+        │   └── risk_manager.py
         ├── strategies/
         │   ├── __init__.py
+        │   ├── breakout.py
         │   ├── hybrid_strategy.py
+        │   ├── indicators.py
         │   ├── market_state.py
+        │   ├── rsi_strategy.py
         │   ├── strategy_base.py
+        │   ├── strategy_manager.py
         │   ├── technical_bounce.py
+        │   ├── trend_following.py
         │   └── __pycache__/
-        ├── tests/
-        │   ├── __init__.py
-        │   ├── test_api_connection.py
-        │   ├── test_indicators.py
-        │   ├── test_risk_manager.py
-        │   ├── test_strategies.py
-        │   ├── __pycache__/
-        │   └── test_models/
-        │       ├── __init__.py
-        │       ├── test_backtesting.py
-        │       ├── test_feature_eng.py
-        │       └── test_lstm.py
+        ├── test/
+        │   ├── test_backtest_stop_loss.py
+        │   ├── test_data_preparation.py
+        │   ├── test_feature_engineering.py
+        │   └── test_hyperparameter_search.py
         ├── ui/
         │   ├── correlation_dashboard.py
         │   └── main_dashboard.py
-        ├── utils/
-        │   ├── __init__.py
-        │   ├── backtest_engine.py
-        │   ├── correlation_matrix.py
-        │   ├── exceptions.py
-        │   ├── logger.py
-        │   ├── market_risk_feed.py
-        │   ├── model_backtester.py
-        │   ├── model_explainer.py
-        │   ├── model_monitor.py
-        │   ├── network_utils.py
-        │   ├── notification_service.py
-        │   ├── performance_analyzer.py
-        │   ├── visualizer.py
-        │   └── __pycache__/
-        └── visualizers/
-            └── sentiment_visualizer.py
+        └── utils/
+            ├── __init__.py
+            ├── backtest_engine.py
+            ├── correlation_matrix.py
+            ├── cross_market_signals.py
+            ├── data_utils.py
+            ├── elliott_wave.py
+            ├── encoding_converter.py
+            ├── exceptions.py
+            ├── feature_consistency_check.py
+            ├── feature_optimizer.py
+            ├── logger.py
+            ├── market_indicators.py
+            ├── market_risk_feed.py
+            ├── model_backtester.py
+            ├── model_explainer.py
+            ├── model_monitor.py
+            ├── network_utils.py
+            ├── notification_handler.py
+            ├── notification_service.py
+            ├── performance_analyzer.py
+            ├── performance_metrics.py
+            ├── prepare_validation_data.py
+            ├── threshold_dashboard.py
+            ├── visualization.py
+            ├── visualizer.py
+            └── __pycache__/

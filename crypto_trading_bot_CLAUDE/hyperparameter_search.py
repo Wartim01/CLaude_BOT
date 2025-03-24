@@ -104,15 +104,31 @@ class BestModelCallback:
     
     def __call__(self, study, trial):
         logger.debug(f"Callback __call__ invoked for trial {trial.number}")
-        # Check if we found a new best trial
-        if study.best_value > self.best_value:
-            self.best_value = study.best_value
-            self.best_params = study.best_params
-            
-            logger.info(f"New best trial found! Trial {trial.number}: F1={study.best_value:.4f}")
-            
-            # Update the model_params.py file with the new best parameters
-            update_model_params_file(self.best_params, self.timeframe, self.best_value)
+        
+        # Add error handling to check if there are completed trials
+        try:
+            # Only check for best value if the current trial is complete
+            if trial.state == optuna.trial.TrialState.COMPLETE:
+                # Get completed trials
+                completed_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+                
+                # Only proceed if we have at least one completed trial
+                if completed_trials:
+                    # Find the best trial manually among the completed trials
+                    best_trial = max(completed_trials, key=lambda t: t.value if t.value is not None else float('-inf'))
+                    
+                    # Check if we found a new best trial
+                    if best_trial.value is not None and best_trial.value > self.best_value:
+                        self.best_value = best_trial.value
+                        self.best_params = best_trial.params
+                        
+                        logger.info(f"New best trial found! Trial {best_trial.number}: F1={self.best_value:.4f}")
+                        
+                        # Update the model_params.py file with the new best parameters
+                        update_model_params_file(self.best_params, self.timeframe, self.best_value)
+        except Exception as e:
+            # This can happen if there are issues with accessing trials or values
+            logger.warning(f"Could not update parameters after trial {trial.number}: {str(e)}")
 
 class LSTMHyperparameterOptimizer:
     """
@@ -170,11 +186,8 @@ class LSTMHyperparameterOptimizer:
         Fonction objectif pour Optuna avec modèle à sortie unique
         """
         # Assurer la reproductibilité pour chaque essai
-        import numpy as np
-        import tensorflow as tf
         np.random.seed(42)
         tf.random.set_seed(42)
-        # Utilise l'ensemble de validation fixe initialisé dans __init__
         
         try:
             # Configuration des paramètres avec les nouvelles plages recommandées
@@ -182,160 +195,408 @@ class LSTMHyperparameterOptimizer:
             lstm_layers = trial.suggest_int("lstm_layers", 1, 3)
             lstm_units = [lstm_units_first]
             for i in range(1, lstm_layers):
-                lstm_units.append(lstm_units[-1] // 2)
+                lstm_units.append(lstm_units_first // 2)
             
-            dropout_rate = trial.suggest_float("dropout_rate", 0.2, 0.5)  # Recommandé: [0.2, 0.5]
+            dropout_rate = trial.suggest_float("dropout_rate", 0.2, 0.5)
             learning_rate = trial.suggest_float("learning_rate", 1e-5, 1e-3, log=True)
             
             # Taille du batch parmi des valeurs fixes
             batch_size = trial.suggest_categorical("batch_size", [16, 32, 64, 128])
-            sequence_length = trial.suggest_categorical("sequence_length", [90])
+            
+            # Fixed sequence_length = 60
+            sequence_length = 60
             
             # Process a small batch of data to determine the actual feature dimension
             X_sample, _ = self.feature_engineering.create_multi_horizon_data(
-                self.normalized_train.iloc[:100],  # Use a small sample
-                sequence_length=60,  # Default value
-                horizons=[4],  # For 1h prediction with 15m data
+                self.normalized_train.iloc[:100],
+                sequence_length=sequence_length,
+                horizons=[4],
                 is_training=True
             )
+            
+            # Check if X_sample has the expected 3D shape
+            if X_sample is None or len(X_sample) == 0:
+                logger.error("Failed to create input sequences - X_sample is empty")
+                return -1.0
+                
+            if len(X_sample.shape) != 3:
+                logger.error(f"X_sample has unexpected shape: {X_sample.shape}, expected 3D tensor")
+                return -1.0
             
             # Get the actual feature dimension from the processed data
             actual_feature_dim = X_sample.shape[2]
             logger.info(f"Detected actual feature dimension: {actual_feature_dim}")
             
-            # Force the sequence length to 60 for consistency
-            seq_length = 60
-
+            # Use a fixed feature dimension instead of a dynamic one
+            FIXED_FEATURE_DIM = 67  # Hardcode this to ensure consistency
+            
+            # Build model parameters with FIXED feature dimensions to avoid None shape issues
             model_params = {
-                "input_length": seq_length,
-                "feature_dim": actual_feature_dim,
+                "input_length": sequence_length,  # Fixed to 60
+                "feature_dim": FIXED_FEATURE_DIM,  # Fixed dimension
                 "lstm_units": lstm_units,
                 "dropout_rate": dropout_rate,
                 "learning_rate": learning_rate,
                 "l1_reg": trial.suggest_float("l1_reg", 1e-6, 1e-3, log=True),
                 "l2_reg": trial.suggest_float("l2_reg", 1e-6, 1e-3, log=True),
-                "use_attention": False,  # Simplifier pour l'optimisation
-                "use_residual": False,   # Simplifier pour l'optimisation
-                "prediction_horizons": [4]  # Single horizon for 1h with 15m data
+                "use_attention": False,
+                "use_residual": False,
+                "prediction_horizons": [(4, "1h", True)]
             }
             
             logger.info(f"Essai {trial.number}: {json.dumps(model_params, indent=2)}")
             
-            # Créer le trainer avec les paramètres
-            trainer = ModelTrainer(model_params)
+            # Create trainer with explicit error handling for shape issues
+            try:
+                trainer = ModelTrainer(model_params)
+                
+                # Try to build the model with explicit error handling
+                try:
+                    # Use eager execution temporarily to help with shape issues
+                    tf.config.run_functions_eagerly(True)
+                    single_model = trainer.model.build_single_output_model(horizon_idx=0)
+                    # Return to normal execution mode after model creation
+                    tf.config.run_functions_eagerly(False)
+                except ValueError as e:
+                    if "Shapes used to initialize variables" in str(e):
+                        logger.error(f"Shape initialization error: {str(e)}")
+                        return -1.0
+                    raise
+                
+                # Rest of the training and evaluation code...
+                # Assurer la reproductibilité pour chaque essai
+                np.random.seed(42)
+                tf.random.set_seed(42)
+                
+                try:
+                    # Configuration des paramètres avec les nouvelles plages recommandées
+                    lstm_units_first = trial.suggest_int("lstm_units_first", 64, 256)
+                    lstm_layers = trial.suggest_int("lstm_layers", 1, 3)
+                    lstm_units = [lstm_units_first]
+                    for i in range(1, lstm_layers):
+                        lstm_units.append(lstm_units_first // 2)
+                    
+                    dropout_rate = trial.suggest_float("dropout_rate", 0.2, 0.5)
+                    learning_rate = trial.suggest_float("learning_rate", 1e-5, 1e-3, log=True)
+                    
+                    # Taille du batch parmi des valeurs fixes
+                    batch_size = trial.suggest_categorical("batch_size", [16, 32, 64, 128])
+                    
+                    # IMPORTANT: Hardcode sequence_length to 60, do NOT let Optuna suggest it
+                    sequence_length = 60
+                    
+                    # Process a small batch of data to determine the actual feature dimension
+                    X_sample, _ = self.feature_engineering.create_multi_horizon_data(
+                        self.normalized_train.iloc[:100],
+                        sequence_length=sequence_length,
+                        horizons=[4],
+                        is_training=True
+                    )
+                    
+                    # Check if X_sample has the expected 3D shape
+                    if X_sample is None or len(X_sample) == 0:
+                        logger.error("Failed to create input sequences - X_sample is empty")
+                        raise ValueError("Failed to create valid input sequences")
+                        
+                    if len(X_sample.shape) != 3:
+                        logger.error(f"X_sample has unexpected shape: {X_sample.shape}, expected 3D tensor")
+                        raise ValueError(f"Expected 3D tensor, got shape {X_sample.shape}")
+                    
+                    # Get the actual feature dimension from the processed data
+                    actual_feature_dim = X_sample.shape[2]
+                    logger.info(f"Detected actual feature dimension: {actual_feature_dim}")
+                    
+                    # Ensure feature dimension is fixed and known before building the model
+                    # This is critical to avoid the "None" dimension error
+                    if actual_feature_dim <= 0:
+                        logger.error(f"Invalid feature dimension: {actual_feature_dim}")
+                        raise ValueError(f"Feature dimension must be positive, got {actual_feature_dim}")
+                    
+                    # Build model parameters - be explicit about all dimensions
+                    model_params = {
+                        "input_length": sequence_length,  # Fixed to 60
+                        "feature_dim": actual_feature_dim,  # Use the detected feature dimension
+                        "lstm_units": lstm_units,
+                        "dropout_rate": dropout_rate,
+                        "learning_rate": learning_rate,
+                        "l1_reg": trial.suggest_float("l1_reg", 1e-6, 1e-3, log=True),
+                        "l2_reg": trial.suggest_float("l2_reg", 1e-6, 1e-3, log=True),
+                        "use_attention": False,
+                        "use_residual": False,
+                        "prediction_horizons": [(4, "1h", True)]  # Use tuple format for consistency
+                    }
+                    
+                    logger.info(f"Essai {trial.number}: {json.dumps(model_params, indent=2)}")
+                    
+                    # Créer le trainer avec les paramètres
+                    trainer = ModelTrainer(model_params)
+                    
+                    # Créer un modèle à sortie unique pour l'optimisation
+                    try:
+                        single_model = trainer.model.build_single_output_model(horizon_idx=0)  # Utiliser l'horizon court terme
+                    except ValueError as e:
+                        if "Shapes used to initialize variables" in str(e):
+                            logger.error(f"Shape error creating model: {str(e)}")
+                            logger.error("This is likely due to undefined dimensions in the model inputs")
+                            return -1.0
+                        raise
+                    
+                    # Préparer les données pour ce modèle avec strong validation
+                    X_train, y_lists = self.feature_engineering.create_multi_horizon_data(
+                        self.normalized_train,
+                        sequence_length=sequence_length,
+                        horizons=[4],  # Use consistent horizons format
+                        is_training=True
+                    )
+                    
+                    # Debug information - log shape before any processing
+                    logger.info(f"Original X_train shape: {X_train.shape}")
+                    
+                    # Verify X_train shape and reshape if needed
+                    if len(X_train.shape) != 3:
+                        logger.warning(f"X_train has unexpected shape: {X_train.shape}, attempting to reshape")
+                        if len(X_train.shape) == 2:
+                            # If X_train is 2D (samples, features), reshape to 3D (samples, sequence_length, features/sequence_length)
+                            num_samples = X_train.shape[0]
+                            total_features = X_train.shape[1]
+                            
+                            # Check if total_features is divisible by sequence_length
+                            if total_features % sequence_length == 0:
+                                feature_dim = total_features // sequence_length
+                                X_train = X_train.reshape(num_samples, sequence_length, feature_dim)
+                                logger.info(f"Reshaped X_train to {X_train.shape}")
+                            else:
+                                # If not divisible, we'll need to pad or truncate
+                                logger.warning(f"Total features {total_features} not divisible by sequence length {sequence_length}")
+                                # Create a new array with the right shape
+                                feature_dim = actual_feature_dim  # Use the feature dimension we detected earlier
+                                new_X_train = np.zeros((num_samples, sequence_length, feature_dim))
+                                
+                                # Fill with available data, truncating if necessary
+                                for i in range(num_samples):
+                                    flat_data = X_train[i]
+                                    # Reshape the flat data into a 2D array of appropriate size
+                                    if len(flat_data) >= sequence_length * feature_dim:
+                                        reshaped_data = flat_data[:sequence_length * feature_dim].reshape(sequence_length, feature_dim)
+                                    else:
+                                        # Pad with zeros
+                                        padded_data = np.zeros(sequence_length * feature_dim)
+                                        padded_data[:len(flat_data)] = flat_data
+                                        reshaped_data = padded_data.reshape(sequence_length, feature_dim)
+                                    
+                                    new_X_train[i] = reshaped_data
+                                
+                                X_train = new_X_train
+                                logger.info(f"Created new X_train with shape {X_train.shape}")
+                        else:
+                            raise ValueError(f"Cannot reshape X_train with shape {X_train.shape}")
+                    
+                    # Verify timesteps dimension matches sequence_length
+                    if X_train.shape[1] != sequence_length:
+                        logger.error(f"X_train timesteps {X_train.shape[1]} doesn't match sequence_length {sequence_length}")
+                        # Try to fix this by padding or truncating
+                        if X_train.shape[1] < sequence_length:
+                            # Pad with zeros
+                            padding = np.zeros((X_train.shape[0], sequence_length - X_train.shape[1], X_train.shape[2]))
+                            X_train = np.concatenate([X_train, padding], axis=1)
+                            logger.info(f"Padded X_train to shape {X_train.shape}")
+                        else:
+                            # Truncate
+                            X_train = X_train[:, :sequence_length, :]
+                            logger.info(f"Truncated X_train to shape {X_train.shape}")
+                    
+                    # Also validate validation data with strong validation
+                    X_val, y_val_lists = self.feature_engineering.create_multi_horizon_data(
+                        self.normalized_val,
+                        sequence_length=sequence_length,
+                        horizons=[4],  # Use consistent horizons format
+                        is_training=True
+                    )
+                    
+                    # Debug information - log shape before any processing
+                    logger.info(f"Original X_val shape: {X_val.shape}")
+                    
+                    # Verify X_val shape and reshape if needed - same logic as X_train
+                    if len(X_val.shape) != 3:
+                        logger.warning(f"X_val has unexpected shape: {X_val.shape}, attempting to reshape")
+                        if len(X_val.shape) == 2:
+                            # If X_val is 2D (samples, features), reshape to 3D (samples, sequence_length, features/sequence_length)
+                            num_samples = X_val.shape[0]
+                            total_features = X_val.shape[1]
+                            
+                            # Check if total_features is divisible by sequence_length
+                            if total_features % sequence_length == 0:
+                                feature_dim = total_features // sequence_length
+                                X_val = X_val.reshape(num_samples, sequence_length, feature_dim)
+                                logger.info(f"Reshaped X_val to {X_val.shape}")
+                            else:
+                                # If not divisible, we'll need to pad or truncate
+                                feature_dim = actual_feature_dim  # Use the feature dimension we detected earlier
+                                new_X_val = np.zeros((num_samples, sequence_length, feature_dim))
+                                
+                                # Fill with available data, truncating if necessary
+                                for i in range(num_samples):
+                                    flat_data = X_val[i]
+                                    # Reshape the flat data into a 2D array of appropriate size
+                                    if len(flat_data) >= sequence_length * feature_dim:
+                                        reshaped_data = flat_data[:sequence_length * feature_dim].reshape(sequence_length, feature_dim)
+                                    else:
+                                        # Pad with zeros
+                                        padded_data = np.zeros(sequence_length * feature_dim)
+                                        padded_data[:len(flat_data)] = flat_data
+                                        reshaped_data = padded_data.reshape(sequence_length, feature_dim)
+                                    
+                                    new_X_val[i] = reshaped_data
+                                
+                                X_val = new_X_val
+                                logger.info(f"Created new X_val with shape {X_val.shape}")
+                        else:
+                            raise ValueError(f"Cannot reshape X_val with shape {X_val.shape}")
+                    
+                    # Verify X_val timesteps dimension matches sequence_length
+                    if X_val.shape[1] != sequence_length:
+                        logger.error(f"X_val timesteps {X_val.shape[1]} doesn't match sequence_length {sequence_length}")
+                        # Try to fix this by padding or truncating
+                        if X_val.shape[1] < sequence_length:
+                            # Pad with zeros
+                            padding = np.zeros((X_val.shape[0], sequence_length - X_val.shape[1], X_val.shape[2]))
+                            X_val = np.concatenate([X_val, padding], axis=1)
+                            logger.info(f"Padded X_val to shape {X_val.shape}")
+                        else:
+                            # Truncate
+                            X_val = X_val[:, :sequence_length, :]
+                            logger.info(f"Truncated X_val to shape {X_val.shape}")
+                    
+                    # Verify validation data shape matches training data shape
+                    if X_train.shape[1:] != X_val.shape[1:]:
+                        logger.error(f"Shape mismatch: X_train {X_train.shape[1:]}, X_val {X_val.shape[1:]}")
+                        # Try to fix feature dimension mismatch
+                        if X_train.shape[1] == X_val.shape[1] and X_train.shape[2] != X_val.shape[2]:
+                            # Sequence length matches but feature dimension doesn't
+                            min_features = min(X_train.shape[2], X_val.shape[2])
+                            X_train = X_train[:, :, :min_features]
+                            X_val = X_val[:, :, :min_features]
+                            logger.info(f"Adjusted feature dimensions to match: X_train {X_train.shape}, X_val {X_val.shape}")
+                        else:
+                            raise ValueError("Training and validation data shapes don't match and cannot be fixed")
+                    
+                    # Extraire uniquement les directions pour l'horizon court terme
+                    y_train = y_lists[0]  # Direction pour le premier horizon
+                    y_val = y_val_lists[0]  # Direction pour le premier horizon
+                    
+                    # Vérification immédiate de la cohérence de la dimension temporelle
+                    assert X_train.shape[1] == sequence_length, f"Mismatch: séquence attendue {sequence_length} vs données {X_train.shape[1]}"
+                    
+                    # Make sure y_train is the right shape (flattened to 1D if needed)
+                    if len(y_train.shape) > 1:
+                        y_train = y_train.flatten()
+                        logger.info(f"Flattened y_train to shape {y_train.shape}")
+                    
+                    if len(y_val.shape) > 1:
+                        y_val = y_val.flatten()
+                        logger.info(f"Flattened y_val to shape {y_val.shape}")
+                    
+                    # Calculer les poids des classes pour l'équilibrage
+                    class_counts = np.bincount(y_train.flatten().astype(int))
+                    class_weights = {
+                        0: len(y_train) / (2 * class_counts[0]) if class_counts[0] > 0 else 1.0,
+                        1: len(y_train) / (2 * class_counts[1]) if class_counts[1] > 0 else 1.0
+                    }
+                    
+                    # Build training callbacks: early stopping and learning rate reducer
+                    from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau # type: ignore
+                    callbacks = [
+                        EarlyStopping(
+                            monitor='val_loss',
+                            patience=trial.suggest_int("early_stopping_patience", 5, 15),
+                            restore_best_weights=True
+                        ),
+                        ReduceLROnPlateau(
+                            monitor='val_loss',
+                            factor=0.5,
+                            patience=trial.suggest_int("reduce_lr_patience", 3, 7),
+                            min_lr=1e-6,
+                            verbose=1
+                        )
+                    ]
+                    
+                    # Log input shape to help diagnose any issues
+                    logger.info(f"Training with input shape: {X_train.shape}, output shape: {y_train.shape}")
+                    
+                    # Perform a final check of the model input shape vs data shape
+                    model_input_shape = single_model.input.shape
+                    logger.info(f"Model expects input shape: {model_input_shape}")
+                    if model_input_shape[1] != X_train.shape[1] or model_input_shape[2] != X_train.shape[2]:
+                        logger.error(f"Model input shape {model_input_shape[1:]} doesn't match data shape {X_train.shape[1:]}")
+                        # Try to rebuild the model with the correct shape
+                        model_params["input_length"] = X_train.shape[1]
+                        model_params["feature_dim"] = X_train.shape[2]
+                        logger.info(f"Rebuilding model with adjusted parameters: input_length={model_params['input_length']}, feature_dim={model_params['feature_dim']}")
+                        trainer = ModelTrainer(model_params)
+                        single_model = trainer.model.build_single_output_model(horizon_idx=0)
+                    
+                    # Utilisation d'un sous-échantillon pour l'optimisation
+                    max_samples = 5000
+                    if len(X_train) > max_samples:
+                        logger.info(f"Using {max_samples} samples for optimization (from {len(X_train)} total)")
+                        X_train_sample = X_train[:max_samples]
+                        y_train_sample = y_train[:max_samples]
+                    else:
+                        X_train_sample = X_train
+                        y_train_sample = y_train
+                        
+                    # Entraîner le modèle sur un sous-ensemble de données pour réduire le temps d'optimisation
+                    history = single_model.fit(
+                        X_train_sample, y_train_sample,
+                        validation_data=(X_val, y_val),
+                        epochs=30,  # Epochs réduits pour l'optimisation
+                        batch_size=batch_size,
+                        class_weight=class_weights,
+                        callbacks=callbacks,
+                        verbose=0  # Réduire la verbosité pour optimiser
+                    )
+                    
+                    # Récupérer les métriques
+                    val_accuracy = max(history.history['val_accuracy'])
+                    val_loss = min(history.history['val_loss'])
+                    
+                    # Évaluer sur l'ensemble de validation complet 
+                    # Calculer le F1-score qui est plus approprié pour les données déséquilibrées
+                    from sklearn.metrics import f1_score
+                    y_pred = (single_model.predict(X_val) > 0.5).astype(int)
+                    f1 = f1_score(y_val, y_pred)
+                    
+                    # Enregistrer les métriques dans l'historique des essais
+                    trial_metrics = {
+                        "val_accuracy": float(val_accuracy),
+                        "val_loss": float(val_loss),
+                        "f1_score": float(f1),
+                        "params": model_params
+                    }
+                    
+                    self.trials_history.append(trial_metrics)
+                    self._save_trials_history()
+                    
+                    # Retourner le F1-score comme métrique d'optimisation
+                    return f1
+                    
+                except Exception as e:
+                    logger.error(f"Error in objective function: {str(e)}")
+                    import traceback
+                    logger.error(traceback.format_exc())
+                    # Return a very low score so this trial is considered a failure
+                    return -1.0  # Using pruned might prevent useful error messages
             
-            # Créer un modèle à sortie unique pour l'optimisation
-            single_model = trainer.model.build_single_output_model(horizon_idx=0)  # Utiliser l'horizon court terme
-            
-            # Préparer les données pour ce modèle
-            X_train, y_lists = trainer.feature_engineering.create_multi_horizon_data(
-                self.normalized_train,
-                sequence_length=model_params["input_length"],
-                horizons=model_params["prediction_horizons"],
-                is_training=True
-            )
-            
-            X_val, y_val_lists = trainer.feature_engineering.create_multi_horizon_data(
-                self.normalized_val,
-                sequence_length=model_params["input_length"],
-                horizons=model_params["prediction_horizons"],
-                is_training=True
-            )
-            
-            # Extraire uniquement les directions pour l'horizon court terme
-            y_train = y_lists[0]  # Direction pour le premier horizon
-            y_val = y_val_lists[0]  # Direction pour le premier horizon
-            
-            # Vérification immédiate de la cohérence de la dimension temporelle
-            assert X_train.shape[1] == sequence_length, f"Mismatch: séquence attendue {sequence_length} vs données {X_train.shape[1]}"
-            
-            # Calculer les poids des classes pour l'équilibrage
-            class_counts = np.bincount(y_train.flatten())
-            class_weights = {
-                0: len(y_train) / (2 * class_counts[0]),
-                1: len(y_train) / (2 * class_counts[1])
-            }
-            
-            # Build training callbacks: early stopping and learning rate reducer
-            from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau # type: ignore
-            callbacks = [
-                EarlyStopping(
-                    monitor='val_loss',
-                    patience=trial.suggest_int("early_stopping_patience", 5, 15),
-                    restore_best_weights=True
-                ),
-                ReduceLROnPlateau(
-                    monitor='val_loss',
-                    factor=0.5,
-                    patience=trial.suggest_int("reduce_lr_patience", 3, 7),
-                    min_lr=1e-6,
-                    verbose=1
-                )
-            ]
-            
-            # Création des séquences complètes
-            X_train_full, y_train_list = trainer.feature_engineering.create_multi_horizon_data(
-                self.normalized_train,
-                sequence_length=model_params["input_length"],
-                horizons=model_params["prediction_horizons"],
-                is_training=True
-            )
-            X_val_full, y_val_list = trainer.feature_engineering.create_multi_horizon_data(
-                self.normalized_val,
-                sequence_length=model_params["input_length"],
-                horizons=model_params["prediction_horizons"],
-                is_training=True
-            )
-            # Utilisation d’un sous-échantillon pour l’optimisation
-            X_train_sample = X_train_full[:1000]
-            y_train_sample = y_train_list[0][:1000]
-            X_val_sample = X_val_full[:200]
-            y_val_sample = y_val_list[0][:200]
-            
-            history = single_model.fit(
-                x=X_train_sample,
-                y=y_train_sample,
-                epochs=10,  # Nombre réduit pour l’optimisation
-                batch_size=batch_size,
-                validation_data=(X_val_sample, y_val_sample),
-                class_weight=class_weights,
-                callbacks=callbacks,
-                verbose=0
-            )
-            
-            # Évaluer le modèle
-            val_loss, val_accuracy = single_model.evaluate(X_val, y_val, verbose=0)
-            
-            # Prédictions pour calculer le F1 score
-            y_pred = (single_model.predict(X_val) > 0.5).astype(int).flatten()
-            f1 = f1_score(y_val, y_pred)
-            
-            # Enregistrer les résultats
-            trial_result = {
-                "trial_number": trial.number,
-                "params": model_params,
-                "batch_size": batch_size,
-                "val_loss": float(val_loss),
-                "val_accuracy": float(val_accuracy),
-                "f1_score": float(f1),
-                "class_weights": {str(k): float(v) for k, v in class_weights.items()},
-                "timestamp": datetime.now().isoformat()
-            }
-            
-            self.trials_history.append(trial_result)
-            
-            # Sauvegarder périodiquement
-            if len(self.trials_history) % 5 == 0:
-                self._save_trials_history()
-            
-            logger.info(f"Essai {trial.number}: F1={f1:.4f}, Accuracy={val_accuracy:.4f}")
-            
-            return f1  # Optimiser le F1 score
-            
+            except Exception as e:
+                logger.error(f"Error creating model trainer: {str(e)}")
+                return -1.0
+                
         except Exception as e:
-            logger.error(f"Erreur lors de l'entraînement: {str(e)}")
-            return 0.0  # Valeur par défaut en cas d'erreur
-    
+            logger.error(f"Error in objective function: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return -1.0
+
     def _save_trials_history(self):
         """Sauvegarde l'historique des essais"""
         history_path = os.path.join(self.output_dir, f"trials_history_{datetime.now().strftime('%Y%m%d')}.json")
@@ -560,7 +821,7 @@ def main():
     lstm_units = best_params.get("lstm_units_first", 128)
     
     cmd = f"python train_model.py train --symbol {args.symbol} --timeframe {args.timeframe} "
-    cmd += f"--sequence-length {best_params.get('sequence_length', 60)} "
+    cmd += f"--sequence-length 60 "  # Always force 60 regardless of what's in best_params
     cmd += f"--lstm-units {lstm_units} "
     cmd += f"--dropout {best_params.get('dropout_rate', 0.3)} "
     cmd += f"--learning-rate {best_params.get('learning_rate', 0.001)} "

@@ -222,9 +222,9 @@ def train_model(args):
     if 'horizons' not in locals():
         horizons = [12, 24, 96]
 
-    if not hasattr(args, 'sequence_length') or args.sequence_length is None:
-        args.sequence_length = 60
-    sequence_length = args.sequence_length
+    # Force sequence_length to 60 regardless of what's in args
+    args.sequence_length = 60
+    sequence_length = 60
 
     required_samples = sequence_length + max(horizons)
     if len(train_data) < required_samples:
@@ -291,7 +291,7 @@ def train_model(args):
     logger.info("Création des séquences pour l'entraînement...")
     X_train, y_train = feature_engineering.create_multi_horizon_data(
         train_data, 
-        sequence_length=args.sequence_length,  # Use the sequence length from params
+        sequence_length=60,  # Force 60 here
         horizons=horizons,
         is_training=True
     )
@@ -305,7 +305,7 @@ def train_model(args):
     logger.info("Création des séquences pour la validation...")
     X_val, y_val = feature_engineering.create_multi_horizon_data(
         val_data, 
-        sequence_length=sequence_length,  # Use the sequence length from params here too
+        sequence_length=60,  # Force 60 here
         horizons=horizons,
         is_training=True
     )

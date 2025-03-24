@@ -22,25 +22,56 @@ DEFAULT_STEP_SIZE = 10
 DEFAULT_CV_FOLDS = 3
 
 FEATURE_COLUMNS = [
+    # Données OHLCV de base
     "open", "high", "low", "close", "volume",
+    # Indicateurs de tendance
     "ema_9", "ema_21", "ema_50", "ema_200",
     "dist_to_ema_9", "dist_to_ema_21", "dist_to_ema_50", "dist_to_ema_200",
     "macd", "macd_signal", "macd_hist",
     "adx", "plus_di", "minus_di",
-    "rsi", "stoch_k", "stoch_d",
-    "roc_5", "roc_10", "roc_21",
+    # Indicateurs de momentum
+    "rsi", "stoch_k", "stoch_d", "roc_5", "roc_10", "roc_21",
+    # Indicateurs de volatilité
     "bb_upper", "bb_middle", "bb_lower", "bb_width", "bb_percent_b",
-    "atr", "atr_percent", "obv",
-    "rel_volume_5", "rel_volume_10", "rel_volume_21",
+    "atr", "atr_percent", 
+    # Indicateurs de volume
+    "obv", "rel_volume_5", "rel_volume_10", "rel_volume_21",
     "vwap", "vwap_dist",
+    # Caractéristiques de prix et rendements
     "return_1", "return_3", "return_5", "return_10",
+    # Caractéristiques des chandeliers
     "body_size", "body_size_percent", "upper_wick", "lower_wick",
     "upper_wick_percent", "lower_wick_percent",
     "gap_up", "gap_down",
+    # Caractéristiques temporelles
     "hour_sin", "hour_cos", "day_sin", "day_cos",
     "day_of_month_sin", "day_of_month_cos",
+    # Support/résistance
     "is_high", "is_low", "dist_to_high", "dist_to_low",
-    "rsi_bb", "price_volume_trend", "reversal_signal"
+    # Caractéristiques croisées
+    "rsi_bb", "price_volume_trend", "reversal_signal",
+    # Nouveaux indicateurs techniques
+    "cci_20", "williams_r_14", "stoch_rsi", "volatility_14"
+]
+
+# Liste fixe des features à utiliser pour l'entraînement et l'évaluation.
+FIXED_FEATURES = [
+    # Indicateurs de tendance
+    'ema_9', 'dist_to_ema_9', 'ema_21', 'dist_to_ema_21', 'ema_50', 'dist_to_ema_50', 'ema_200', 'dist_to_ema_200',
+    'macd', 'macd_signal', 'macd_hist', 'adx', 'plus_di', 'minus_di',
+    # Indicateurs de momentum
+    'rsi', 'stoch_k', 'stoch_d', 'roc_5', 'roc_10', 'roc_21',
+    # Indicateurs de volatilité
+    'bb_upper', 'bb_middle', 'bb_lower', 'bb_width', 'bb_percent_b', 'atr', 'atr_percent',
+    # Indicateurs de volume
+    'obv', 'rel_volume_5', 'rel_volume_10', 'rel_volume_21', 'vwap', 'vwap_dist',
+    # Caractéristiques des chandeliers
+    'body_size', 'body_size_percent', 'upper_wick', 'lower_wick', 'upper_wick_percent', 'lower_wick_percent',
+    'gap_up', 'gap_down',
+    # Caractéristiques temporelles
+    'hour_sin', 'hour_cos', 'day_sin', 'day_cos', 'day_of_month_sin', 'day_of_month_cos',
+    # Nouveaux indicateurs
+    'cci_20', 'williams_r_14', 'stoch_rsi', 'volatility_14'
 ]
 
 def load_config():

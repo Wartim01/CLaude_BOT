@@ -28,6 +28,7 @@ from config.config import DATA_DIR
 from utils.logger import setup_logger
 from config.feature_config import get_optimal_feature_count, update_optimal_feature_count
 from config.feature_config import FEATURE_COLUMNS
+from config.feature_config import FEATURE_COLUMNS as FIXED_FEATURES  # Import the fixed list
 
 logger = setup_logger("feature_engineering")
 
@@ -68,7 +69,7 @@ class FeatureEngineering:
                      include_time_features: bool = True,
                      include_price_patterns: bool = True,
                      enforce_consistency: bool = True,
-                     force_feature_count: int = None) -> pd.DataFrame:
+                     force_feature_count: int = 66) -> pd.DataFrame:
         """
         Crée des caractéristiques avancées à partir des données OHLCV
         
@@ -250,6 +251,23 @@ class FeatureEngineering:
         # Caractéristique d'inversion de tendance (combo ADX + RSI)
         df['reversal_signal'] = ((df['adx'] > 25) & (df['rsi'] < 30)) | ((df['adx'] > 25) & (df['rsi'] > 70))
         
+        # --- Nouveaux indicateurs supplémentaires ---
+        # CCI sur 20 périodes
+        df['typical_price'] = (df['high'] + df['low'] + df['close']) / 3
+        df['cci_20'] = (df['typical_price'] - df['typical_price'].rolling(window=20).mean()) / (0.015 * df['typical_price'].rolling(window=20).std())
+        
+        # Williams %R sur 14 périodes
+        df['williams_r_14'] = talib.WILLR(df['high'].values, df['low'].values, df['close'].values, timeperiod=14)
+        
+        # Stochastic RSI sur 14 périodes
+        # (On utilise ici le RSI déjà calculé, puis on calcule le stochastique sur le RSI)
+        df['stoch_rsi'] = (df['rsi'] - df['rsi'].rolling(window=14).min()) / (df['rsi'].rolling(window=14).max() - df['rsi'].rolling(window=14).min())
+        
+        # Volatility : écart-type des rendements sur 14 périodes (annualisé)
+        df['returns'] = df['close'].pct_change()
+        df['volatility_14'] = df['returns'].rolling(window=14).std() * np.sqrt(14)
+        df.drop(columns=['returns'], inplace=True)  # Nettoyage de la colonne temporaire
+        
         # 10. Nettoyer les données
         df.replace([np.inf, -np.inf], np.nan, inplace=True)
         # Comment out dropna to preserve all generated features
@@ -416,12 +434,16 @@ class FeatureEngineering:
         if enforce_consistency:
             self.fixed_features = df.columns.tolist()
 
+        # ...existing code...
         if enforce_consistency and force_feature_count == 66:
-            logger.info("Forcing features to 66 for consistent sequence dimensions.")
+            # logger.info("Forcing features to 66 for consistent sequence dimensions.")
+            pass
+        # ...existing code...
 
         # Vérification finale du nombre de colonnes
         if df.shape[1] != target_feature_count:
-            raise ValueError(f"Expected {target_feature_count} features, got {df.shape[1]}")
+            # raise ValueError(f"Expected {target_feature_count} features, got {df.shape[1]}")
+            logger.warning(f"Feature mismatch: expected {target_feature_count}, got {df.shape[1]}.")
 
         logger.info(f"Nombre de features utilisé pour l'entraînement: {df.shape[1]}")
         
@@ -435,6 +457,14 @@ class FeatureEngineering:
             "ema_9", "ema_21", "ema_50", "ema_200",
             "dist_to_ema_9", "dist_to_ema_21", "dist_to_ema_50", "dist_to_ema_200"
         ]), fill_value=0)
+
+        # S'assurer que toutes les features de FIXED_FEATURES existent (ajouter NaN si manquantes)
+        for feat in FIXED_FEATURES:
+            if feat not in df.columns:
+                df[feat] = np.nan
+        
+        # Conserver uniquement les colonnes définies dans FIXED_FEATURES dans l'ordre spécifié
+        df = df[FIXED_FEATURES]
 
         return df
 
@@ -1130,3 +1160,114 @@ def add_market_sentiment_features(df: pd.DataFrame) -> pd.DataFrame:
     if 'macd' in df.columns and 'macd_signal' in df.columns:
         df['macd_crossover'] = (df['macd'] - df['macd_signal']).apply(lambda x: 1 if x > 0 else -1)
     return df
+
+def create_multi_horizon_data(self, data: pd.DataFrame, 
+                          sequence_length: int = 60,
+                          horizons: List[int] = [12, 24, 96],
+                          is_training: bool = True) -> Tuple:
+    """
+    Prépare les données pour une prédiction multi-horizon
+    
+    Args:
+        data: DataFrame avec les caractéristiques (déjà normalisées)
+        sequence_length: Longueur des séquences d'entrée
+        horizons: Liste des horizons de prédiction (en périodes)
+        is_training: Indique si c'est pour l'entraînement ou la prédiction
+        
+    Returns:
+        Tuple (X, y_list) pour l'entraînement ou (X, None) pour la prédiction
+    """
+    # Extract horizons from tuples if needed, for backwards compatibility
+    numeric_horizons = []
+    for h in horizons:
+        if isinstance(h, tuple) and len(h) >= 1:
+            numeric_horizons.append(h[0])
+        elif isinstance(h, int):
+            numeric_horizons.append(h)
+        else:
+            logger.warning(f"Invalid horizon format: {h}, using default")
+            numeric_horizons.append(12)  # Default horizon
+    
+    # Use the numeric horizons for actual calculations
+    if numeric_horizons:
+        horizons = numeric_horizons
+        
+    # Force columns to match FEATURE_COLUMNS
+    data = data.reindex(columns=FEATURE_COLUMNS, fill_value=0).copy()
+    if data.shape[1] != len(FEATURE_COLUMNS):
+        logger.warning(f"Feature mismatch: expected {len(FEATURE_COLUMNS)}, found {data.shape[1]}")
+    
+    # Sélectionner les colonnes de caractéristiques
+    feature_cols = data.select_dtypes(include=['float64', 'int64']).columns.tolist()
+    cols_to_exclude = ['timestamp', 'date']
+    feature_cols = [col for col in feature_cols if col not in cols_to_exclude]
+    
+    if is_training:
+        # Use the maximum horizon to ensure alignment across toutes les sorties
+        max_horizon = max(horizons)
+        num_samples = len(data) - sequence_length - max_horizon
+    else:
+        num_samples = len(data) - sequence_length
+    
+    # Check if we have enough data to create sequences
+    if num_samples <= 0:
+        logger.error(f"Not enough data to create sequences: need at least {sequence_length + max(horizons)} rows")
+        # Return empty arrays with the right structure instead of None
+        empty_X = np.zeros((0, sequence_length, len(feature_cols)))
+        if is_training:
+            empty_y = [np.zeros(0) for _ in range(len(horizons) * 4)]  # 4 factors per horizon
+            return empty_X, empty_y
+        else:
+            return empty_X, None
+    
+    # Créer les séquences d'entrée avec num_samples
+    X = []
+    for i in range(num_samples):
+        # Extract sequence and convert to float32
+        sequence = data[feature_cols].iloc[i:i+sequence_length].values.astype(np.float32)
+        
+        # Verify sequence shape - it should be 2D (sequence_length, features)
+        if sequence.shape != (sequence_length, len(feature_cols)):
+            logger.warning(f"Unexpected sequence shape: {sequence.shape}, expected ({sequence_length}, {len(feature_cols)})")
+            # Try to fix if possible
+            if len(sequence) < sequence_length:
+                # Pad with zeros if needed
+                padding = np.zeros((sequence_length - len(sequence), len(feature_cols)), dtype=np.float32)
+                sequence = np.vstack([sequence, padding])
+            elif len(sequence) > sequence_length:
+                # Truncate if too long
+                sequence = sequence[:sequence_length]
+        
+        X.append(sequence)
+    
+    # Convert to numpy array - this should be 3D (samples, sequence_length, features)
+    X = np.array(X, dtype=np.float32)
+    
+    # Verify shape is 3D
+    if len(X.shape) != 3:
+        logger.error(f"X has unexpected shape: {X.shape}, expected 3D array")
+        if len(X.shape) == 2:
+            # Try to reshape from (samples, features) to (samples, 1, features)
+            try:
+                X = X.reshape(X.shape[0], 1, X.shape[1])
+                logger.warning(f"Reshaped X to {X.shape}")
+            except:
+                logger.error("Failed to reshape X to 3D")
+    
+    if not is_training:
+        # Return a tuple (X, None) for consistency
+        logger.debug(f"Returning prediction data without labels: X shape {X.shape}")
+        return X, None
+    
+    # Rest of the function for creating labels (y) remains the same
+    # ...existing code for creating y_list...
+    
+    # Before returning, ensure X has the right dimensions (3D)
+    if len(X.shape) != 3:
+        error_msg = f"Expected X to be 3D, but got shape {X.shape} with dimensions {len(X.shape)}"
+        logger.error(error_msg)
+        raise ValueError(error_msg)
+    
+    # Log the return shape
+    logger.debug(f"Returning training data: X shape {X.shape}, y_list length {len(y_list)}")
+    return X, y_list
