@@ -29,69 +29,44 @@ from config.model_params import LSTM_DEFAULT_PARAMS
 
 # Configuration du logger
 logger = setup_logger("hyperparameter_search")
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 def update_model_params_file(best_params, timeframe, f1_score):
-    """
-    Updates the parameters in config.model_params.py with the best parameters.
-    """
-    params_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config', 'model_params.py')
-    if not os.path.exists(params_file):
-        logger.error(f"Configuration file not found: {params_file}")
-        return False
+    import json, os
+    from datetime import datetime
+    
+    # Chemin du fichier de paramètres optimisés
+    params_path = os.path.join("config", "optimized_params.json")
+    
+    # Créer le répertoire si nécessaire
+    os.makedirs(os.path.dirname(params_path), exist_ok=True)
+    
+    # Charger les paramètres existants s'ils existent
+    existing_params = {}
+    if os.path.exists(params_path):
+        try:
+            with open(params_path, 'r') as f:
+                existing_params = json.load(f)
+            logger.debug(f"Paramètres existants chargés depuis {params_path}")
+        except Exception as e:
+            logger.warning(f"Erreur lors du chargement des paramètres existants: {e}")
+    
+    # Préparer les nouveaux paramètres
+    updated_params = best_params.copy()
+    updated_params["last_optimized"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    updated_params["f1_score"] = f1_score
+    
+    # Mettre à jour uniquement le timeframe spécifié, préserver les autres
+    existing_params[timeframe] = updated_params
+    
+    # Enregistrer les paramètres mis à jour
     try:
-        with open(params_file, 'r') as file:
-            content = file.read()
-        # Update optimized params for the current timeframe
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        lstm_units_str = str([best_params.get("lstm_units_first", 128)] +
-                             [best_params.get("lstm_units_first", 128)//2]*(best_params.get("lstm_layers", 2)-1))
-        pattern = rf'"{timeframe}":\s*\{{[\s\S]*?\}}'
-        replacement = f'"{timeframe}": {{\n'
-        replacement += f'        "lstm_units": {lstm_units_str},\n'
-        replacement += f'        "dropout_rate": {best_params.get("dropout_rate", 0.3)},\n'
-        replacement += f'        "learning_rate": {best_params.get("learning_rate", 0.001)},\n'
-        replacement += f'        "batch_size": {best_params.get("batch_size", 64)},\n'
-        replacement += f'        "sequence_length": {best_params.get("sequence_length", 60)},\n'
-        replacement += f'        "l1_regularization": {best_params.get("l1_reg", 0.0001)},\n'
-        replacement += f'        "l2_regularization": {best_params.get("l2_reg", 0.0001)},\n'
-        replacement += f'        "use_attention": True,\n'
-        replacement += f'        "use_residual": True,\n'
-        replacement += f'        "last_optimized": "{timestamp}",\n'
-        replacement += f'        "f1_score": {f1_score}\n'
-        replacement += f'    }}'
-        updated_content = re.sub(pattern, replacement, content, flags=re.DOTALL)
-        logger.debug(f"Updated config content:\n{updated_content}")
-        updated_content = re.sub(r'# Last optimization: .*', f'# Last optimization: {timestamp} (timeframe: {timeframe}, F1: {f1_score:.4f})', updated_content)
-        # Update LSTM_DEFAULT_PARAMS section similarly
-        default_pattern = r'LSTM_DEFAULT_PARAMS\s*=\s*\{[\s\S]*?\}'
-        new_params_str = "LSTM_DEFAULT_PARAMS = {\n"
-        new_params = {
-            "lstm_units": [best_params.get("lstm_units_first", 128)] +
-                          [best_params.get("lstm_units_first", 128)//2]*(best_params.get("lstm_layers", 2)-1),
-            "dropout_rate": best_params.get("dropout_rate", 0.3),
-            "learning_rate": best_params.get("learning_rate", 0.001),
-            "batch_size": best_params.get("batch_size", 64),
-            "sequence_length": best_params.get("sequence_length", 60),
-            "l1_regularization": best_params.get("l1_reg", 0.0001),
-            "l2_regularization": best_params.get("l2_reg", 0.0001)
-        }
-        for key, value in new_params.items():
-            new_params_str += f'    "{key}": {value},\n'
-        new_params_str += '    "use_attention": True,\n'
-        new_params_str += '    "use_residual": True,\n'
-        new_params_str += '    "epochs": 100,\n'
-        new_params_str += '    "early_stopping_patience": 15,\n'
-        new_params_str += '    "reduce_lr_patience": 7\n'
-        new_params_str += "}"
-        updated_content = re.sub(default_pattern, new_params_str, updated_content, flags=re.DOTALL)
-        with open(params_file, 'w') as file:
-            file.write(updated_content)
-        logger.info(f"Parameters in {params_file} updated successfully with F1 score: {f1_score:.4f}")
-        return True
+        with open(params_path, 'w') as f:
+            json.dump(existing_params, f, indent=2)
+        logger.info(f"Paramètres optimisés mis à jour pour {timeframe} avec F1={f1_score:.4f}")
+        logger.debug(f"Détail des paramètres enregistrés pour {timeframe}: {json.dumps(updated_params)}")
     except Exception as e:
-        logger.error(f"Error updating model parameters file: {e}")
-        return False
+        logger.error(f"Erreur lors de l'enregistrement des paramètres optimisés: {e}")
 
 class BestModelCallback:
     """
@@ -101,34 +76,46 @@ class BestModelCallback:
         self.best_value = -float('inf')
         self.best_params = None
         self.timeframe = timeframe
+        logger.info(f"BestModelCallback initialisé pour timeframe: {timeframe}")
     
     def __call__(self, study, trial):
-        logger.debug(f"Callback __call__ invoked for trial {trial.number}")
+        logger.debug(f"Callback __call__ invoqué pour l'essai {trial.number}")
         
-        # Add error handling to check if there are completed trials
+        # Ajouter une gestion d'erreur pour vérifier s'il y a des essais terminés
         try:
-            # Only check for best value if the current trial is complete
+            # Ne vérifier que si l'essai actuel est terminé
             if trial.state == optuna.trial.TrialState.COMPLETE:
-                # Get completed trials
+                # Obtenir les essais terminés
                 completed_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
                 
-                # Only proceed if we have at least one completed trial
+                logger.debug(f"Essais terminés: {len(completed_trials)}")
+                
+                # Ne procéder que s'il y a au moins un essai terminé
                 if completed_trials:
-                    # Find the best trial manually among the completed trials
+                    # Trouver le meilleur essai manuellement parmi les essais terminés
                     best_trial = max(completed_trials, key=lambda t: t.value if t.value is not None else float('-inf'))
                     
-                    # Check if we found a new best trial
+                    logger.debug(f"Meilleur essai actuel: #{best_trial.number} avec valeur={best_trial.value}")
+                    logger.debug(f"Meilleure valeur précédente: {self.best_value}")
+                    
+                    # Vérifier si nous avons trouvé un nouvel essai meilleur
                     if best_trial.value is not None and best_trial.value > self.best_value:
+                        old_value = self.best_value
                         self.best_value = best_trial.value
                         self.best_params = best_trial.params
                         
-                        logger.info(f"New best trial found! Trial {best_trial.number}: F1={self.best_value:.4f}")
+                        logger.info(f"Nouveau meilleur essai trouvé! Essai {best_trial.number}: F1={self.best_value:.4f} (précédent: {old_value:.4f})")
                         
-                        # Update the model_params.py file with the new best parameters
+                        # Mettre à jour le fichier de paramètres avec les nouveaux meilleurs paramètres
                         update_model_params_file(self.best_params, self.timeframe, self.best_value)
+                        logger.info(f"Fichier de configuration mis à jour avec les paramètres de l'essai {best_trial.number}")
+                    else:
+                        logger.debug(f"Pas de nouveau meilleur essai trouvé (meilleur reste: F1={self.best_value:.4f})")
         except Exception as e:
-            # This can happen if there are issues with accessing trials or values
-            logger.warning(f"Could not update parameters after trial {trial.number}: {str(e)}")
+            # Cela peut se produire s'il y a des problèmes avec l'accès aux essais ou aux valeurs
+            logger.warning(f"Impossible de mettre à jour les paramètres après l'essai {trial.number}: {str(e)}")
+            import traceback
+            logger.debug(traceback.format_exc())
 
 class LSTMHyperparameterOptimizer:
     """
@@ -189,24 +176,35 @@ class LSTMHyperparameterOptimizer:
         np.random.seed(42)
         tf.random.set_seed(42)
         
+        logger.debug(f"Démarrage de l'essai #{trial.number}")
+        
         try:
-            # Configuration des paramètres avec les nouvelles plages recommandées
-            lstm_units_first = trial.suggest_int("lstm_units_first", 64, 256)
-            lstm_layers = trial.suggest_int("lstm_layers", 1, 3)
-            lstm_units = [lstm_units_first]
-            for i in range(1, lstm_layers):
-                lstm_units.append(lstm_units_first // 2)
+            # Exemple de suggestion pour les unités LSTM
+            lstm_units_first = trial.suggest_int("lstm_units_first", 136, 256)  # minimum fixé à 136
+            lstm_layers = trial.suggest_int("lstm_layers", 2, 3)  # Limiter à 2 ou 3 couches
+            
+            logger.debug(f"Essai #{trial.number}: Couches LSTM: {lstm_layers}, Unités première couche: {lstm_units_first}")
+            
+            if lstm_layers == 2:
+                lstm_units = [lstm_units_first, lstm_units_first // 2]
+            else:  # lstm_layers == 3
+                lstm_units = [lstm_units_first, lstm_units_first // 2, lstm_units_first // 2]
             
             dropout_rate = trial.suggest_float("dropout_rate", 0.2, 0.5)
             learning_rate = trial.suggest_float("learning_rate", 1e-5, 1e-3, log=True)
             
+            logger.debug(f"Essai #{trial.number}: Dropout: {dropout_rate}, Learning rate: {learning_rate}")
+            
             # Taille du batch parmi des valeurs fixes
             batch_size = trial.suggest_categorical("batch_size", [16, 32, 64, 128])
+            logger.debug(f"Essai #{trial.number}: Batch size: {batch_size}")
             
             # Fixed sequence_length = 60
             sequence_length = 60
+            logger.debug(f"Essai #{trial.number}: Longueur de séquence fixée à {sequence_length}")
             
             # Process a small batch of data to determine the actual feature dimension
+            logger.debug(f"Essai #{trial.number}: Préparation d'un échantillon de données pour déterminer la dimension des caractéristiques")
             X_sample, _ = self.feature_engineering.create_multi_horizon_data(
                 self.normalized_train.iloc[:100],
                 sequence_length=sequence_length,
@@ -216,19 +214,25 @@ class LSTMHyperparameterOptimizer:
             
             # Check if X_sample has the expected 3D shape
             if X_sample is None or len(X_sample) == 0:
-                logger.error("Failed to create input sequences - X_sample is empty")
+                logger.error(f"Essai #{trial.number}: Échec de création des séquences d'entrée - X_sample est vide")
                 return -1.0
                 
             if len(X_sample.shape) != 3:
-                logger.error(f"X_sample has unexpected shape: {X_sample.shape}, expected 3D tensor")
+                logger.error(f"Essai #{trial.number}: X_sample a une forme inattendue: {X_sample.shape}, tensor 3D attendu")
                 return -1.0
             
             # Get the actual feature dimension from the processed data
             actual_feature_dim = X_sample.shape[2]
-            logger.info(f"Detected actual feature dimension: {actual_feature_dim}")
+            logger.debug(f"Essai #{trial.number}: Dimension de caractéristiques détectée: {actual_feature_dim}")
             
             # Use a fixed feature dimension instead of a dynamic one
             FIXED_FEATURE_DIM = 67  # Hardcode this to ensure consistency
+            logger.debug(f"Essai #{trial.number}: Utilisation d'une dimension fixe de caractéristiques: {FIXED_FEATURE_DIM}")
+            
+            # Suggestion des paramètres de régularisation
+            l1_reg = trial.suggest_float("l1_reg", 1e-6, 1e-3, log=True)
+            l2_reg = trial.suggest_float("l2_reg", 1e-6, 1e-3, log=True)
+            logger.debug(f"Essai #{trial.number}: Régularisation L1: {l1_reg}, L2: {l2_reg}")
             
             # Build model parameters with FIXED feature dimensions to avoid None shape issues
             model_params = {
@@ -237,29 +241,32 @@ class LSTMHyperparameterOptimizer:
                 "lstm_units": lstm_units,
                 "dropout_rate": dropout_rate,
                 "learning_rate": learning_rate,
-                "l1_reg": trial.suggest_float("l1_reg", 1e-6, 1e-3, log=True),
-                "l2_reg": trial.suggest_float("l2_reg", 1e-6, 1e-3, log=True),
+                "l1_reg": l1_reg,
+                "l2_reg": l2_reg,
                 "use_attention": False,
                 "use_residual": False,
                 "prediction_horizons": [(4, "1h", True)]
             }
             
-            logger.info(f"Essai {trial.number}: {json.dumps(model_params, indent=2)}")
+            logger.debug(f"Essai #{trial.number}: Paramètres du modèle configurés: {json.dumps(model_params, indent=2)}")
             
             # Create trainer with explicit error handling for shape issues
             try:
+                logger.debug(f"Essai #{trial.number}: Création du ModelTrainer")
                 trainer = ModelTrainer(model_params)
                 
                 # Try to build the model with explicit error handling
                 try:
+                    logger.debug(f"Essai #{trial.number}: Construction du modèle à sortie unique")
                     # Use eager execution temporarily to help with shape issues
                     tf.config.run_functions_eagerly(True)
                     single_model = trainer.model.build_single_output_model(horizon_idx=0)
                     # Return to normal execution mode after model creation
                     tf.config.run_functions_eagerly(False)
+                    logger.debug(f"Essai #{trial.number}: Modèle construit avec succès")
                 except ValueError as e:
                     if "Shapes used to initialize variables" in str(e):
-                        logger.error(f"Shape initialization error: {str(e)}")
+                        logger.error(f"Essai #{trial.number}: Erreur d'initialisation des formes: {str(e)}")
                         return -1.0
                     raise
                 
@@ -578,7 +585,10 @@ class LSTMHyperparameterOptimizer:
                     self._save_trials_history()
                     
                     # Retourner le F1-score comme métrique d'optimisation
-                    return f1
+                    result = f1
+                    tf.keras.backend.clear_session()  # Libère la mémoire GPU après chaque essai
+                    trial.set_user_attr("completed", True)
+                    return result
                     
                 except Exception as e:
                     logger.error(f"Error in objective function: {str(e)}")
@@ -596,6 +606,86 @@ class LSTMHyperparameterOptimizer:
             import traceback
             logger.error(traceback.format_exc())
             return -1.0
+
+    from sklearn.model_selection import StratifiedShuffleSplit
+    from sklearn.metrics import f1_score
+    import numpy as np
+
+    def objective_stratified(self, trial):
+        from sklearn.model_selection import StratifiedShuffleSplit
+        from sklearn.metrics import f1_score
+        import numpy as np
+
+        def suggest_hyperparameters(trial, feature_dim):
+            lstm_units_first = trial.suggest_int("lstm_units_first", 64, 256)
+            lstm_layers = trial.suggest_int("lstm_layers", 1, 3)
+            lstm_units = [lstm_units_first]
+            for _ in range(1, lstm_layers):
+                lstm_units.append(lstm_units_first // 2)
+            return {
+                "input_length": 60,
+                "feature_dim": feature_dim,
+                "lstm_units": lstm_units,
+                "dropout_rate": trial.suggest_float("dropout_rate", 0.2, 0.5),
+                "learning_rate": trial.suggest_float("learning_rate", 1e-5, 1e-3, log=True),
+                "l1_reg": trial.suggest_float("l1_reg", 1e-6, 1e-3, log=True),
+                "l2_reg": trial.suggest_float("l2_reg", 1e-6, 1e-3, log=True),
+                "use_attention": False,
+                "use_residual": False,
+                "prediction_horizons": [(4, "1h", True)],
+                "batch_size": trial.suggest_categorical("batch_size", [16, 32, 64, 128]),
+                "sequence_length": 60,
+                "l1_regularization": 6.358e-5,
+                "l2_regularization": 0.001,
+                "epochs": 100,
+                "early_stopping_patience": trial.suggest_int("early_stopping_patience", 5, 15),
+                "reduce_lr_patience": trial.suggest_int("reduce_lr_patience", 3, 7)
+            }
+
+        # ...existing code...
+        X_all, y_lists = self.feature_engineering.create_multi_horizon_data(
+            self.normalized_train,
+            sequence_length=60,
+            horizons=[4],
+            is_training=True
+        )
+        y_all = y_lists[0].flatten()
+        sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
+        for train_idx, val_idx in sss.split(X_all, y_all):
+            X_train, X_val = X_all[train_idx], X_all[val_idx]
+            y_train, y_val = y_all[train_idx], y_all[val_idx]
+
+        feature_dim = X_train.shape[2] if len(X_train.shape)==3 else X_train.shape[1]//60
+        config = suggest_hyperparameters(trial, feature_dim)
+        
+        # Utiliser directement ModelTrainer pour construire et entraîner le modèle
+        trainer = ModelTrainer(config)
+        history = trainer.train(
+            X_train, y_train,
+            epochs=config["epochs"],
+            batch_size=config["batch_size"],
+            verbose=0
+        )
+        model = trainer.model
+        # --- existing code continues ---
+        y_pred = (model.predict(X_val) > 0.5).astype(int)
+        print("\n--- DEBUG ---")
+        print("y_pred unique values:", np.unique(y_pred, return_counts=True))
+        print("y_val unique values:", np.unique(y_val, return_counts=True))
+        print("First preds vs true:", list(zip(y_pred[:10].flatten(), y_val[:10].flatten())))
+        print("----------------\n")
+        try:
+            f1 = f1_score(y_val, y_pred, average='binary')
+        except Exception as e:
+            print("Erreur F1-score:", e)
+            f1 = 0.0
+        val_accuracy = max(history.history.get('val_accuracy', [0]))
+        val_loss = min(history.history.get('val_loss', [np.inf]))
+        trial.set_user_attr("val_accuracy", val_accuracy)
+        trial.set_user_attr("val_loss", val_loss)
+        trial.set_user_attr("f1_score", f1)
+        trial.set_user_attr("params", config)
+        return f1
 
     def _save_trials_history(self):
         """Sauvegarde l'historique des essais"""
@@ -632,10 +722,22 @@ class LSTMHyperparameterOptimizer:
         # Préparer les callbacks
         optuna_callbacks = []
         if callbacks:
+            logger.info(f"Utilisation de {len(callbacks)} callbacks fournis")
+            for cb in callbacks:
+                if isinstance(cb, BestModelCallback):
+                    logger.info(f"BestModelCallback trouvé pour timeframe: {cb.timeframe}")
             optuna_callbacks.extend(callbacks)
+        else:
+            logger.warning("Aucun callback fourni - les meilleurs paramètres ne seront pas automatiquement sauvegardés")
         
         # Lancer l'optimisation
-        study.optimize(self.objective, n_trials=n_trials, timeout=timeout, callbacks=optuna_callbacks)
+        try:
+            study.optimize(self.objective_stratified, n_trials=n_trials, timeout=timeout, callbacks=optuna_callbacks)
+            logger.info("Optimisation terminée avec succès")
+        except Exception as e:
+            logger.error(f"Erreur pendant l'optimisation: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
         
         # Obtenir les meilleurs hyperparamètres
         best_params = study.best_params
@@ -740,6 +842,20 @@ def download_data_if_needed(symbol, timeframe, start_date=None, end_date=None):
         
     logger.error(f"No data file found for {symbol}_{timeframe}. Please download the data first.")
     return False
+
+def load_data(data_path, symbol, timeframe):
+    import os
+    import pandas as pd
+    file_name = f"{symbol}_{timeframe}.csv"
+    full_path = os.path.join(data_path, file_name)
+    if not os.path.exists(full_path):
+        raise FileNotFoundError(f"Data file not found: {full_path}")
+    data = pd.read_csv(full_path)
+    # Process data as needed (e.g. parse dates, set index)
+    if 'timestamp' in data.columns:
+        data['timestamp'] = pd.to_datetime(data['timestamp'])
+        data.set_index('timestamp', inplace=True)
+    return data
 
 def main():
     """Point d'entrée principal"""

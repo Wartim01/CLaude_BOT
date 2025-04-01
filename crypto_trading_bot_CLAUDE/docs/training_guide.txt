@@ -205,3 +205,9 @@ CONSEILS SPÃ‰CIFIQUES
    - Configurez des alertes via Discord ou email
    - VÃ©rifiez quotidiennement les performances
    - RÃ©entraÃ®nez le modÃ¨le lorsque le win rate commence Ã  baisser
+
+
+
+Avant chaque réponse, tu dois te référer a la structure du projet (structure globale.txt). Le fichier "wartim01-claude_bot.txt", contient l'intégralité de mon code après un gitingest, a chaque fois, il faut naviguer grâce a la structure fournie dans le document pour obtenir le code du fichier. 
+
+l'objectif est d'avoir le meilleurs bot de day training qui cherche le plus de gains en un minimum de temps (gros ration gain/perte mais avec une gestion des risques solide pour minimiser la perte vis a vis du gain, start à 200 USTD) .

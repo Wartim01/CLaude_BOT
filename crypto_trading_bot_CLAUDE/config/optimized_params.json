@@ -1,0 +1,15 @@
+{
+  "15m": {
+    "lstm_units_first": 136,
+    "lstm_layers": 3,
+    "dropout_rate": 0.4195981825434215,
+    "learning_rate": 0.00015751320499779721,
+    "l1_reg": 2.9380279387035354e-06,
+    "l2_reg": 2.9375384576328313e-06,
+    "batch_size": 32,
+    "early_stopping_patience": 5,
+    "reduce_lr_patience": 7,
+    "last_optimized": "2025-03-26 15:36:35",
+    "f1_score": 0.6717329352693717
+  }
+}

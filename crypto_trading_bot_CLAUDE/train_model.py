@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 import json
 import tensorflow as tf
 import optuna
+from data_generator import create_dataset  # Intégration du nouveau script
 
 # Fix Unicode encoding issues on Windows
 if sys.platform.startswith('win'):
@@ -28,7 +29,7 @@ if sys.platform.startswith('win'):
 
 from config.config import DATA_DIR, MODEL_CHECKPOINTS_DIR
 from utils.logger import setup_logger
-from ai.models.lstm_model import LSTMModel
+from ai.models.lstm_model import EnhancedLSTMModel  # Use advanced model with attention & residuals
 from ai.models.feature_engineering import FeatureEngineering
 
 logger = setup_logger("train_model")
@@ -98,14 +99,14 @@ def parse_args():
     parser.add_argument("--sequence_length", type=int, default=60, help="Sequence length for the LSTM input")
     return parser.parse_args()
 
-def load_data(data_path, symbol, timeframe):
+def load_data(data_path, symbol=None, timeframe=None):
     """
     Charge les données de marché
     
     Args:
         data_path: Chemin vers les données
-        symbol: Symbole de la paire de trading
-        timeframe: Intervalle de temps
+        symbol: Symbole de la paire de trading (optional)
+        timeframe: Intervalle de temps (optional)
         
     Returns:
         DataFrame avec les données
@@ -122,18 +123,28 @@ def load_data(data_path, symbol, timeframe):
             raise FileNotFoundError(f"Data directory not found: {data_path}")
 
     # Déterminer le chemin du fichier
-    file_path = os.path.join(data_path, f"{symbol}_{timeframe}.csv")
+    file_path = os.path.join(data_path, f"{symbol}_{timeframe}.csv") if symbol and timeframe else data_path
     
     # Vérifier si le fichier existe
-    if not os.path.exists(file_path):
-        # Chercher un fichier qui contient le symbole et le timeframe
-        possible_files = [f for f in os.listdir(data_path) if f.endswith('.csv') and symbol in f and timeframe in f]
-        
-        if possible_files:
-            file_path = os.path.join(data_path, possible_files[0])
-            logger.info(f"Utilisation du fichier trouvé: {file_path}")
+    if os.path.isdir(file_path) or not os.path.exists(file_path):
+        # If it's a directory or the file doesn't exist
+        if symbol and timeframe:
+            # Chercher un fichier qui contient le symbole et le timeframe
+            possible_files = [f for f in os.listdir(data_path) if f.endswith('.csv') and symbol in f and timeframe in f]
+            
+            if possible_files:
+                file_path = os.path.join(data_path, possible_files[0])
+                logger.info(f"Utilisation du fichier trouvé: {file_path}")
+            else:
+                raise FileNotFoundError(f"Aucun fichier de données trouvé pour {symbol}_{timeframe} dans {data_path}")
         else:
-            raise FileNotFoundError(f"Aucun fichier de données trouvé pour {symbol}_{timeframe} dans {data_path}")
+            # Handle case when symbol and timeframe are not provided - try to find a CSV file
+            possible_files = [f for f in os.listdir(data_path) if f.endswith('.csv')]
+            if possible_files:
+                file_path = os.path.join(data_path, possible_files[0])
+                logger.info(f"Utilisation du premier fichier trouvé: {file_path}")
+            else:
+                raise FileNotFoundError(f"Aucun fichier CSV trouvé dans {data_path}")
     
     # Charger les données
     logger.info(f"Chargement des données depuis {file_path}...")
@@ -188,7 +199,8 @@ def train_model(args):
     featured_data = feature_engineering.create_features(
         df, 
         include_time_features=True,
-        include_price_patterns=True
+        include_price_patterns=True,
+        enforce_consistency=True
     )
     
     # Normaliser les données
@@ -339,16 +351,15 @@ def train_model(args):
     logger.info(f"Detected actual feature dimension: {actual_feature_dim}")
     
     # Create model with the actual feature dimension
-    model = LSTMModel(
-        input_length=sequence_length,
-        feature_dim=actual_feature_dim,  # Use detected dimension instead of hard-coded value
-        lstm_units=lstm_units,
-        dropout_rate=dropout_rate,
-        learning_rate=learning_rate,
-        use_attention=getattr(args, "use_attention", False),
-        prediction_horizons=horizons,
-        l1_reg=l1_reg,
-        l2_reg=l2_reg
+    model = EnhancedLSTMModel(
+        input_length=60,
+        feature_dim=actual_feature_dim,  # or appropriate value from configuration
+        lstm_units=[136, 68, 68],
+        dropout_rate=0.4195981825434215,
+        learning_rate=0.00015751320499779721,
+        use_attention=True,
+        use_residual=True,
+        prediction_horizons=[(4, "1h", True)]
     )
     
     # 6. Préparer les callbacks
@@ -414,7 +425,8 @@ def train_model(args):
         def on_epoch_end(self, epoch, logs=None):
             logs = logs or {}
             metrics_str = ' - '.join([f"{k}: {v:.4f}" for k, v in logs.items()])
-            print(f"\nÉpoque {epoch+1}/{self.params['epochs']} - {metrics_str}")
+            # Replace print with logger.info() to ensure metrics appear in unified logs
+            logger.info(f"Époque {epoch+1}/{self.params['epochs']} - {metrics_str}")
     
     # Only add the custom logger if verbose level is not already 2
     if verbose_level != 2:
@@ -615,45 +627,10 @@ def create_evaluation_plots(model, X_val, y_val, predictions, symbol, timeframe,
     
     logger.info(f"Visualisations sauvegardées dans {viz_dir}")
 
+def main():
+    args = parse_args()
+    train_model(args)
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Train LSTM Model")
-    subparsers = parser.add_subparsers(dest="command")  # Remove required=True
-    
-    train_parser = subparsers.add_parser("train", help="Train the model")
-    train_parser.add_argument("--symbol", required=True)
-    train_parser.add_argument("--timeframe", required=True)
-    train_parser.add_argument("--start-date", required=True)
-    train_parser.add_argument("--end-date", required=True)
-    train_parser.add_argument("--data_path", required=True)
-    # Ajoutons également les paramètres optionnels
-    train_parser.add_argument("--epochs", type=int, default=100)
-    train_parser.add_argument("--batch_size", type=int, default=64)
-    train_parser.add_argument("--validation_split", type=float, default=0.2)
-    train_parser.add_argument("--patience", type=int, default=10)
-    train_parser.add_argument("--use_attention", action="store_true", help="Use attention mechanism")
-    train_parser.add_argument("--use_early_stopping", action="store_true", default=True, help="Use early stopping")
-    train_parser.add_argument("--evaluate_after", action="store_true", default=True, help="Evaluate after training")
-    train_parser.add_argument("--verbose", type=int, default=1, choices=[0, 1, 2],
-                           help="Niveau de verbosité (0=silencieux, 1=barre de progression, 2=une ligne par époque)")
-    train_parser.add_argument("--sequence_length", type=int, default=60, help="Sequence length for the LSTM input")
-    
-    args = parser.parse_args()
-    
-    # Check if command is provided (replacement for required=True)
-    if args.command is None:
-        parser.print_help()
-        import sys
-        sys.exit(1)
-        
-    if args.command == "train":
-        try:
-            # Appel direct à la fonction d'entraînement
-            model, history = train_model(args)
-            logger.info("Entraînement terminé avec succès!")
-        except Exception as e:
-            logger.error(f"Erreur lors de l'entraînement: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            import sys
-            sys.exit(1)
+    main()
 

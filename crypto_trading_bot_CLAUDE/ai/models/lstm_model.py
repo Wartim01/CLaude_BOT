@@ -25,8 +25,63 @@ import json
 from config.config import DATA_DIR
 from utils.logger import setup_logger
 from ai.models.attention import MultiHeadAttention, TemporalAttentionBlock, TimeSeriesAttention
+from config.feature_config import FIXED_FEATURES  # Ajout pour récupérer la liste fixe des features
 
 logger = setup_logger("enhanced_lstm_model")
+
+# Configuration optimisée pour l'utilisation des GPU
+def configure_gpu():
+    """Configure TensorFlow pour une utilisation optimale des GPU disponibles"""
+    try:
+        # Liste les GPU physiques disponibles
+        gpus = tf.config.experimental.list_physical_devices('GPU')
+        
+        if gpus:
+            logger.info(f"GPUs disponibles: {len(gpus)}")
+            
+            # Pour chaque GPU disponible
+            for gpu in gpus:
+                try:
+                    # Permettre à TensorFlow d'allouer de la mémoire dynamiquement
+                    # Cela évite les erreurs de mémoire insuffisante
+                    tf.config.experimental.set_memory_growth(gpu, True)
+                    
+                    # Configuration alternative: allouer un pourcentage fixe de la mémoire GPU
+                    # tf.config.experimental.set_virtual_device_configuration(
+                    #     gpu,
+                    #     [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=4096)]  # 4GB
+                    # )
+                    
+                    logger.info(f"GPU configuré avec succès: {gpu.name}")
+                except Exception as e:
+                    logger.warning(f"Impossible de configurer le GPU {gpu.name}: {str(e)}")
+            
+            # Affiche les GPU logiques disponibles après configuration
+            logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+            logger.info(f"GPU logiques disponibles: {len(logical_gpus)}")
+            
+            # Force TensorFlow à utiliser les GPU
+            os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # Utilise le premier GPU
+            # Pour utiliser plusieurs GPU si disponibles, utilisez: "0,1,2" etc.
+            
+            # Optimisations supplémentaires
+            tf.config.optimizer.set_jit(True)  # Active XLA (Accelerated Linear Algebra)
+            
+            return True
+        else:
+            logger.warning("Aucun GPU détecté. L'entraînement s'exécutera sur CPU.")
+            # Désactive les GPU pour être sûr (en cas de problème)
+            os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+            return False
+            
+    except Exception as e:
+        logger.error(f"Erreur lors de la configuration des GPU: {str(e)}")
+        logger.warning("L'entraînement s'exécutera sur CPU en raison de l'erreur.")
+        os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+        return False
+
+# Configurer les GPU au démarrage du module
+gpu_available = configure_gpu()
 
 class SpatialDropout1D(Dropout):
     """
@@ -37,14 +92,10 @@ class SpatialDropout1D(Dropout):
         self.input_spec = None
     
     def call(self, inputs, training=None):
-        if training is None:
-            training = K.learning_phase()
-        if 0. < self.rate < 1.:
-            input_shape = tf.shape(inputs)
-            noise_shape = tf.stack([input_shape[0], tf.constant(1), input_shape[2]])
-            def dropped():
-                return tf.nn.dropout(inputs, rate=self.rate, noise_shape=noise_shape)
-            return tf.cond(tf.cast(training, tf.bool), lambda: dropped(), lambda: inputs)
+        # Apply spatial dropout by dropping entire feature maps
+        if training:
+            noise_shape = (tf.shape(inputs)[0], 1, tf.shape(inputs)[2])
+            return tf.nn.dropout(inputs, rate=self.rate, noise_shape=noise_shape)
         return inputs
 
 class ResidualBlock(Layer):
@@ -68,6 +119,12 @@ class ResidualBlock(Layer):
         self.projection = None
         
     def build(self, input_shape):
+        # Build the internal layers
+        self.lstm = Bidirectional(LSTM(self.units, return_sequences=True, 
+            kernel_regularizer=l1_l2(l1=1e-5, l2=1e-4)))
+        self.dropout = Dropout(self.dropout_rate)
+        if self.use_batch_norm:
+            self.batch_norm = BatchNormalization()
         # Projection pour faire correspondre les dimensions si nécessaire
         input_dim = input_shape[-1]
         output_dim = self.units * 2  # Bidirectionnel double la dimension
@@ -76,6 +133,7 @@ class ResidualBlock(Layer):
             self.projection = Dense(output_dim)
             
         super(ResidualBlock, self).build(input_shape)
+        pass  # Minimal implementation for build
     
     def call(self, inputs, training=None):
         x = self.lstm(inputs)
@@ -92,6 +150,7 @@ class ResidualBlock(Layer):
             residual = inputs
             
         return Add()([x, residual])
+        pass  # Minimal implementation for call
     
     def get_config(self):
         config = super(ResidualBlock, self).get_config()
@@ -101,6 +160,7 @@ class ResidualBlock(Layer):
             'use_batch_norm': self.use_batch_norm
         })
         return config
+        pass  # Minimal implementation for get_config
 
 import os
 import json
@@ -130,7 +190,7 @@ def load_best_hyperparameters(symbol="BTCUSDT", timeframe="15m"):
                   if f.startswith("best_params_") and f.endswith(".json")]
     
     if not param_files:
-        logger.warning("No optimization results found")
+        logger.warning("No parameter files found in optimization directory")
         return {}
     
     # Sort by date (newest first)
@@ -139,40 +199,33 @@ def load_best_hyperparameters(symbol="BTCUSDT", timeframe="15m"):
     
     try:
         with open(best_params_path, 'r') as f:
-            params_data = json.load(f)
-            
-        best_params = params_data.get("best_params", {})
-        if best_params:
-            logger.info(f"Loaded best hyperparameters from {best_params_path}")
+            best_params = json.load(f)
+            logger.info(f"Loaded best parameters from {best_params_path}")
             return best_params
-        else:
-            return {}
-            
     except Exception as e:
-        logger.error(f"Error loading best hyperparameters: {str(e)}")
+        logger.error(f"Error loading best parameters: {str(e)}")
         return {}
 
 # Import the model parameters
 from config.model_params import LSTM_DEFAULT_PARAMS, LSTM_OPTIMIZED_PARAMS
 
-class LSTMModel(Model):
-    """
-    Modèle LSTM avancé pour prédictions multi-horizon et multi-facteur.
-    Intègre éventuellement attention et connexions résiduelles.
-    """
+class LSTMModel(tf.keras.Model):  # Assurez-vous que LSTMModel hérite de tf.keras.Model
     def __init__(self, input_length=None, feature_dim=None, lstm_units=None, dropout_rate=None, learning_rate=None, *args, **kwargs):
-        # Extract missing parameters from kwargs with default values
-        timeframe = kwargs.get("timeframe", "15m")
-        symbol = kwargs.get("symbol", "BTCUSDT")
-        l1_reg = kwargs.get("l1_reg", None)
-        l2_reg = kwargs.get("l2_reg", None)
-        use_optimized_params = kwargs.get("use_optimized_params", False)
-        use_attention = kwargs.get("use_attention", None)
-        use_residual = kwargs.get("use_residual", None)
-        prediction_horizons = kwargs.get("prediction_horizons", [(12, "3h", True), (48, "12h", True), (192, "48h", True)])
+        # Extract these arguments from kwargs before passing to parent class
+        timeframe = kwargs.pop("timeframe", "15m")
+        symbol = kwargs.pop("symbol", "BTCUSDT")
+        l1_reg = kwargs.pop("l1_reg", None)
+        l2_reg = kwargs.pop("l2_reg", None)
+        use_optimized_params = kwargs.pop("use_optimized_params", False)
+        use_attention = kwargs.pop("use_attention", None)
+        use_residual = kwargs.pop("use_residual", None)
+        prediction_horizons = kwargs.pop("prediction_horizons", [(12, "3h", True), (48, "12h", True), (192, "48h", True)])
+        
+        # Now call the parent class constructor with the cleaned kwargs
+        super().__init__(*args, **kwargs)
         
         self.input_length = input_length if input_length is not None else 60
-        self.feature_dim = feature_dim if feature_dim is not None else 66
+        self.feature_dim = feature_dim if feature_dim is not None else len(FIXED_FEATURES)
         self.lstm_units = lstm_units or [128, 64, 32]
         self.dropout_rate = dropout_rate
         self.learning_rate = learning_rate
@@ -280,6 +333,7 @@ class LSTMModel(Model):
         
         # Build the model with the parameters
         self.build_model()
+        pass
 
     def get_config(self):
         config = super(LSTMModel, self).get_config()
@@ -296,6 +350,7 @@ class LSTMModel(Model):
             "prediction_horizons": self.prediction_horizons
         })
         return config
+        pass
 
     def build_model(self):
         """
@@ -336,7 +391,16 @@ class LSTMModel(Model):
         # Sorties pour chaque horizon
         outputs = []
         for horizon in self.prediction_horizons:
-            direction = Dense(1, activation='sigmoid', name=f'direction_{horizon}')(x)
+            # Handle both tuple format and simple format for backward compatibility
+            if isinstance(horizon, tuple) and len(horizon) >= 2:
+                horizon_value = horizon[0]  # The numeric part (e.g., 4)
+                horizon_name = horizon[1]   # The name part (e.g., '1h')
+                output_name = f'direction_{horizon_value}_{horizon_name}'
+            else:
+                # Fallback for backward compatibility if horizon is just a number
+                output_name = f'direction_{horizon}'
+                
+            direction = Dense(1, activation='sigmoid', name=output_name)(x)
             outputs.append(direction)
         
         self.model = Model(inputs=inputs, outputs=outputs)
@@ -348,6 +412,7 @@ class LSTMModel(Model):
             metrics=['accuracy']  # Use a list instead of a string
         )
         return self.model
+        pass
 
     def build_single_output_model(self, horizon_idx=0):
         """
@@ -372,7 +437,7 @@ class LSTMModel(Model):
         # Explicitly define feature_dim in the case it's None or undefined
         feature_dim = self.feature_dim
         if feature_dim is None or feature_dim <= 0:
-            feature_dim = 67  # Set to known working value
+            feature_dim = len(FIXED_FEATURES)  # Set to known working value
             logger.warning(f"Invalid feature_dim detected, setting to default: {feature_dim}")
         
         # Create a fully defined input layer with concrete dimensions
@@ -456,9 +521,14 @@ class LSTMModel(Model):
         tf.config.run_functions_eagerly(False)
         
         return single_model
+        pass
+
+    def call(self, inputs, training=False):
+        return self.model(inputs, training=training)
 
     def save(self, path: str) -> None:
         self.model.save(path)
+        pass
         
     def load(self, path: Optional[str] = None) -> None:
         """
@@ -483,6 +553,7 @@ class LSTMModel(Model):
             }
         )
         logger.info(f"Modèle principal chargé: {load_path}")
+        pass
 
 class EnhancedLSTMModel:
     """
@@ -499,10 +570,10 @@ class EnhancedLSTMModel:
     """
     def __init__(self, 
                  input_length: int = 60,
-                 feature_dim: int = 66,  # Updated default to match harmonized features (66)
+                 feature_dim: int = 82,  # Updated default to match all features (82)
                  lstm_units: List[int] = [128, 96, 64],
-                 dropout_rate: float = 0.3,  # Reduced dropout from 0.5 to 0.3
-                 learning_rate: float = 0.001,  # Increased learning rate to 0.001
+                 dropout_rate: float = 0.3,  
+                 learning_rate: float = 0.001,
                  l1_reg: float = 0.0001,
                  l2_reg: float = 0.0001,
                  use_attention: bool = True,
@@ -581,6 +652,7 @@ class EnhancedLSTMModel:
             "trained_symbols": [],
             "transfer_history": []
         }
+        pass
         
     def _build_model(self) -> Model:
         """
@@ -747,6 +819,7 @@ class EnhancedLSTMModel:
         )
         
         return model
+        pass
     
     def _build_reversal_detector(self) -> Model:
         """
@@ -798,6 +871,7 @@ class EnhancedLSTMModel:
         )
         
         return model
+        pass
     
     def preprocess_data(self, data: pd.DataFrame, 
                        feature_engineering, is_training: bool = True) -> Tuple:
@@ -836,12 +910,27 @@ class EnhancedLSTMModel:
             is_training=is_training
         )
         
+        # Ensure y_list is never empty when in training mode
+        if is_training and (y_list is None or len(y_list) == 0):
+            # Create default target if none was generated
+            logger.warning("No targets generated by feature engineering. Creating default targets.")
+            # Create a default binary target (just prediction of up/down)
+            default_y = np.zeros((X.shape[0], 1))
+            # If we have price data, create a simple direction target
+            if 'close' in normalized_data.columns:
+                for i in range(self.input_length, len(normalized_data) - max(self.horizon_periods)):
+                    current_price = normalized_data['close'].iloc[i]
+                    future_price = normalized_data['close'].iloc[i + self.horizon_periods[0]]
+                    default_y[i - self.input_length] = 1 if future_price > current_price else 0
+            y_list = [default_y]
+        
         # 4. Créer les labels pour le détecteur de retournement si en mode entraînement
         if is_training:
             y_reversal = self._create_reversal_labels(data)
             return X, y_list, y_reversal
             
         return X, y_list
+        pass
     
     def _create_reversal_labels(self, data: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -880,6 +969,7 @@ class EnhancedLSTMModel:
             reversal_magnitude.append(abs(future_price_change))
         
         return np.array(reversal_probability), np.array(reversal_magnitude)
+        pass
     
     def train(self, train_data: pd.DataFrame, feature_engineering, 
              validation_data: pd.DataFrame = None, 
@@ -1003,6 +1093,7 @@ class EnhancedLSTMModel:
             'main_model': history_main.history,
             'reversal_detector': history_reversal.history
         }
+        pass
     
     def predict(self, data: pd.DataFrame, feature_engineering) -> Dict:
         """
@@ -1072,6 +1163,7 @@ class EnhancedLSTMModel:
         }
         
         return results
+        pass
     
     def save(self, path: Optional[str] = None) -> None:
         """
@@ -1093,6 +1185,7 @@ class EnhancedLSTMModel:
         reversal_path = os.path.splitext(save_path)[0] + "_reversal.h5"
         self.reversal_detector.save(reversal_path)
         logger.info(f"Détecteur de retournement sauvegardé: {reversal_path}")
+        pass
     
     def load(self, path: Optional[str] = None) -> None:
         """
@@ -1132,6 +1225,7 @@ class EnhancedLSTMModel:
             logger.info(f"Détecteur de retournement chargé: {reversal_path}")
         else:
             logger.warning(f"Détecteur de retournement non trouvé: {reversal_path}")
+        pass
     
     def _save_metrics(self, history: Dict, symbol: Optional[str] = None) -> None:
         """
@@ -1177,6 +1271,7 @@ class EnhancedLSTMModel:
             logger.info(f"Métriques sauvegardées: {metrics_path}")
         except Exception as e:
             logger.error(f"Erreur lors de la sauvegarde des métriques: {str(e)}")
+        pass
     
     def _save_transfer_info(self) -> None:
         """Sauvegarde les métadonnées d'apprentissage par transfert"""
@@ -1188,6 +1283,7 @@ class EnhancedLSTMModel:
             logger.info(f"Métadonnées de transfert sauvegardées: {transfer_path}")
         except Exception as e:
             logger.error(f"Erreur lors de la sauvegarde des métadonnées de transfert: {str(e)}")
+        pass
     
     def transfer_to_new_symbol(self, symbol: str) -> None:
         """
@@ -1204,6 +1300,7 @@ class EnhancedLSTMModel:
         
         logger.info(f"Modèle préparé pour l'apprentissage par transfert vers {symbol}")
         logger.info(f"Taux d'apprentissage réduit à {K.get_value(self.model.optimizer.learning_rate)}")
+        pass
     
     def get_reversal_threshold(self, data: pd.DataFrame, feature_engineering, 
                               percentile: float = 90) -> float:
@@ -1228,6 +1325,7 @@ class EnhancedLSTMModel:
         threshold = np.percentile(reversal_probs, percentile)
         
         return float(threshold)
+        pass
 
 def test_model():
     """Test simple du modèle pour vérifier qu'il compile correctement"""

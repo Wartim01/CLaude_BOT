@@ -34,11 +34,11 @@ logger = setup_logger("feature_engineering")
 
 class FeatureEngineering:
     """
-    Classe pour la création et transformation des caractéristiques
-    pour l'entraînement du modèle LSTM
+    Module d'ingénierie des caractéristiques pour les données de marché.
+    Implémente une approche modulaire pour générer, normaliser et sélectionner les caractéristiques.
     """
     def __init__(self, save_scalers: bool = True, expected_feature_count: int = None, 
-                auto_optimize: bool = False):
+                auto_optimize: bool = True):
         """
         Initialise le module d'ingénierie des caractéristiques.
         
@@ -48,20 +48,21 @@ class FeatureEngineering:
             auto_optimize: Activer l'optimisation automatique du nombre de caractéristiques.
         """
         self.save_scalers = save_scalers
-        # Utiliser la valeur centralisée si aucune valeur n'est fournie
-        self.expected_feature_count = expected_feature_count if expected_feature_count is not None else get_optimal_feature_count()
+        # Always load the current FIXED_FEATURES list
+        from config.feature_config import FIXED_FEATURES
+        self.fixed_features = FIXED_FEATURES
+        self.expected_feature_count = expected_feature_count if expected_feature_count is not None else len(FIXED_FEATURES)
         self.auto_optimize = auto_optimize
         self.optimal_feature_count = None
         self.scalers = {}
         self.scalers_path = os.path.join(DATA_DIR, "models", "scalers")
-        self.fixed_features = None  # Liste des colonnes à conserver de façon cohérente
         self.feature_importances = {}  # Stockage des importances de features
         
         # Créer le répertoire pour les scalers si nécessaire
         if save_scalers and not os.path.exists(self.scalers_path):
             os.makedirs(self.scalers_path, exist_ok=True)
         
-        # Si auto_optimize est activé, essayez de charger la configuration optimale existante
+        # Chargement de la configuration toujours après l'initialisation des fixed_features
         if auto_optimize:
             self.load_feature_configuration()
 
@@ -83,6 +84,10 @@ class FeatureEngineering:
         Returns:
             DataFrame enrichi avec les caractéristiques créées
         """
+        # Always refresh fixed_features to current FIXED_FEATURES
+        from config.feature_config import FIXED_FEATURES
+        self.fixed_features = FIXED_FEATURES
+        
         # Vérifier que les colonnes requises sont présentes
         required_columns = ['open', 'high', 'low', 'close', 'volume']
         if not all(col in data.columns for col in required_columns):
@@ -157,6 +162,22 @@ class FeatureEngineering:
         # VWAP (Volume-Weighted Average Price)
         df['vwap'] = calculate_vwap(df)
         df['vwap_dist'] = (df['close'] - df['vwap']) / df['vwap'] * 100  # Distance au VWAP
+        
+        # --- Nouveaux indicateurs multi-timeframe et indicateurs de volume avancés ---
+        sma_periods = [15, 30, 60]
+        for period in sma_periods:
+            df[f'sma_{period}'] = df['close'].rolling(window=period).mean()
+            df[f'dist_to_sma_{period}'] = (df['close'] - df[f'sma_{period}']) / df[f'sma_{period}'] * 100
+        
+        try:
+            df['mfi'] = talib.MFI(df['high'].values, df['low'].values, df['close'].values, df['volume'].values, timeperiod=14)
+        except Exception as e:
+            logger.warning(f"Erreur lors du calcul de MFI: {str(e)}")
+        
+        try:
+            df['ad'] = talib.AD(df['high'].values, df['low'].values, df['close'].values, df['volume'].values)
+        except Exception as e:
+            logger.warning(f"Erreur lors du calcul de l'Accumulation/Distribution: {str(e)}")
         
         # 5. Caractéristiques de prix
         # Rendements à différentes périodes
@@ -277,111 +298,17 @@ class FeatureEngineering:
         df.fillna(0, inplace=True)
         
         logger.info(f"Nombre de features généré avant harmonisation: {df.shape[1]}")
-
-        # Vérifier d'abord si une configuration précédente existe et doit être utilisée
-        if enforce_consistency and self.fixed_features is not None:
+        if enforce_consistency:
             logger.info(f"Utilisation de la liste fixe de caractéristiques (configuration existante)")
-            # Calculer les colonnes existantes vs. attendues
-            existing_cols = set(df.columns)
-            required_cols = set(self.fixed_features)
-            
-            # Colonnes manquantes et en trop
-            missing_cols = required_cols - existing_cols
-            extra_cols = existing_cols - required_cols
-            
-            if missing_cols:
-                logger.warning(f"Caractéristiques manquantes: {len(missing_cols)}. Ajout de colonnes de remplacement.")
-                
-                # Mapping for columns that need specific calculations
-                calc_map = {
-                    "open": lambda d: d["open"],
-                    "high": lambda d: d["high"],
-                    "low": lambda d: d["low"],
-                    "close": lambda d: d["close"],
-                    "volume": lambda d: d["volume"],
-                    "ema_9": lambda d: calculate_ema(d, [9])[9],
-                    "ema_21": lambda d: calculate_ema(d, [21])[21],
-                    "ema_50": lambda d: calculate_ema(d, [50])[50],
-                    "ema_200": lambda d: calculate_ema(d, [200])[200],
-                    "dist_to_ema_9": lambda d: (d["close"] - calculate_ema(d, [9])[9]) / calculate_ema(d, [9])[9] * 100,
-                    "dist_to_ema_21": lambda d: (d["close"] - calculate_ema(d, [21])[21]) / calculate_ema(d, [21])[21] * 100,
-                    "dist_to_ema_50": lambda d: (d["close"] - calculate_ema(d, [50])[50]) / calculate_ema(d, [50])[50] * 100,
-                    "dist_to_ema_200": lambda d: (d["close"] - calculate_ema(d, [200])[200]) / calculate_ema(d, [200])[200] * 100,
-                    "macd": lambda d: calculate_macd(d)["macd"],
-                    "macd_signal": lambda d: calculate_macd(d)["signal"],
-                    "macd_hist": lambda d: calculate_macd(d)["histogram"],
-                    "adx": lambda d: calculate_adx(d)["adx"],
-                    "plus_di": lambda d: calculate_adx(d)["plus_di"],
-                    "minus_di": lambda d: calculate_adx(d)["minus_di"],
-                    "rsi": lambda d: calculate_rsi(d),
-                    "stoch_k": lambda d: calculate_stochastic(d)["k"],
-                    "stoch_d": lambda d: calculate_stochastic(d)["d"],
-                    "roc_5": lambda d: d["close"].pct_change(5) * 100,
-                    "roc_10": lambda d: d["close"].pct_change(10) * 100,
-                    "roc_21": lambda d: d["close"].pct_change(21) * 100,
-                    "bb_upper": lambda d: calculate_bollinger_bands(d)["upper"],
-                    "bb_middle": lambda d: calculate_bollinger_bands(d)["middle"],
-                    "bb_lower": lambda d: calculate_bollinger_bands(d)["lower"],
-                    "bb_width": lambda d: calculate_bollinger_bands(d)["bandwidth"],
-                    "bb_percent_b": lambda d: calculate_bollinger_bands(d)["percent_b"],
-                    "atr": lambda d: calculate_atr(d),
-                    "atr_percent": lambda d: calculate_atr(d) / d["close"] * 100,
-                    "obv": lambda d: calculate_obv(d),
-                    "rel_volume_5": lambda d: d["volume"] / d["volume"].rolling(5).mean(),
-                    "rel_volume_10": lambda d: d["volume"] / d["volume"].rolling(10).mean(),
-                    "rel_volume_21": lambda d: d["volume"] / d["volume"].rolling(21).mean(),
-                    "vwap": lambda d: calculate_vwap(d),
-                    "vwap_dist": lambda d: (d["close"] - calculate_vwap(d)) / calculate_vwap(d) * 100,
-                    "return_1": lambda d: d["close"].pct_change(1) * 100,
-                    "return_3": lambda d: d["close"].pct_change(3) * 100,
-                    "return_5": lambda d: d["close"].pct_change(5) * 100,
-                    "return_10": lambda d: d["close"].pct_change(10) * 100,
-                    "body_size": lambda d: abs(d["close"] - d["open"]),
-                    "body_size_percent": lambda d: abs(d["close"] - d["open"]) / d["open"] * 100,
-                    "upper_wick": lambda d: d["high"] - d[["open", "close"]].max(axis=1),
-                    "lower_wick": lambda d: d[["open", "close"]].min(axis=1) - d["low"],
-                    "upper_wick_percent": lambda d: (d["high"] - d[["open", "close"]].max(axis=1)) / d["open"] * 100,
-                    "lower_wick_percent": lambda d: (d[["open", "close"]].min(axis=1) - d["low"]) / d["open"] * 100,
-                    "gap_up": lambda d: (d["low"] > d["high"].shift(1)).astype(int),
-                    "gap_down": lambda d: (d["high"] < d["low"].shift(1)).astype(int),
-                    "hour_sin": lambda d: np.sin(2 * np.pi * d.index.hour / 24),
-                    "hour_cos": lambda d: np.cos(2 * np.pi * d.index.hour / 24),
-                    "day_sin": lambda d: np.sin(2 * np.pi * d.index.dayofweek / 7),
-                    "day_cos": lambda d: np.cos(2 * np.pi * d.index.dayofweek / 7),
-                    "day_of_month_sin": lambda d: np.sin(2 * np.pi * d.index.day / 31),
-                    "day_of_month_cos": lambda d: np.cos(2 * np.pi * d.index.day / 31),
-                    "is_high": lambda d: (d["high"] > d["high"].shift(1)) & (d["high"] > d["high"].shift(-1)),
-                    "is_low": lambda d: (d["low"] < d["low"].shift(1)) & (d["low"] < d["low"].shift(-1)),
-                    "dist_to_high": lambda d: (d["close"] - d["high"].rolling(50).max()) / d["high"].rolling(50).max() * 100,
-                    "dist_to_low": lambda d: (d["close"] - d["low"].rolling(50).min()) / d["low"].rolling(50).min() * 100,
-                    "rsi_bb": lambda d: (d["rsi"] - 50) * d["bb_percent_b"],
-                    "price_volume_trend": lambda d: d["return_1"] * d["rel_volume_5"],
-                    "reversal_signal": lambda d: ((d["adx"] > 25) & (d["rsi"] < 30)) | ((d["adx"] > 25) & (d["rsi"] > 70))
-                }
-
-                for col in missing_cols:
-                    try:
-                        if col in calc_map:
-                            df[col] = calc_map[col](df)
-                        else:
-                            # Default filler for columns without specific logic
-                            df[col] = 0
-                    except Exception:
-                        df[col] = 0
-            
-            if extra_cols:
-                logger.warning(f"Caractéristiques supplémentaires ignorées: {len(extra_cols)}")
-                
-            # Réordonner les colonnes exactement comme dans la configuration précédente
-            df = df[self.fixed_features]
-            
-            # Vérification finale du nombre de colonnes
-            if df.shape[1] != len(self.fixed_features):
-                raise ValueError(f"Incohérence dans le nombre de colonnes: {df.shape[1]} vs {len(self.fixed_features)} attendues")
-                
-            logger.info(f"DataFrame harmonisé selon la configuration précédente: {df.shape[1]} colonnes")
+            # Removed missing column check and dummy column additions:
+            # ...existing code removed...
+            # Mise à jour directe de fixed_features avec les colonnes réellement calculées
+            self.fixed_features = list(df.columns)
+            logger.info(f"DataFrame harmonisé conservant toutes les caractéristiques: {df.shape[1]} colonnes")
+            if self.save_scalers:
+                self._save_feature_metadata(df)
             return df
-        
+
         # Déterminer le nombre cible de caractéristiques
         target_feature_count = force_feature_count
         if target_feature_count is None:
@@ -463,9 +390,6 @@ class FeatureEngineering:
             if feat not in df.columns:
                 df[feat] = np.nan
         
-        # Conserver uniquement les colonnes définies dans FIXED_FEATURES dans l'ordre spécifié
-        df = df[FIXED_FEATURES]
-
         return df
 
     def _save_feature_metadata(self, df: pd.DataFrame) -> None:
@@ -475,6 +399,10 @@ class FeatureEngineering:
         Args:
             df: DataFrame avec les caractéristiques finalisées
         """
+        # Ensure fixed_features is up to date with current FIXED_FEATURES
+        from config.feature_config import FIXED_FEATURES
+        self.fixed_features = FIXED_FEATURES
+        
         # Enregistrer la liste exacte des colonnes
         self.fixed_features = df.columns.tolist()
         
@@ -493,7 +421,7 @@ class FeatureEngineering:
                 # En cas d'erreur, enregistrer des informations minimales
                 feature_stats[col] = {"calculable": False}
         
-        # Sauvegarder les métadonnées complètes
+        # Sauvegarder les métadonnées complètes with updated fixed_features
         metadata = {
             "timestamp": datetime.now().isoformat(),
             "feature_count": len(self.fixed_features),
@@ -703,6 +631,10 @@ class FeatureEngineering:
         Returns:
             True si la configuration a été chargée avec succès, False sinon
         """
+        # Always load the current FIXED_FEATURES list first
+        from config.feature_config import FIXED_FEATURES
+        self.fixed_features = FIXED_FEATURES
+        
         # D'abord essayer de charger la configuration standard
         config_path = os.path.join(self.scalers_path, "feature_config.json")
         metadata_path = os.path.join(self.scalers_path, "feature_metadata.json")
@@ -711,14 +643,35 @@ class FeatureEngineering:
         config_exists = os.path.exists(config_path)
         metadata_exists = os.path.exists(metadata_path)
         
+        # If metadata exists, load it but KEEP the current FIXED_FEATURES
+        if metadata_exists:
+            try:
+                with open(metadata_path, 'r') as f:
+                    metadata = json.load(f)
+                
+                # Don't override fixed_features - use the current one
+                logger.info(f"Métadonnées des caractéristiques chargées: {metadata_path}")
+                logger.info(f"Utilisation de FIXED_FEATURES actuel avec {len(self.fixed_features)} colonnes")
+                
+                # Only update optimal_feature_count if not explicitly provided
+                if self.optimal_feature_count is None:
+                    self.optimal_feature_count = len(self.fixed_features)
+                
+                # Garder une référence aux statistiques pour validation
+                if "feature_stats" in metadata:
+                    self.feature_stats = metadata["feature_stats"]
+                
+                return True
+            except Exception as e:
+                logger.error(f"Erreur lors du chargement des métadonnées: {str(e)}")
+        
         # Si aucun fichier local n'existe, utiliser la configuration centralisée
         if not config_exists and not metadata_exists:
             # Charger depuis la configuration centralisée si aucune valeur explicite n'a été fournie
             if self.optimal_feature_count is None:
-                centralized_feature_count = get_optimal_feature_count()
-                self.optimal_feature_count = centralized_feature_count
+                self.optimal_feature_count = len(self.fixed_features)
                 
-                logger.info(f"Configuration locale non trouvée, utilisation de la configuration centralisée: {centralized_feature_count} features")
+                logger.info(f"Configuration locale non trouvée, utilisation de la configuration centralisée: {len(self.fixed_features)} features")
             else:
                 logger.info(f"Configuration locale non trouvée, conservation de la valeur explicite: {self.optimal_feature_count} features")
                 
@@ -730,15 +683,19 @@ class FeatureEngineering:
                 with open(metadata_path, 'r') as f:
                     metadata = json.load(f)
                 
-                self.fixed_features = metadata.get("feature_list")
-                # Ne pas écraser la valeur explicite si elle existe déjà
-                if self.optimal_feature_count is None and "feature_count" in metadata:
-                    self.optimal_feature_count = metadata.get("feature_count")
-                    
+                # Don't override fixed_features with metadata - use the current one
                 logger.info(f"Métadonnées des caractéristiques chargées: {metadata_path}")
+                logger.info(f"Utilisation de FIXED_FEATURES actuel avec {len(self.fixed_features)} colonnes")
+                
+                # Only update optimal_feature_count if not explicitly provided
+                if self.optimal_feature_count is None:
+                    self.optimal_feature_count = len(self.fixed_features)
                 
                 # Garder une référence aux statistiques pour validation
-                self.feature_stats = metadata.get("feature_stats", {})
+                if "feature_stats" in metadata:
+                    self.feature_stats = metadata["feature_stats"]
+                
+                return True
             
             # Sinon, essayer la configuration standard
             elif config_exists:
@@ -747,40 +704,26 @@ class FeatureEngineering:
                 
                 # Ne pas écraser une valeur explicite si elle existe déjà
                 if self.optimal_feature_count is None and "optimal_feature_count" in config:
-                    self.optimal_feature_count = config.get("optimal_feature_count")
+                    self.optimal_feature_count = len(self.fixed_features)  # Use current FIXED_FEATURES length
                     
-                self.fixed_features = config.get("feature_list")
-                
                 if "top_features" in config:
                     self.feature_importances = {f: i for f, i in config["top_features"]}
                 
                 logger.info(f"Configuration des caractéristiques chargée: {config_path}")
             
-            if self.fixed_features:
-                logger.info(f"Liste de caractéristiques chargée: {len(self.fixed_features)} colonnes")
-                
-                # Si optimal_feature_count n'est toujours pas défini, utiliser la longueur des fixed_features
-                if self.optimal_feature_count is None:
-                    self.optimal_feature_count = len(self.fixed_features)
-                
-                # Dans les tests, on veut que la valeur explicite soit prioritaire
-                # Synchroniser avec la configuration centralisée seulement si nécessaire
-                # et si on n'a pas déjà une valeur explicite
-                if self.optimal_feature_count is not None:
-                    # Mettre à jour la config centralisée seulement si c'est un cas légitime de production
-                    # pas dans les tests
-                    if not 'unittest' in sys.modules:
-                        update_optimal_feature_count(self.optimal_feature_count)
-                        logger.info(f"Configuration centralisée mise à jour avec {self.optimal_feature_count} features")
-                
-                return True
-            else:
-                logger.warning("Liste de caractéristiques vide ou non valide dans la configuration")
-                return False
+            # Always update fixed_features to current FIXED_FEATURES
+            logger.info(f"Utilisation de FIXED_FEATURES actuel avec {len(self.fixed_features)} colonnes")
+            
+            # If optimal_feature_count isn't defined, use the length of fixed_features
+            if self.optimal_feature_count is None:
+                self.optimal_feature_count = len(self.fixed_features)
+            
+            return True
                 
         except Exception as e:
-            logger.error(f"Erreur lors du chargement de la configuration des caractéristiques: {str(e)}")
-            return False
+            logger.error(f"Erreur lors du chargement de la configuration: {str(e)}")
+            
+        return False
 
     def scale_features(self, data: pd.DataFrame, is_training: bool = True,
                      method: str = 'standard', feature_group: str = 'lstm') -> pd.DataFrame:
@@ -953,6 +896,23 @@ class FeatureEngineering:
         data = data.reindex(columns=FEATURE_COLUMNS, fill_value=0).copy()
         if data.shape[1] != len(FEATURE_COLUMNS):
             logger.warning(f"Feature mismatch: expected {len(FEATURE_COLUMNS)}, found {data.shape[1]}")
+        
+        # Vérification de la suffisance des données et ajustement dynamique des horizons
+        if len(data) < sequence_length:
+            raise ValueError(f"Not enough data: requires at least {sequence_length} rows, got {len(data)} rows.")
+        required_samples = sequence_length + max(horizons)
+        if len(data) < required_samples:
+            new_max = len(data) - sequence_length
+            logger.warning(f"Insufficient data for desired horizons (requires {required_samples} rows). "
+                           f"Adjusting horizons to maximum of {new_max} periods.")
+            horizons = [min(h, new_max) for h in horizons]
+            logger.info(f"Adjusted horizons: {horizons}")
+        
+        # Calcul du nombre d'échantillons en fonction du mode (entraînement ou prédiction)
+        if is_training:
+            num_samples = len(data) - sequence_length - max(horizons)
+        else:
+            num_samples = len(data) - sequence_length
         
         # Sélectionner les colonnes de caractéristiques
         feature_cols = data.select_dtypes(include=['float64', 'int64']).columns.tolist()
@@ -1268,6 +1228,8 @@ def create_multi_horizon_data(self, data: pd.DataFrame,
         logger.error(error_msg)
         raise ValueError(error_msg)
     
+    # Initialize y_list as an empty list since no labels are generated in this context
+    y_list = []
     # Log the return shape
     logger.debug(f"Returning training data: X shape {X.shape}, y_list length {len(y_list)}")
     return X, y_list

@@ -15,18 +15,24 @@ logger = setup_logger("feature_config")
 CONFIG_FILE = os.path.join(DATA_DIR, "models", "feature_config.json")
 
 # Valeurs par défaut
-DEFAULT_FEATURE_COUNT = 78
+DEFAULT_FEATURE_COUNT = 91  # Mise à jour à 91 pour inclure toutes les caractéristiques générées
 DEFAULT_MIN_FEATURES = 20
 DEFAULT_MAX_FEATURES = 100
 DEFAULT_STEP_SIZE = 10
 DEFAULT_CV_FOLDS = 3
 
+# Mise à jour pour inclure toutes les 91 caractéristiques générées
+# Cette liste sera complétée à l'exécution par FeatureEngineering
 FEATURE_COLUMNS = [
     # Données OHLCV de base
     "open", "high", "low", "close", "volume",
+    # Métadonnées
+    "close_time", "quote_asset_volume", "taker_buy_quote_asset_volume", "number_of_trades",
+    "taker_buy_base_asset_volume",
     # Indicateurs de tendance
     "ema_9", "ema_21", "ema_50", "ema_200",
     "dist_to_ema_9", "dist_to_ema_21", "dist_to_ema_50", "dist_to_ema_200",
+    "sma_15", "sma_30", "sma_60", "dist_to_sma_15", "dist_to_sma_30", "dist_to_sma_60",
     "macd", "macd_signal", "macd_hist",
     "adx", "plus_di", "minus_di",
     # Indicateurs de momentum
@@ -36,13 +42,16 @@ FEATURE_COLUMNS = [
     "atr", "atr_percent", 
     # Indicateurs de volume
     "obv", "rel_volume_5", "rel_volume_10", "rel_volume_21",
-    "vwap", "vwap_dist",
+    "vwap", "vwap_dist", "mfi", "ad",
     # Caractéristiques de prix et rendements
     "return_1", "return_3", "return_5", "return_10",
     # Caractéristiques des chandeliers
     "body_size", "body_size_percent", "upper_wick", "lower_wick",
     "upper_wick_percent", "lower_wick_percent",
-    "gap_up", "gap_down",
+    "gap_up", "gap_down", "typical_price",
+    # Patterns de prix
+    "hammer", "inverted_hammer", "morning_star", "evening_star",
+    "bullish_engulfing", "bearish_engulfing", "bullish_patterns", "bearish_patterns",
     # Caractéristiques temporelles
     "hour_sin", "hour_cos", "day_sin", "day_cos",
     "day_of_month_sin", "day_of_month_cos",
@@ -50,29 +59,13 @@ FEATURE_COLUMNS = [
     "is_high", "is_low", "dist_to_high", "dist_to_low",
     # Caractéristiques croisées
     "rsi_bb", "price_volume_trend", "reversal_signal",
-    # Nouveaux indicateurs techniques
-    "cci_20", "williams_r_14", "stoch_rsi", "volatility_14"
+    # Nouveaux indicateurs
+    "cci_20", "williams_r_14", "stoch_rsi", "volatility_14",
+    # Laissez les champs pour les caractéristiques supplémentaires détectées dynamiquement
 ]
 
-# Liste fixe des features à utiliser pour l'entraînement et l'évaluation.
-FIXED_FEATURES = [
-    # Indicateurs de tendance
-    'ema_9', 'dist_to_ema_9', 'ema_21', 'dist_to_ema_21', 'ema_50', 'dist_to_ema_50', 'ema_200', 'dist_to_ema_200',
-    'macd', 'macd_signal', 'macd_hist', 'adx', 'plus_di', 'minus_di',
-    # Indicateurs de momentum
-    'rsi', 'stoch_k', 'stoch_d', 'roc_5', 'roc_10', 'roc_21',
-    # Indicateurs de volatilité
-    'bb_upper', 'bb_middle', 'bb_lower', 'bb_width', 'bb_percent_b', 'atr', 'atr_percent',
-    # Indicateurs de volume
-    'obv', 'rel_volume_5', 'rel_volume_10', 'rel_volume_21', 'vwap', 'vwap_dist',
-    # Caractéristiques des chandeliers
-    'body_size', 'body_size_percent', 'upper_wick', 'lower_wick', 'upper_wick_percent', 'lower_wick_percent',
-    'gap_up', 'gap_down',
-    # Caractéristiques temporelles
-    'hour_sin', 'hour_cos', 'day_sin', 'day_cos', 'day_of_month_sin', 'day_of_month_cos',
-    # Nouveaux indicateurs
-    'cci_20', 'williams_r_14', 'stoch_rsi', 'volatility_14'
-]
+# Utiliser la même liste pour FIXED_FEATURES pour conserver la cohérence
+FIXED_FEATURES = FEATURE_COLUMNS.copy()
 
 def load_config():
     """

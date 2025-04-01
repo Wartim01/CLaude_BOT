@@ -5,13 +5,13 @@ Ces paramètres doivent être cohérents avec ceux utilisés dans l'entraînemen
 
 # Paramètres par défaut
 LSTM_DEFAULT_PARAMS = {
-    "lstm_units": [136, 68, 68],
+    "lstm_units": [136, 68, 68],  # Architecture à trois couches: 136, 68 et 68 neurones
     "dropout_rate": 0.4195981825434215,
     "learning_rate": 0.00015751320499779721,
     "batch_size": 128,
     "sequence_length": 60,
     "l1_regularization": 6.358358856676247e-05,
-    "l2_regularization": 0.000133112160807369,
+    "l2_regularization": 0.001,  # Augmenté pour réduire l'overfitting
     "use_attention": True,
     "use_residual": True,
     "epochs": 100,
