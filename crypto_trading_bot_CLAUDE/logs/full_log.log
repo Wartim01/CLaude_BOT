@@ -1,90 +1,267 @@
-2025-03-27 13:41:00,402 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
-2025-03-27 13:41:01,072 - train_model - INFO - Chargement des données depuis C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv...
-2025-03-27 13:41:01,089 - train_model - INFO - Données chargées: 5665 lignes de 2023-12-31 23:00:00 à 2024-02-28 23:00:00
-2025-03-27 13:41:01,090 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
-2025-03-27 13:41:01,091 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
-2025-03-27 13:41:01,091 - train_model - INFO - Création des caractéristiques...
-2025-03-27 13:41:01,452 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
-2025-03-27 13:41:01,452 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
-2025-03-27 13:41:01,452 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
-2025-03-27 13:41:01,479 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
-2025-03-27 13:41:01,479 - train_model - INFO - Normalisation des données...
-2025-03-27 13:41:01,505 - train_model - INFO - Division des données: 4532 échantillons d'entraînement, 1133 échantillons de validation
-2025-03-27 13:41:01,506 - train_model - INFO - Utilisation d'un unique horizon de prédiction: 4 périodes
-2025-03-27 13:41:01,506 - train_model - INFO - Using optimized parameters for 15m from config
-2025-03-27 13:41:01,506 - train_model - INFO - Last optimization: 2025-03-23 12:21:01 with F1 score: 0.6770
-2025-03-27 13:41:01,506 - train_model - INFO - Training with parameters: lstm_units=[136, 68, 34], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, sequence_length=60, batch_size=32, l1_reg=6.358358856676247e-05, l2_reg=0.000133112160807369
-2025-03-27 13:41:01,506 - train_model - INFO - Création des séquences pour l'entraînement...
-2025-03-27 13:41:05,383 - train_model - INFO - Dimensions de X_train: (4468, 60, 8) (attendu: (*, 60, 80))
-2025-03-27 13:41:05,383 - train_model - INFO - Création des séquences pour la validation...
-2025-03-27 13:41:06,264 - train_model - INFO - Vérification des dimensions: X_train = (4468, 60, 8), X_val = (1069, 60, 8)
-2025-03-27 13:41:06,264 - train_model - INFO - Création du modèle LSTM avec unités: [136, 68, 34]
-2025-03-27 13:41:06,264 - train_model - INFO - Determining actual feature dimension from processed data...
-2025-03-27 13:41:06,296 - train_model - INFO - Detected actual feature dimension: 8
-2025-03-27 13:41:07,799 - train_model - INFO - Début de l'entraînement pour 100 époques avec batch_size=32...
-2025-03-27 14:08:49,580 - train_model - INFO - Sauvegarde du modèle dans C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras...
-2025-03-27 14:08:49,684 - enhanced_lstm_model - INFO - Modèle principal sauvegardé: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
-2025-03-27 14:08:49,723 - enhanced_lstm_model - INFO - Détecteur de retournement sauvegardé: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m_reversal.h5
-2025-03-27 14:08:54,468 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
-2025-03-27 14:08:55,127 - train_model - INFO - Chargement des données depuis C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv...
-2025-03-27 14:08:55,146 - train_model - INFO - Données chargées: 5665 lignes de 2023-12-31 23:00:00 à 2024-02-28 23:00:00
-2025-03-27 14:08:55,146 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
-2025-03-27 14:08:55,147 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
-2025-03-27 14:08:55,147 - train_model - INFO - Création des caractéristiques...
-2025-03-27 14:08:55,509 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
-2025-03-27 14:08:55,509 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
-2025-03-27 14:08:55,509 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
-2025-03-27 14:08:55,535 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
-2025-03-27 14:08:55,536 - train_model - INFO - Normalisation des données...
-2025-03-27 14:08:55,563 - train_model - INFO - Division des données: 4532 échantillons d'entraînement, 1133 échantillons de validation
-2025-03-27 14:08:55,563 - train_model - INFO - Utilisation d'un unique horizon de prédiction: 4 périodes
-2025-03-27 14:08:55,563 - train_model - INFO - Using optimized parameters for 15m from config
-2025-03-27 14:08:55,563 - train_model - INFO - Last optimization: 2025-03-23 12:21:01 with F1 score: 0.6770
-2025-03-27 14:08:55,563 - train_model - INFO - Training with parameters: lstm_units=[136, 68, 34], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, sequence_length=60, batch_size=32, l1_reg=6.358358856676247e-05, l2_reg=0.000133112160807369
-2025-03-27 14:08:55,563 - train_model - INFO - Création des séquences pour l'entraînement...
-2025-03-27 14:08:59,465 - train_model - INFO - Dimensions de X_train: (4468, 60, 8) (attendu: (*, 60, 80))
-2025-03-27 14:08:59,465 - train_model - INFO - Création des séquences pour la validation...
-2025-03-27 14:09:00,379 - train_model - INFO - Vérification des dimensions: X_train = (4468, 60, 8), X_val = (1069, 60, 8)
-2025-03-27 14:09:00,379 - train_model - INFO - Création du modèle LSTM avec unités: [136, 68, 34]
-2025-03-27 14:09:00,379 - train_model - INFO - Determining actual feature dimension from processed data...
-2025-03-27 14:09:00,411 - train_model - INFO - Detected actual feature dimension: 8
-2025-03-27 14:09:01,907 - train_model - INFO - Début de l'entraînement pour 100 époques avec batch_size=32...
-2025-03-27 14:37:32,025 - train_model - INFO - Sauvegarde du modèle dans C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras...
-2025-03-27 14:37:32,128 - enhanced_lstm_model - INFO - Modèle principal sauvegardé: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
-2025-03-27 14:37:32,154 - enhanced_lstm_model - INFO - Détecteur de retournement sauvegardé: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m_reversal.h5
-2025-03-27 14:37:36,702 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
-2025-03-27 14:37:37,333 - train_model - INFO - Chargement des données depuis C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv...
-2025-03-27 14:37:37,351 - train_model - INFO - Données chargées: 5665 lignes de 2023-12-31 23:00:00 à 2024-02-28 23:00:00
-2025-03-27 14:37:37,352 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
-2025-03-27 14:37:37,352 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
-2025-03-27 14:37:37,352 - train_model - INFO - Création des caractéristiques...
-2025-03-27 14:37:37,708 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
-2025-03-27 14:37:37,709 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
-2025-03-27 14:37:37,709 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
-2025-03-27 14:37:37,735 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\scalers\feature_metadata.json
-2025-03-27 14:37:37,736 - train_model - INFO - Normalisation des données...
-2025-03-27 14:37:37,765 - train_model - INFO - Division des données: 4532 échantillons d'entraînement, 1133 échantillons de validation
-2025-03-27 14:37:37,765 - train_model - INFO - Utilisation d'un unique horizon de prédiction: 4 périodes
-2025-03-27 14:37:37,765 - train_model - INFO - Using optimized parameters for 15m from config
-2025-03-27 14:37:37,765 - train_model - INFO - Last optimization: 2025-03-23 12:21:01 with F1 score: 0.6770
-2025-03-27 14:37:37,765 - train_model - INFO - Training with parameters: lstm_units=[136, 68, 34], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, sequence_length=60, batch_size=32, l1_reg=6.358358856676247e-05, l2_reg=0.000133112160807369
-2025-03-27 14:37:37,765 - train_model - INFO - Création des séquences pour l'entraînement...
-2025-03-27 14:37:41,694 - train_model - INFO - Dimensions de X_train: (4468, 60, 8) (attendu: (*, 60, 80))
-2025-03-27 14:37:41,695 - train_model - INFO - Création des séquences pour la validation...
-2025-03-27 14:37:42,594 - train_model - INFO - Vérification des dimensions: X_train = (4468, 60, 8), X_val = (1069, 60, 8)
-2025-03-27 14:37:42,594 - train_model - INFO - Création du modèle LSTM avec unités: [136, 68, 34]
-2025-03-27 14:37:42,594 - train_model - INFO - Determining actual feature dimension from processed data...
-2025-03-27 14:37:42,626 - train_model - INFO - Detected actual feature dimension: 8
-2025-03-27 14:37:44,169 - train_model - INFO - Début de l'entraînement pour 100 époques avec batch_size=32...
-2025-03-27 15:06:38,228 - train_model - INFO - Sauvegarde du modèle dans C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras...
-2025-03-27 15:06:38,348 - enhanced_lstm_model - INFO - Modèle principal sauvegardé: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
-2025-03-27 15:06:38,376 - enhanced_lstm_model - INFO - Détecteur de retournement sauvegardé: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m_reversal.h5
-2025-03-27 15:06:43,735 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
-2025-03-27 15:06:44,001 - model_evaluation - INFO - Loaded 5661 data points from C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
-2025-03-27 15:06:44,001 - model_evaluation - INFO - Data shape: (5661, 11)
-2025-03-27 15:06:44,002 - model_evaluation - INFO - Data index type: <class 'pandas.core.indexes.datetimes.DatetimeIndex'>
-2025-03-27 15:06:44,002 - model_evaluation - INFO - Data date range: 2024-01-01 00:00:00 to 2024-02-28 23:00:00
-2025-03-27 15:06:44,003 - model_evaluation - INFO - Using model from: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
-2025-03-27 15:06:44,004 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[128, 64, 32], dropout=None, learning_rate=None, l1_reg=None, l2_reg=None
-2025-03-27 15:06:44,034 - model_evaluation - ERROR - Error loading model: Shapes used to initialize variables must be fully-defined (no `None` dimensions). Received: shape=(None, 512) for variable path='bidirectional/forward_lstm/lstm_cell/kernel'
-2025-03-27 15:06:44,034 - model_evaluation - ERROR - Failed to load model
+2025-04-01 11:41:31,804 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:41:45,319 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:41:50,223 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:44:23,041 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:44:27,795 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:44:32,512 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:47:58,688 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:47:58,855 - feature_engineering - INFO - Configuration locale non trouvée, utilisation de la configuration centralisée: 89 features
+2025-04-01 11:47:59,238 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 11:47:59,238 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 11:47:59,238 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 11:47:59,265 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 11:48:03,677 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:48:03,833 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 11:48:03,834 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 11:48:04,188 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 11:48:04,188 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 11:48:04,188 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 11:48:04,215 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 11:48:08,769 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:48:08,938 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 11:48:08,939 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 11:48:09,343 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 11:48:09,343 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 11:48:09,343 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 11:48:09,370 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 11:50:42,341 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:50:42,492 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 11:50:42,492 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 11:50:42,865 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 11:50:42,865 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 11:50:42,865 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 11:50:42,900 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 11:50:47,349 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:50:47,499 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 11:50:47,499 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 11:50:47,850 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 11:50:47,850 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 11:50:47,850 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 11:50:47,876 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 11:50:52,415 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:50:52,566 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 11:50:52,566 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 11:50:52,983 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 11:50:52,983 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 11:50:52,983 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 11:50:53,010 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 11:55:08,246 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:58:31,199 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:03:56,302 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:04:57,865 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:05:35,071 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:07:27,564 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:07:41,342 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:08:53,671 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:09:33,819 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:10:07,214 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:10:07,381 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:10:07,382 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 12:10:07,794 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 12:10:07,795 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 12:10:07,796 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 12:10:07,823 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:12:18,706 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:12:18,883 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:12:18,884 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 12:12:19,312 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 12:12:19,313 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 12:12:19,314 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 12:12:19,351 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:14:59,876 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:15:00,039 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:15:00,040 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 12:15:00,435 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 12:15:00,435 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 12:15:00,436 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 12:15:00,463 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:17:27,170 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:17:27,335 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:17:27,336 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 12:17:27,724 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 12:17:27,725 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 12:17:27,725 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 12:17:27,752 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:20:07,777 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:20:07,946 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:20:07,946 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 12:20:08,318 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 12:20:08,318 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 12:20:08,319 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 12:20:08,346 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:22:59,228 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:22:59,434 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:22:59,435 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 12:22:59,846 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 12:22:59,847 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 12:22:59,848 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 12:22:59,882 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:23:34,559 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:23:34,719 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:23:34,720 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 12:23:35,094 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 12:23:35,094 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 12:23:35,095 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 12:23:35,126 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:25:21,899 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:25:22,106 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:25:22,108 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 12:25:22,492 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 12:25:22,492 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 12:25:22,493 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 12:25:22,522 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:27:14,862 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:27:15,028 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:27:15,028 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 12:27:15,413 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 12:27:15,414 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 12:27:15,415 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 12:27:15,442 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:29:58,844 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:29:59,005 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:29:59,006 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 12:29:59,388 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 12:29:59,389 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 12:29:59,390 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 12:29:59,416 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:34:29,269 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:34:29,429 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:34:29,430 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 12:34:29,798 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 12:34:29,798 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 12:34:29,799 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 12:34:29,826 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:40:04,499 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:40:04,711 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:40:04,712 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 12:40:05,155 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 12:40:05,156 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 12:40:05,157 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 12:40:05,199 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:40:15,330 - feature_engineering - INFO - Dimensions finales - X: (3469, 60, 78), dtype: float32
+2025-04-01 12:40:15,331 - feature_engineering - INFO - Dimensions des labels: y[0]: (3469,), dtype: int32, y[1]: (3469,), dtype: float64, y[2]: (3469,), dtype: float64, y[3]: (3469,), dtype: float64, y[4]: (3469,), dtype: int32, y[5]: (3469,), dtype: float64, y[6]: (3469,), dtype: float64, y[7]: (3469,), dtype: float64, y[8]: (3469,), dtype: int32, y[9]: (3469,), dtype: float64, y[10]: (3469,), dtype: float64, y[11]: (3469,), dtype: float64
+2025-04-01 12:40:16,890 - feature_engineering - INFO - Dimensions finales - X: (810, 60, 78), dtype: float32
+2025-04-01 12:40:16,891 - feature_engineering - INFO - Dimensions des labels: y[0]: (810,), dtype: int32, y[1]: (810,), dtype: float64, y[2]: (810,), dtype: float64, y[3]: (810,), dtype: float64, y[4]: (810,), dtype: int32, y[5]: (810,), dtype: float64, y[6]: (810,), dtype: float64, y[7]: (810,), dtype: float64, y[8]: (810,), dtype: int32, y[9]: (810,), dtype: float64, y[10]: (810,), dtype: float64, y[11]: (810,), dtype: float64
+2025-04-01 12:40:18,874 - feature_engineering - INFO - Dimensions finales - X: (1036, 60, 78), dtype: float32
+2025-04-01 12:40:18,875 - feature_engineering - INFO - Dimensions des labels: y[0]: (1036,), dtype: int32, y[1]: (1036,), dtype: float64, y[2]: (1036,), dtype: float64, y[3]: (1036,), dtype: float64, y[4]: (1036,), dtype: int32, y[5]: (1036,), dtype: float64, y[6]: (1036,), dtype: float64, y[7]: (1036,), dtype: float64, y[8]: (1036,), dtype: int32, y[9]: (1036,), dtype: float64, y[10]: (1036,), dtype: float64, y[11]: (1036,), dtype: float64
+2025-04-01 12:46:09,520 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:46:09,729 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:46:09,729 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 12:46:10,116 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 12:46:10,117 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 12:46:10,117 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 12:46:10,144 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:46:10,943 - feature_engineering - INFO - After reindex, data has 89 columns (expected 89)
+2025-04-01 12:46:10,945 - feature_engineering - INFO - Using 89 feature columns for sequence creation
+2025-04-01 12:46:21,216 - feature_engineering - INFO - After reindex, data has 89 columns (expected 89)
+2025-04-01 12:46:21,216 - feature_engineering - INFO - Using 89 feature columns for sequence creation
+2025-04-01 12:46:22,900 - feature_engineering - INFO - After reindex, data has 89 columns (expected 89)
+2025-04-01 12:46:22,901 - feature_engineering - INFO - Using 89 feature columns for sequence creation
+2025-04-01 12:46:25,088 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-01 12:46:25,088 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-01 12:53:49,938 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:53:50,141 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:53:50,141 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 12:53:50,514 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 12:53:50,514 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 12:53:50,515 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 12:53:50,542 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:53:51,324 - feature_engineering - INFO - After reindex, data has 89 columns (expected 89)
+2025-04-01 12:53:51,325 - feature_engineering - INFO - Using 89 feature columns for sequence creation
+2025-04-01 12:54:02,009 - feature_engineering - INFO - After reindex, data has 89 columns (expected 89)
+2025-04-01 12:54:02,010 - feature_engineering - INFO - Using 89 feature columns for sequence creation
+2025-04-01 12:54:03,704 - feature_engineering - INFO - After reindex, data has 89 columns (expected 89)
+2025-04-01 12:54:03,705 - feature_engineering - INFO - Using 89 feature columns for sequence creation
+2025-04-01 12:54:05,943 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-01 12:54:05,944 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-01 12:57:37,134 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:57:37,293 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:57:37,294 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 12:57:37,660 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 12:57:37,661 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 12:57:37,662 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 12:57:37,690 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:57:38,421 - feature_engineering - INFO - After reindex, data has 89 columns (expected 89)
+2025-04-01 12:57:38,422 - feature_engineering - INFO - Using 89 feature columns for sequence creation
+2025-04-01 12:57:48,213 - feature_engineering - INFO - After reindex, data has 89 columns (expected 89)
+2025-04-01 12:57:48,214 - feature_engineering - INFO - Using 89 feature columns for sequence creation
+2025-04-01 12:57:49,902 - feature_engineering - INFO - After reindex, data has 89 columns (expected 89)
+2025-04-01 12:57:49,902 - feature_engineering - INFO - Using 89 feature columns for sequence creation
+2025-04-01 12:57:52,078 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-01 12:57:52,079 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-01 12:58:51,572 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:58:51,728 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:58:51,729 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 12:58:52,087 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 12:58:52,087 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 12:58:52,088 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 12:58:52,115 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 12:58:52,853 - feature_engineering - INFO - After reindex, data has 89 columns (expected 89)
+2025-04-01 12:58:52,853 - feature_engineering - INFO - Using 89 feature columns for sequence creation
+2025-04-01 12:59:02,541 - feature_engineering - INFO - After reindex, data has 89 columns (expected 89)
+2025-04-01 12:59:02,542 - feature_engineering - INFO - Using 89 feature columns for sequence creation
+2025-04-01 12:59:04,281 - feature_engineering - INFO - After reindex, data has 89 columns (expected 89)
+2025-04-01 12:59:04,282 - feature_engineering - INFO - Using 89 feature columns for sequence creation
+2025-04-01 12:59:06,474 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-01 12:59:06,474 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-01 13:03:12,420 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 13:03:12,597 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 13:03:12,597 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 13:03:12,968 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 13:03:12,969 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 13:03:12,970 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 13:03:12,996 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 13:03:13,755 - feature_engineering - INFO - After reindex, data has 89 columns (expected 89)
+2025-04-01 13:03:13,755 - feature_engineering - INFO - Using 89 feature columns for sequence creation
+2025-04-01 13:03:24,756 - feature_engineering - INFO - After reindex, data has 89 columns (expected 89)
+2025-04-01 13:03:24,756 - feature_engineering - INFO - Using 89 feature columns for sequence creation
+2025-04-01 13:03:26,581 - feature_engineering - INFO - After reindex, data has 89 columns (expected 89)
+2025-04-01 13:03:26,582 - feature_engineering - INFO - Using 89 feature columns for sequence creation
+2025-04-01 13:03:29,178 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-01 13:03:29,178 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-01 13:04:15,979 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 13:04:16,139 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 13:04:16,139 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 13:04:16,512 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 13:04:16,513 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 13:04:16,513 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 13:04:16,540 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 13:04:17,291 - feature_engineering - INFO - After reindex, data has 89 columns (expected 89)
+2025-04-01 13:04:17,291 - feature_engineering - INFO - Using 89 feature columns for sequence creation
+2025-04-01 13:04:27,340 - feature_engineering - INFO - After reindex, data has 89 columns (expected 89)
+2025-04-01 13:04:27,341 - feature_engineering - INFO - Using 89 feature columns for sequence creation
+2025-04-01 13:04:29,216 - feature_engineering - INFO - After reindex, data has 89 columns (expected 89)
+2025-04-01 13:04:29,216 - feature_engineering - INFO - Using 89 feature columns for sequence creation
+2025-04-01 13:04:31,484 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-01 13:04:31,484 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-01 13:06:50,597 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 13:06:50,764 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 13:06:50,765 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 13:06:51,186 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 13:06:51,187 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 13:06:51,188 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 13:06:51,219 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 13:06:52,098 - feature_engineering - INFO - After reindex, data has 89 columns (expected 89)
+2025-04-01 13:06:52,099 - feature_engineering - INFO - Using 89 feature columns for sequence creation
+2025-04-01 13:07:02,187 - feature_engineering - INFO - After reindex, data has 89 columns (expected 89)
+2025-04-01 13:07:02,187 - feature_engineering - INFO - Using 89 feature columns for sequence creation
+2025-04-01 13:07:04,024 - feature_engineering - INFO - After reindex, data has 89 columns (expected 89)
+2025-04-01 13:07:04,024 - feature_engineering - INFO - Using 89 feature columns for sequence creation
+2025-04-01 13:07:06,296 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-01 13:07:06,296 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-01 13:10:32,102 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 13:10:32,277 - feature_engineering - INFO - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 13:10:32,278 - feature_engineering - INFO - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 13:10:32,661 - feature_engineering - INFO - Nombre de features généré avant harmonisation: 91
+2025-04-01 13:10:32,662 - feature_engineering - INFO - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 13:10:32,663 - feature_engineering - INFO - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 13:10:32,690 - feature_engineering - INFO - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 13:10:33,528 - feature_engineering - INFO - After reindex, data has 89 columns (expected 89)
+2025-04-01 13:10:33,536 - feature_engineering - INFO - Using 89 feature columns for sequence creation
+2025-04-01 13:10:43,537 - feature_engineering - INFO - After reindex, data has 89 columns (expected 89)
+2025-04-01 13:10:43,537 - feature_engineering - INFO - Using 89 feature columns for sequence creation
+2025-04-01 13:10:45,248 - feature_engineering - INFO - After reindex, data has 89 columns (expected 89)
+2025-04-01 13:10:45,249 - feature_engineering - INFO - Using 89 feature columns for sequence creation
+2025-04-01 13:10:47,559 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-01 13:10:47,559 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 09:23:31,212 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.

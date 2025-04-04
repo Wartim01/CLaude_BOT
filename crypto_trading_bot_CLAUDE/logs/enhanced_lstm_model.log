@@ -1,11 +1,58 @@
-2025-03-27 13:41:00,402 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
-2025-03-27 14:08:49,684 - enhanced_lstm_model - INFO - Modèle principal sauvegardé: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
-2025-03-27 14:08:49,723 - enhanced_lstm_model - INFO - Détecteur de retournement sauvegardé: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m_reversal.h5
-2025-03-27 14:08:54,468 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
-2025-03-27 14:37:32,128 - enhanced_lstm_model - INFO - Modèle principal sauvegardé: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
-2025-03-27 14:37:32,154 - enhanced_lstm_model - INFO - Détecteur de retournement sauvegardé: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m_reversal.h5
-2025-03-27 14:37:36,702 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
-2025-03-27 15:06:38,348 - enhanced_lstm_model - INFO - Modèle principal sauvegardé: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m.keras
-2025-03-27 15:06:38,376 - enhanced_lstm_model - INFO - Détecteur de retournement sauvegardé: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\models\lstm_BTCUSDT_15m_reversal.h5
-2025-03-27 15:06:43,735 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
-2025-03-27 15:06:44,004 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[128, 64, 32], dropout=None, learning_rate=None, l1_reg=None, l2_reg=None
+2025-04-01 11:41:31,804 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:41:45,319 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:41:50,223 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:44:23,041 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:44:27,795 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:44:32,512 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:47:58,688 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:48:03,677 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:48:08,769 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:50:42,341 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:50:47,349 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:50:52,415 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:55:08,246 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:58:31,199 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:03:56,302 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:04:57,865 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:05:35,071 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:07:27,564 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:07:41,342 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:08:53,671 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:09:33,819 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:10:07,214 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:12:18,706 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:14:59,876 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:17:27,170 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:20:07,777 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:22:59,228 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:23:34,559 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:25:21,899 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:27:14,862 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:29:58,844 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:34:29,269 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:40:04,499 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:46:09,520 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:46:25,088 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-01 12:46:25,088 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-01 12:53:49,938 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:54:05,943 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-01 12:54:05,944 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-01 12:57:37,134 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:57:52,078 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-01 12:57:52,079 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-01 12:58:51,572 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 12:59:06,474 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-01 12:59:06,474 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-01 13:03:12,420 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 13:03:29,178 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-01 13:03:29,178 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-01 13:04:15,979 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 13:04:31,484 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-01 13:04:31,484 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-01 13:06:50,597 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 13:07:06,296 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-01 13:07:06,296 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-01 13:10:32,102 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 13:10:47,559 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-01 13:10:47,559 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 09:23:31,212 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.

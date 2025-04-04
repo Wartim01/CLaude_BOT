@@ -22,7 +22,9 @@ from typing import Dict, List, Tuple, Union, Optional
 from datetime import datetime
 import json
 
-from config.config import DATA_DIR
+from utils.path_utils import get_path, build_path, get_model_path
+# Remplacer l'import de DATA_DIR
+# from config.config import DATA_DIR
 from utils.logger import setup_logger
 from ai.models.attention import MultiHeadAttention, TemporalAttentionBlock, TimeSeriesAttention
 from config.feature_config import FIXED_FEATURES  # Ajout pour récupérer la liste fixe des features
@@ -133,7 +135,6 @@ class ResidualBlock(Layer):
             self.projection = Dense(output_dim)
             
         super(ResidualBlock, self).build(input_shape)
-        pass  # Minimal implementation for build
     
     def call(self, inputs, training=None):
         x = self.lstm(inputs)
@@ -150,7 +151,6 @@ class ResidualBlock(Layer):
             residual = inputs
             
         return Add()([x, residual])
-        pass  # Minimal implementation for call
     
     def get_config(self):
         config = super(ResidualBlock, self).get_config()
@@ -160,7 +160,6 @@ class ResidualBlock(Layer):
             'use_batch_norm': self.use_batch_norm
         })
         return config
-        pass  # Minimal implementation for get_config
 
 import os
 import json
@@ -333,7 +332,6 @@ class LSTMModel(tf.keras.Model):  # Assurez-vous que LSTMModel hérite de tf.ker
         
         # Build the model with the parameters
         self.build_model()
-        pass
 
     def get_config(self):
         config = super(LSTMModel, self).get_config()
@@ -350,16 +348,18 @@ class LSTMModel(tf.keras.Model):  # Assurez-vous que LSTMModel hérite de tf.ker
             "prediction_horizons": self.prediction_horizons
         })
         return config
-        pass
 
     def build_model(self):
-        """
-        Construit le modèle LSTM multi-sorties complet
-        """
-        from tensorflow.keras.layers import Input, LSTM, Dense, Dropout, Bidirectional # type: ignore
-        from tensorflow.keras.models import Model # type: ignore
-        from tensorflow.keras.optimizers import Adam # type: ignore
-        from tensorflow.keras.regularizers import l1_l2 # type: ignore
+        """Construit l'architecture du modèle LSTM"""
+        from tensorflow.keras.layers import Input, LSTM, Dense, Dropout, BatchNormalization
+        from tensorflow.keras.models import Model
+        
+        # Logging des dimensions d'entrée
+        logger.info(f"Construction du modèle LSTM avec input_shape={self.input_shape}")
+        logger.info(f"Dimensions explicites: sequence_length={self.input_length}, features={self.feature_dim}")
+        
+        # Couche d'entrée avec dimensions explicites
+        input_layer = Input(shape=(self.input_length, self.feature_dim), name='input_layer')
         
         inputs = Input(shape=(self.input_length, self.feature_dim))
         x = inputs
@@ -412,11 +412,9 @@ class LSTMModel(tf.keras.Model):  # Assurez-vous que LSTMModel hérite de tf.ker
             metrics=['accuracy']  # Use a list instead of a string
         )
         return self.model
-        pass
 
     def build_single_output_model(self, horizon_idx=0):
-        """
-        Construit un modèle LSTM avec une seule sortie pour l'optimisation
+        """Construit un modèle LSTM avec une seule sortie pour l'optimisation
         
         Args:
             horizon_idx: Indice de l'horizon à utiliser (0 = court terme)
@@ -521,14 +519,12 @@ class LSTMModel(tf.keras.Model):  # Assurez-vous que LSTMModel hérite de tf.ker
         tf.config.run_functions_eagerly(False)
         
         return single_model
-        pass
 
     def call(self, inputs, training=False):
         return self.model(inputs, training=training)
 
     def save(self, path: str) -> None:
         self.model.save(path)
-        pass
         
     def load(self, path: Optional[str] = None) -> None:
         """
@@ -553,7 +549,6 @@ class LSTMModel(tf.keras.Model):  # Assurez-vous que LSTMModel hérite de tf.ker
             }
         )
         logger.info(f"Modèle principal chargé: {load_path}")
-        pass
 
 class EnhancedLSTMModel:
     """
@@ -636,12 +631,10 @@ class EnhancedLSTMModel:
         self.model = self._build_model()
         self.reversal_detector = self._build_reversal_detector()
         
-        # Chemins des modèles
-        self.models_dir = os.path.join(DATA_DIR, "models", "production")
-        os.makedirs(self.models_dir, exist_ok=True)
-        
-        self.model_path = os.path.join(self.models_dir, "enhanced_lstm_model.h5")
-        self.reversal_detector_path = os.path.join(self.models_dir, "reversal_detector_model.h5")
+        # Chemins des modèles - utiliser path_utils
+        self.models_dir = get_path("trained_models")
+        self.model_path = build_path("enhanced_lstm_model.keras", base="trained_models")
+        self.reversal_detector_path = build_path("reversal_detector_model.keras", base="trained_models")
         
         # Historique des performances du modèle
         self.metrics_history = []
@@ -652,7 +645,6 @@ class EnhancedLSTMModel:
             "trained_symbols": [],
             "transfer_history": []
         }
-        pass
         
     def _build_model(self) -> Model:
         """
@@ -819,7 +811,6 @@ class EnhancedLSTMModel:
         )
         
         return model
-        pass
     
     def _build_reversal_detector(self) -> Model:
         """
@@ -871,7 +862,6 @@ class EnhancedLSTMModel:
         )
         
         return model
-        pass
     
     def preprocess_data(self, data: pd.DataFrame, 
                        feature_engineering, is_training: bool = True) -> Tuple:
@@ -930,7 +920,6 @@ class EnhancedLSTMModel:
             return X, y_list, y_reversal
             
         return X, y_list
-        pass
     
     def _create_reversal_labels(self, data: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -969,7 +958,6 @@ class EnhancedLSTMModel:
             reversal_magnitude.append(abs(future_price_change))
         
         return np.array(reversal_probability), np.array(reversal_magnitude)
-        pass
     
     def train(self, train_data: pd.DataFrame, feature_engineering, 
              validation_data: pd.DataFrame = None, 
@@ -1093,7 +1081,6 @@ class EnhancedLSTMModel:
             'main_model': history_main.history,
             'reversal_detector': history_reversal.history
         }
-        pass
     
     def predict(self, data: pd.DataFrame, feature_engineering) -> Dict:
         """
@@ -1163,7 +1150,6 @@ class EnhancedLSTMModel:
         }
         
         return results
-        pass
     
     def save(self, path: Optional[str] = None) -> None:
         """
@@ -1185,7 +1171,6 @@ class EnhancedLSTMModel:
         reversal_path = os.path.splitext(save_path)[0] + "_reversal.h5"
         self.reversal_detector.save(reversal_path)
         logger.info(f"Détecteur de retournement sauvegardé: {reversal_path}")
-        pass
     
     def load(self, path: Optional[str] = None) -> None:
         """
@@ -1225,7 +1210,6 @@ class EnhancedLSTMModel:
             logger.info(f"Détecteur de retournement chargé: {reversal_path}")
         else:
             logger.warning(f"Détecteur de retournement non trouvé: {reversal_path}")
-        pass
     
     def _save_metrics(self, history: Dict, symbol: Optional[str] = None) -> None:
         """
@@ -1271,7 +1255,6 @@ class EnhancedLSTMModel:
             logger.info(f"Métriques sauvegardées: {metrics_path}")
         except Exception as e:
             logger.error(f"Erreur lors de la sauvegarde des métriques: {str(e)}")
-        pass
     
     def _save_transfer_info(self) -> None:
         """Sauvegarde les métadonnées d'apprentissage par transfert"""
@@ -1283,7 +1266,6 @@ class EnhancedLSTMModel:
             logger.info(f"Métadonnées de transfert sauvegardées: {transfer_path}")
         except Exception as e:
             logger.error(f"Erreur lors de la sauvegarde des métadonnées de transfert: {str(e)}")
-        pass
     
     def transfer_to_new_symbol(self, symbol: str) -> None:
         """
@@ -1300,7 +1282,6 @@ class EnhancedLSTMModel:
         
         logger.info(f"Modèle préparé pour l'apprentissage par transfert vers {symbol}")
         logger.info(f"Taux d'apprentissage réduit à {K.get_value(self.model.optimizer.learning_rate)}")
-        pass
     
     def get_reversal_threshold(self, data: pd.DataFrame, feature_engineering, 
                               percentile: float = 90) -> float:
@@ -1325,7 +1306,6 @@ class EnhancedLSTMModel:
         threshold = np.percentile(reversal_probs, percentile)
         
         return float(threshold)
-        pass
 
 def test_model():
     """Test simple du modèle pour vérifier qu'il compile correctement"""
@@ -1349,5 +1329,139 @@ def test_model():
 
 if __name__ == "__main__":
     test_model()
+
+def create_lstm_model(input_shape, lstm_units, dropout=0.2, l1_reg=0.0001, l2_reg=0.0001):
+    """
+    Crée un modèle LSTM simple
+    
+    Args:
+        input_shape: Forme des données d'entrée (séquence, caractéristiques)
+        lstm_units: Liste d'unités pour chaque couche LSTM
+        dropout: Taux de dropout
+        l1_reg: Régularisation L1
+        l2_reg: Régularisation L2
+        
+    Returns:
+        Modèle Keras compilé
+    """
+    from tensorflow.keras.models import Model
+    from tensorflow.keras.layers import Input, LSTM, Dense, Dropout, Bidirectional
+    from tensorflow.keras.regularizers import l1_l2
+    
+    # Logging des dimensions d'entrée
+    logger.info(f"Construction du modèle LSTM avec input_shape={input_shape}")
+    logger.info(f"Dimensions explicites: sequence_length={input_shape[0]}, features={input_shape[1]}")
+    
+    # Couche d'entrée avec dimensions explicites
+    inputs = Input(shape=input_shape, name='input_layer')
+    
+    x = inputs
+    
+    # Créer les couches LSTM
+    for i, units in enumerate(lstm_units):
+        return_sequences = i < len(lstm_units) - 1  # True pour toutes les couches sauf la dernière
+        
+        x = Bidirectional(
+            LSTM(units, 
+                 return_sequences=return_sequences,
+                 kernel_regularizer=l1_l2(l1=l1_reg, l2=l2_reg),
+                 name=f'lstm_{i+1}'
+            )
+        )(x)
+        
+        x = Dropout(dropout, name=f'dropout_{i+1}')(x)
+    
+    # Couche de sortie (classification binaire)
+    outputs = Dense(1, activation='sigmoid', name='direction')(x)
+    
+    # Créer le modèle
+    model = Model(inputs=inputs, outputs=outputs)
+    
+    # Compiler le modèle
+    model.compile(
+        loss='binary_crossentropy',
+        optimizer='adam',
+        metrics=['accuracy']
+    )
+    
+    return model
+
+def create_attention_lstm_model(input_shape, lstm_units, dropout=0.2, l1_reg=0.0001, l2_reg=0.0001):
+    """
+    Crée un modèle LSTM avec mécanisme d'attention
+    
+    Args:
+        input_shape: Forme des données d'entrée (séquence, caractéristiques)
+        lstm_units: Liste d'unités pour chaque couche LSTM
+        dropout: Taux de dropout
+        l1_reg: Régularisation L1
+        l2_reg: Régularisation L2
+        
+    Returns:
+        Modèle Keras compilé
+    """
+    from tensorflow.keras.models import Model
+    from tensorflow.keras.layers import Input, LSTM, Dense, Dropout, Bidirectional, Attention, Concatenate
+    from tensorflow.keras.regularizers import l1_l2
+    
+    # Logging des dimensions d'entrée
+    logger.info(f"Construction du modèle LSTM avec attention, input_shape={input_shape}")
+    logger.info(f"Dimensions explicites: sequence_length={input_shape[0]}, features={input_shape[1]}")
+    
+    # Couche d'entrée
+    inputs = Input(shape=input_shape, name='input_layer')
+    x = inputs
+    
+    # Première couche LSTM (retourne toute la séquence pour l'attention)
+    lstm_outputs = []
+    for i, units in enumerate(lstm_units):
+        # Toutes les couches retournent des séquences pour le mécanisme d'attention
+        if i == 0:
+            lstm_out = Bidirectional(
+                LSTM(units, 
+                     return_sequences=True,
+                     kernel_regularizer=l1_l2(l1=l1_reg, l2=l2_reg),
+                     name=f'lstm_{i+1}'
+                )
+            )(x)
+        else:
+            lstm_out = Bidirectional(
+                LSTM(units, 
+                     return_sequences=True,
+                     kernel_regularizer=l1_l2(l1=l1_reg, l2=l2_reg),
+                     name=f'lstm_{i+1}'
+                )
+            )(lstm_out)
+        
+        lstm_out = Dropout(dropout, name=f'dropout_{i+1}')(lstm_out)
+        lstm_outputs.append(lstm_out)
+    
+    # Mécanisme d'attention simple sur la dernière sortie LSTM
+    last_lstm_out = lstm_outputs[-1]
+    
+    # Utiliser un mécanisme d'attention adapté aux séries temporelles
+    attention_layer = TimeSeriesAttention(filters=lstm_units[-1])(last_lstm_out)
+    
+    # Contexte global (moyenne sur la dimension temporelle)
+    global_context = GlobalAveragePooling1D()(attention_layer)
+    
+    # Couche dense finale
+    x = Dense(64, activation='relu', kernel_regularizer=l1_l2(l1=l1_reg, l2=l2_reg))(global_context)
+    x = Dropout(dropout)(x)
+    
+    # Couche de sortie (classification binaire)
+    outputs = Dense(1, activation='sigmoid', name='direction')(x)
+    
+    # Créer le modèle
+    model = Model(inputs=inputs, outputs=outputs)
+    
+    # Compiler le modèle
+    model.compile(
+        loss='binary_crossentropy',
+        optimizer=Adam(learning_rate=0.001),
+        metrics=['accuracy']
+    )
+    
+    return model
 
 

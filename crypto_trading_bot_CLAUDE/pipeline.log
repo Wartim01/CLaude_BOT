@@ -1,33 +1,650 @@
-2025-03-27 13:40:51,000 - INFO - D�but de l'ex�cution du pipeline.
-2025-03-27 13:40:51,000 - INFO - D�but du t�l�chargement des donn�es...
-2025-03-27 13:40:51,000 - DEBUG - Commande de t�l�chargement: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe download_data.py --symbol BTCUSDT --interval 15m --start 2024-01-01 --end 2024-02-29
-2025-03-27 13:40:56,589 - INFO - Sortie stdout du t�l�chargement: Downloading BTCUSDT 15m data from 2024-01-01 00:00:00 to 2024-02-29 00:00:00
+2025-04-01 11:38:43,621 - INFO - D�but de l'ex�cution du pipeline.
+2025-04-01 11:38:43,621 - INFO - D�but du t�l�chargement des donn�es...
+2025-04-01 11:38:43,622 - DEBUG - Commande de t�l�chargement: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe download_data.py --symbol BTCUSDT --interval 15m --start 2024-01-01 --end 2024-02-29
+2025-04-01 11:38:43,677 - ERROR - Erreur lors du t�l�chargement des donn�es: Command '['C:\\Users\\timot\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe', 'download_data.py', '--symbol', 'BTCUSDT', '--interval', '15m', '--start', '2024-01-01', '--end', '2024-02-29']' returned non-zero exit status 2.
+2025-04-01 11:38:43,678 - ERROR - Sortie stderr: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe: can't open file 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\download_data.py': [Errno 2] No such file or directory
+
+2025-04-01 11:38:43,678 - WARNING - Probl�me lors du t�l�chargement des donn�es, mais continue le pipeline...
+2025-04-01 11:38:43,679 - INFO - D�but de l'entra�nement avec les hyperparam�tres
+2025-04-01 11:38:43,679 - INFO - Entra�nement - Tentative 1/3
+2025-04-01 11:38:43,679 - INFO - Commande d'entra�nement construite avec uniquement les arguments valides
+2025-04-01 11:38:43,680 - DEBUG - Commande d'entra�nement: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe train_model.py --symbol BTCUSDT --timeframe 15m --data_path C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data --verbose 2
+2025-04-01 11:38:43,730 - ERROR - Erreur lors de l'entra�nement (code 2)
+2025-04-01 11:38:43,730 - ERROR - Stderr: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe: can't open file 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\train_model.py': [Errno 2] No such file or directory
+
+2025-04-01 11:38:43,731 - INFO - Entra�nement - Tentative 2/3
+2025-04-01 11:38:43,731 - INFO - Commande d'entra�nement construite avec uniquement les arguments valides
+2025-04-01 11:38:43,732 - DEBUG - Commande d'entra�nement: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe train_model.py --symbol BTCUSDT --timeframe 15m --data_path C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data --verbose 2
+2025-04-01 11:38:43,778 - ERROR - Erreur lors de l'entra�nement (code 2)
+2025-04-01 11:38:43,779 - ERROR - Stderr: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe: can't open file 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\train_model.py': [Errno 2] No such file or directory
+
+2025-04-01 11:38:43,779 - INFO - Entra�nement - Tentative 3/3
+2025-04-01 11:38:43,780 - INFO - Commande d'entra�nement construite avec uniquement les arguments valides
+2025-04-01 11:38:43,780 - DEBUG - Commande d'entra�nement: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe train_model.py --symbol BTCUSDT --timeframe 15m --data_path C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data --verbose 2
+2025-04-01 11:38:43,826 - ERROR - Erreur lors de l'entra�nement (code 2)
+2025-04-01 11:38:43,826 - ERROR - Stderr: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe: can't open file 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\train_model.py': [Errno 2] No such file or directory
+
+2025-04-01 11:38:43,833 - INFO - D�but de l'�valuation du mod�le...
+2025-04-01 11:38:43,834 - DEBUG - Commande d'�valuation: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe evaluate_model.py evaluate --symbol BTCUSDT --timeframe 15m --start-date 2024-01-01 --end-date 2024-02-29 --data_path C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data
+2025-04-01 11:38:43,880 - ERROR - Erreur lors de l'�valuation (code 2)
+2025-04-01 11:38:43,881 - ERROR - L'�valuation a �chou�.
+2025-04-01 11:38:43,881 - WARNING - Ex�cution du pipeline termin�e avec des erreurs. Consultez les logs pour plus de d�tails.
+2025-04-01 11:40:53,921 - INFO - Début de l'exécution du pipeline.
+2025-04-01 11:40:53,922 - INFO - Début du téléchargement des données...
+2025-04-01 11:40:53,922 - DEBUG - Commande de téléchargement: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\download_data.py --symbol BTCUSDT --interval 15m --start 2024-01-01 --end 2024-02-29
+2025-04-01 11:41:02,450 - INFO - Sortie stdout du téléchargement: Downloading BTCUSDT 15m data from 2024-01-01 00:00:00 to 2024-02-29 00:00:00
   Fetching chunk: 2024-01-01 00:00:00 to 2024-02-29 00:00:00
 Downloaded 5665 candles
 Data saved to C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
 
-2025-03-27 13:40:56,590 - INFO - T�l�chargement termin�.
-2025-03-27 13:40:56,590 - INFO - D�but de l'entra�nement avec les hyperparam�tres
-2025-03-27 13:40:56,591 - INFO - Entra�nement - Tentative 1/3
-2025-03-27 13:40:56,591 - INFO - Param�tres bruts trouv�s pour 15m
-2025-03-27 13:40:56,591 - INFO - Param�tres transform�s: {'lstm_units': '136,68,34', 'dropout': 0.4195981825434215, 'learning_rate': 0.00015751320499779721, 'batch_size': 32, 'patience': 5}
-2025-03-27 13:40:56,592 - INFO - Commande d'entra�nement construite avec uniquement les arguments valides
-2025-03-27 13:40:56,592 - DEBUG - Commande d'entra�nement: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe train_model.py --symbol BTCUSDT --timeframe 15m --data_path C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data --verbose 2 --lstm_units 136,68,34 --dropout 0.4195981825434215 --learning_rate 0.00015751320499779721 --batch_size 32 --patience 5
-2025-03-27 14:08:50,623 - INFO - F1 < 0.70 apr�s l'entra�nement.
-2025-03-27 14:08:50,623 - INFO - Entra�nement - Tentative 2/3
-2025-03-27 14:08:50,624 - INFO - Param�tres bruts trouv�s pour 15m
-2025-03-27 14:08:50,624 - INFO - Param�tres transform�s: {'lstm_units': '136,68,34', 'dropout': 0.4195981825434215, 'learning_rate': 0.00015751320499779721, 'batch_size': 32, 'patience': 5}
-2025-03-27 14:08:50,624 - INFO - Commande d'entra�nement construite avec uniquement les arguments valides
-2025-03-27 14:08:50,625 - DEBUG - Commande d'entra�nement: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe train_model.py --symbol BTCUSDT --timeframe 15m --data_path C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data --verbose 2 --lstm_units 136,68,34 --dropout 0.4195981825434215 --learning_rate 0.00015751320499779721 --batch_size 32 --patience 5
-2025-03-27 14:37:33,099 - INFO - F1 < 0.70 apr�s l'entra�nement.
-2025-03-27 14:37:33,100 - INFO - Entra�nement - Tentative 3/3
-2025-03-27 14:37:33,101 - INFO - Param�tres bruts trouv�s pour 15m
-2025-03-27 14:37:33,101 - INFO - Param�tres transform�s: {'lstm_units': '136,68,34', 'dropout': 0.4195981825434215, 'learning_rate': 0.00015751320499779721, 'batch_size': 32, 'patience': 5}
-2025-03-27 14:37:33,101 - INFO - Commande d'entra�nement construite avec uniquement les arguments valides
-2025-03-27 14:37:33,101 - DEBUG - Commande d'entra�nement: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe train_model.py --symbol BTCUSDT --timeframe 15m --data_path C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data --verbose 2 --lstm_units 136,68,34 --dropout 0.4195981825434215 --learning_rate 0.00015751320499779721 --batch_size 32 --patience 5
-2025-03-27 15:06:39,320 - INFO - F1 < 0.70 apr�s l'entra�nement.
-2025-03-27 15:06:39,320 - WARNING - Nombre maximum de tentatives d'entra�nement atteint (3). Meilleur F1 score < 0.70. L'entra�nement est consid�r� comme termin�.
-2025-03-27 15:06:39,326 - INFO - D�but de l'�valuation du mod�le...
-2025-03-27 15:06:39,326 - DEBUG - Commande d'�valuation: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe evaluate_model.py evaluate --symbol BTCUSDT --timeframe 15m --start-date 2024-01-01 --end-date 2024-02-29 --data_path C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data
-2025-03-27 15:06:44,516 - INFO - �valuation termin�e.
-2025-03-27 15:06:44,516 - INFO - Ex�cution du pipeline termin�e avec succ�s.
+2025-04-01 11:41:02,451 - INFO - Téléchargement terminé.
+2025-04-01 11:41:02,451 - INFO - Téléchargement des données réussi.
+2025-04-01 11:41:02,452 - INFO - Début de l'entraînement...
+2025-04-01 11:41:02,452 - INFO - Entraînement - Tentative 1/3
+2025-04-01 11:41:02,453 - INFO - Utilisation des paramètres optimisés transformés pour CLI: {'lstm_units': '136,68,34', 'learning_rate': 0.00015751320499779721, 'batch_size': 32, 'l1_reg': 2.9380279387035354e-06, 'l2_reg': 2.9375384576328313e-06}
+2025-04-01 11:41:02,453 - DEBUG - Commande d'entraînement finale: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py --symbol BTCUSDT --timeframe 15m --data_path C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data --lstm_units 136,68,34 --learning_rate 0.00015751320499779721 --batch_size 32 --l1_reg 2.9380279387035354e-06 --l2_reg 2.9375384576328313e-06
+2025-04-01 11:41:41,475 - ERROR - Erreur lors de l'entraînement (Tentative 1, Code: 2): Command '['C:\\Users\\timot\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe', 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\train_model.py', '--symbol', 'BTCUSDT', '--timeframe', '15m', '--data_path', 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\market_data', '--lstm_units', '136,68,34', '--learning_rate', '0.00015751320499779721', '--batch_size', '32', '--l1_reg', '2.9380279387035354e-06', '--l2_reg', '2.9375384576328313e-06']' returned non-zero exit status 2.
+2025-04-01 11:41:41,476 - ERROR - Sortie stderr Entraînement:
+2025-04-01 11:41:05.479604: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-04-01 11:41:11.906629: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-04-01 11:41:31,804 - enhanced_lstm_model - [93mWARNING[0m - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+usage: train_model.py [-h] --symbol SYMBOL --timeframe TIMEFRAME --data_path
+                      DATA_PATH [--model_type {lstm,transformer}]
+                      [--validation_split VALIDATION_SPLIT] [--epochs EPOCHS]
+                      [--batch_size BATCH_SIZE] [--lstm_units LSTM_UNITS]
+                      [--dropout DROPOUT] [--learning_rate LEARNING_RATE]
+                      [--patience PATIENCE] [--verbose {0,1,2}]
+                      [--sequence_length SEQUENCE_LENGTH]
+train_model.py: error: unrecognized arguments: --l1_reg 2.9380279387035354e-06 --l2_reg 2.9375384576328313e-06
+2025-04-01 11:41:41,478 - ERROR - Sortie stdout Entraînement (peut contenir des erreurs):
+Page de codes active�: 65001
+2025-04-01 11:41:41,478 - INFO - Entraînement - Tentative 2/3
+2025-04-01 11:41:41,479 - INFO - Utilisation des paramètres optimisés transformés pour CLI: {'lstm_units': '136,68,34', 'learning_rate': 0.00015751320499779721, 'batch_size': 32, 'l1_reg': 2.9380279387035354e-06, 'l2_reg': 2.9375384576328313e-06}
+2025-04-01 11:41:41,480 - DEBUG - Commande d'entraînement finale: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py --symbol BTCUSDT --timeframe 15m --data_path C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data --lstm_units 136,68,34 --learning_rate 0.00015751320499779721 --batch_size 32 --l1_reg 2.9380279387035354e-06 --l2_reg 2.9375384576328313e-06
+2025-04-01 11:41:46,407 - ERROR - Erreur lors de l'entraînement (Tentative 2, Code: 2): Command '['C:\\Users\\timot\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe', 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\train_model.py', '--symbol', 'BTCUSDT', '--timeframe', '15m', '--data_path', 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\market_data', '--lstm_units', '136,68,34', '--learning_rate', '0.00015751320499779721', '--batch_size', '32', '--l1_reg', '2.9380279387035354e-06', '--l2_reg', '2.9375384576328313e-06']' returned non-zero exit status 2.
+2025-04-01 11:41:46,408 - ERROR - Sortie stderr Entraînement:
+2025-04-01 11:41:42.322923: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-04-01 11:41:43.251187: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-04-01 11:41:45,319 - enhanced_lstm_model - [93mWARNING[0m - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+usage: train_model.py [-h] --symbol SYMBOL --timeframe TIMEFRAME --data_path
+                      DATA_PATH [--model_type {lstm,transformer}]
+                      [--validation_split VALIDATION_SPLIT] [--epochs EPOCHS]
+                      [--batch_size BATCH_SIZE] [--lstm_units LSTM_UNITS]
+                      [--dropout DROPOUT] [--learning_rate LEARNING_RATE]
+                      [--patience PATIENCE] [--verbose {0,1,2}]
+                      [--sequence_length SEQUENCE_LENGTH]
+train_model.py: error: unrecognized arguments: --l1_reg 2.9380279387035354e-06 --l2_reg 2.9375384576328313e-06
+2025-04-01 11:41:46,410 - ERROR - Sortie stdout Entraînement (peut contenir des erreurs):
+Page de codes active�: 65001
+2025-04-01 11:41:46,410 - INFO - Entraînement - Tentative 3/3
+2025-04-01 11:41:46,411 - INFO - Utilisation des paramètres optimisés transformés pour CLI: {'lstm_units': '136,68,34', 'learning_rate': 0.00015751320499779721, 'batch_size': 32, 'l1_reg': 2.9380279387035354e-06, 'l2_reg': 2.9375384576328313e-06}
+2025-04-01 11:41:46,411 - DEBUG - Commande d'entraînement finale: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py --symbol BTCUSDT --timeframe 15m --data_path C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data --lstm_units 136,68,34 --learning_rate 0.00015751320499779721 --batch_size 32 --l1_reg 2.9380279387035354e-06 --l2_reg 2.9375384576328313e-06
+2025-04-01 11:41:51,277 - ERROR - Erreur lors de l'entraînement (Tentative 3, Code: 2): Command '['C:\\Users\\timot\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe', 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\train_model.py', '--symbol', 'BTCUSDT', '--timeframe', '15m', '--data_path', 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\market_data', '--lstm_units', '136,68,34', '--learning_rate', '0.00015751320499779721', '--batch_size', '32', '--l1_reg', '2.9380279387035354e-06', '--l2_reg', '2.9375384576328313e-06']' returned non-zero exit status 2.
+2025-04-01 11:41:51,278 - ERROR - Sortie stderr Entraînement:
+2025-04-01 11:41:47.236068: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-04-01 11:41:48.084358: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-04-01 11:41:50,223 - enhanced_lstm_model - [93mWARNING[0m - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+usage: train_model.py [-h] --symbol SYMBOL --timeframe TIMEFRAME --data_path
+                      DATA_PATH [--model_type {lstm,transformer}]
+                      [--validation_split VALIDATION_SPLIT] [--epochs EPOCHS]
+                      [--batch_size BATCH_SIZE] [--lstm_units LSTM_UNITS]
+                      [--dropout DROPOUT] [--learning_rate LEARNING_RATE]
+                      [--patience PATIENCE] [--verbose {0,1,2}]
+                      [--sequence_length SEQUENCE_LENGTH]
+train_model.py: error: unrecognized arguments: --l1_reg 2.9380279387035354e-06 --l2_reg 2.9375384576328313e-06
+2025-04-01 11:41:51,281 - ERROR - Sortie stdout Entraînement (peut contenir des erreurs):
+Page de codes active�: 65001
+2025-04-01 11:41:51,281 - ERROR - Échec de l'entraînement après 3 tentatives.
+2025-04-01 11:41:51,281 - ERROR - L'entraînement a échoué.
+2025-04-01 11:41:51,282 - ERROR - ❌ Exécution du pipeline terminée avec des erreurs. Consultez les logs.
+2025-04-01 11:44:11,128 - INFO - Début de l'exécution du pipeline.
+2025-04-01 11:44:11,129 - INFO - Début du téléchargement des données...
+2025-04-01 11:44:11,129 - DEBUG - Commande de téléchargement: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\download_data.py --symbol BTCUSDT --interval 15m --start 2024-01-01 --end 2024-02-29
+2025-04-01 11:44:18,416 - INFO - Sortie stdout du téléchargement: Downloading BTCUSDT 15m data from 2024-01-01 00:00:00 to 2024-02-29 00:00:00
+  Fetching chunk: 2024-01-01 00:00:00 to 2024-02-29 00:00:00
+Downloaded 5665 candles
+Data saved to C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+
+2025-04-01 11:44:18,417 - INFO - Téléchargement terminé.
+2025-04-01 11:44:18,417 - INFO - Téléchargement des données réussi.
+2025-04-01 11:44:18,417 - INFO - Début de l'entraînement...
+2025-04-01 11:44:18,418 - INFO - Entraînement - Tentative 1/3
+2025-04-01 11:44:18,418 - INFO - Utilisation des paramètres optimisés transformés pour CLI: {'lstm_units': '136,68,34', 'learning_rate': 0.00015751320499779721, 'batch_size': 32, 'l1_reg': 2.9380279387035354e-06, 'l2_reg': 2.9375384576328313e-06}
+2025-04-01 11:44:18,419 - DEBUG - Commande d'entraînement finale: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py --symbol BTCUSDT --timeframe 15m --data_path C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data --lstm_units 136,68,34 --learning_rate 0.00015751320499779721 --batch_size 32 --l1_reg 2.9380279387035354e-06 --l2_reg 2.9375384576328313e-06
+2025-04-01 11:44:23,765 - ERROR - Erreur lors de l'entraînement (Tentative 1, Code: 1): Command '['C:\\Users\\timot\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe', 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\train_model.py', '--symbol', 'BTCUSDT', '--timeframe', '15m', '--data_path', 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\market_data', '--lstm_units', '136,68,34', '--learning_rate', '0.00015751320499779721', '--batch_size', '32', '--l1_reg', '2.9380279387035354e-06', '--l2_reg', '2.9375384576328313e-06']' returned non-zero exit status 1.
+2025-04-01 11:44:23,766 - ERROR - Sortie stderr Entraînement:
+2025-04-01 11:44:19.279370: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-04-01 11:44:20.257076: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-04-01 11:44:23,041 - enhanced_lstm_model - [93mWARNING[0m - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:44:23,226 - __main__ - INFO - Début de l'entraînement du modèle pour BTCUSDT 15m
+2025-04-01 11:44:23,226 - __main__ - INFO - Paramètres optimisés chargés pour 15m
+2025-04-01 11:44:23,226 - __main__ - INFO - Utilisation de 'lstm_units' depuis la ligne de commande: 136,68,34
+2025-04-01 11:44:23,226 - __main__ - INFO - Utilisation de 'dropout' depuis la ligne de commande: 0.2
+2025-04-01 11:44:23,226 - __main__ - INFO - Utilisation de 'learning_rate' depuis les paramètres optimisés: 0.00015751320499779721
+2025-04-01 11:44:23,227 - __main__ - INFO - Utilisation de 'optimizer' par défaut: adam
+2025-04-01 11:44:23,227 - __main__ - INFO - Utilisation de 'use_attention' depuis la ligne de commande: False
+2025-04-01 11:44:23,227 - __main__ - INFO - Utilisation de 'sequence_length' par défaut: 60
+2025-04-01 11:44:23,227 - __main__ - INFO - Utilisation de 'batch_size' depuis la ligne de commande: 32
+2025-04-01 11:44:23,227 - __main__ - INFO - Utilisation de 'validation_split' par défaut: 0.2
+2025-04-01 11:44:23,227 - __main__ - INFO - Utilisation de 'l1_reg' depuis la ligne de commande: 2.9380279387035354e-06
+2025-04-01 11:44:23,227 - __main__ - INFO - Utilisation de 'l2_reg' depuis la ligne de commande: 2.9375384576328313e-06
+2025-04-01 11:44:23,227 - __main__ - INFO - Utilisation de 'patience' depuis la ligne de commande: 10
+2025-04-01 11:44:23,227 - __main__ - INFO - Paramètres finaux pour l'entraînement:
+2025-04-01 11:44:23,227 - __main__ - INFO - - Unités LSTM: [136, 68, 34]
+2025-04-01 11:44:23,227 - __main__ - INFO - - Dropout: 0.2
+2025-04-01 11:44:23,227 - __main__ - INFO - - Taux d'apprentissage: 0.00015751320499779721
+2025-04-01 11:44:23,227 - __main__ - INFO - - Optimiseur: adam
+2025-04-01 11:44:23,227 - __main__ - INFO - - Utiliser Attention: False
+2025-04-01 11:44:23,227 - __main__ - INFO - - Longueur Séquence: 60
+2025-04-01 11:44:23,227 - __main__ - INFO - - Taille Batch: 32
+2025-04-01 11:44:23,227 - __main__ - INFO - - Split Validation: 0.2
+2025-04-01 11:44:23,227 - __main__ - INFO - - Régularisation L1: 2.9380279387035354e-06, L2: 2.9375384576328313e-06
+2025-04-01 11:44:23,227 - __main__ - INFO - - Patience EarlyStopping: 10
+2025-04-01 11:44:23,227 - __main__ - INFO - Attempting to load data from: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data
+2025-04-01 11:44:23,228 - __main__ - ERROR - Unexpected error loading C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data: [Errno 13] Permission denied: 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\market_data'
+2025-04-01 11:44:23,228 - __main__ - CRITICAL - Erreur inattendue pendant l'entraînement: Unexpected error loading C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data: [Errno 13] Permission denied: 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\market_data'
+Traceback (most recent call last):
+  File "C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py", line 73, in load_data
+    df = pd.read_csv(data_path)
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\timot\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\pandas\io\parsers\readers.py", line 1026, in read_csv
+    return _read(filepath_or_buffer, kwds)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\timot\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\pandas\io\parsers\readers.py", line 620, in _read
+    parser = TextFileReader(filepath_or_buffer, **kwds)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\timot\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\pandas\io\parsers\readers.py", line 1620, in __init__
+    self._engine = self._make_engine(f, self.engine)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\timot\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\pandas\io\parsers\readers.py", line 1880, in _make_engine
+    self.handles = get_handle(
+                   ^^^^^^^^^^^
+  File "C:\Users\timot\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\pandas\io\common.py", line 873, in get_handle
+    handle = open(
+             ^^^^^
+PermissionError: [Errno 13] Permission denied: 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\market_data'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py", line 455, in <module>
+    train_model(args) # Passer l'objet args directement
+    ^^^^^^^^^^^^^^^^^
+  File "C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py", line 284, in train_model
+    df = load_data(data_path)
+         ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py", line 110, in load_data
+    raise Exception(error_msg)
+Exception: Unexpected error loading C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data: [Errno 13] Permission denied: 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\market_data'
+2025-04-01 11:44:23,776 - INFO - Entraînement - Tentative 2/3
+2025-04-01 11:44:23,777 - INFO - Utilisation des paramètres optimisés transformés pour CLI: {'lstm_units': '136,68,34', 'learning_rate': 0.00015751320499779721, 'batch_size': 32, 'l1_reg': 2.9380279387035354e-06, 'l2_reg': 2.9375384576328313e-06}
+2025-04-01 11:44:23,778 - DEBUG - Commande d'entraînement finale: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py --symbol BTCUSDT --timeframe 15m --data_path C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data --lstm_units 136,68,34 --learning_rate 0.00015751320499779721 --batch_size 32 --l1_reg 2.9380279387035354e-06 --l2_reg 2.9375384576328313e-06
+2025-04-01 11:44:28,358 - ERROR - Erreur lors de l'entraînement (Tentative 2, Code: 1): Command '['C:\\Users\\timot\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe', 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\train_model.py', '--symbol', 'BTCUSDT', '--timeframe', '15m', '--data_path', 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\market_data', '--lstm_units', '136,68,34', '--learning_rate', '0.00015751320499779721', '--batch_size', '32', '--l1_reg', '2.9380279387035354e-06', '--l2_reg', '2.9375384576328313e-06']' returned non-zero exit status 1.
+2025-04-01 11:44:28,359 - ERROR - Sortie stderr Entraînement:
+2025-04-01 11:44:24.612396: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-04-01 11:44:25.416957: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-04-01 11:44:27,795 - enhanced_lstm_model - [93mWARNING[0m - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:44:27,932 - __main__ - INFO - Début de l'entraînement du modèle pour BTCUSDT 15m
+2025-04-01 11:44:27,933 - __main__ - INFO - Paramètres optimisés chargés pour 15m
+2025-04-01 11:44:27,933 - __main__ - INFO - Utilisation de 'lstm_units' depuis la ligne de commande: 136,68,34
+2025-04-01 11:44:27,933 - __main__ - INFO - Utilisation de 'dropout' depuis la ligne de commande: 0.2
+2025-04-01 11:44:27,933 - __main__ - INFO - Utilisation de 'learning_rate' depuis les paramètres optimisés: 0.00015751320499779721
+2025-04-01 11:44:27,933 - __main__ - INFO - Utilisation de 'optimizer' par défaut: adam
+2025-04-01 11:44:27,933 - __main__ - INFO - Utilisation de 'use_attention' depuis la ligne de commande: False
+2025-04-01 11:44:27,933 - __main__ - INFO - Utilisation de 'sequence_length' par défaut: 60
+2025-04-01 11:44:27,933 - __main__ - INFO - Utilisation de 'batch_size' depuis la ligne de commande: 32
+2025-04-01 11:44:27,933 - __main__ - INFO - Utilisation de 'validation_split' par défaut: 0.2
+2025-04-01 11:44:27,933 - __main__ - INFO - Utilisation de 'l1_reg' depuis la ligne de commande: 2.9380279387035354e-06
+2025-04-01 11:44:27,933 - __main__ - INFO - Utilisation de 'l2_reg' depuis la ligne de commande: 2.9375384576328313e-06
+2025-04-01 11:44:27,933 - __main__ - INFO - Utilisation de 'patience' depuis la ligne de commande: 10
+2025-04-01 11:44:27,933 - __main__ - INFO - Paramètres finaux pour l'entraînement:
+2025-04-01 11:44:27,933 - __main__ - INFO - - Unités LSTM: [136, 68, 34]
+2025-04-01 11:44:27,933 - __main__ - INFO - - Dropout: 0.2
+2025-04-01 11:44:27,933 - __main__ - INFO - - Taux d'apprentissage: 0.00015751320499779721
+2025-04-01 11:44:27,933 - __main__ - INFO - - Optimiseur: adam
+2025-04-01 11:44:27,933 - __main__ - INFO - - Utiliser Attention: False
+2025-04-01 11:44:27,933 - __main__ - INFO - - Longueur Séquence: 60
+2025-04-01 11:44:27,933 - __main__ - INFO - - Taille Batch: 32
+2025-04-01 11:44:27,933 - __main__ - INFO - - Split Validation: 0.2
+2025-04-01 11:44:27,933 - __main__ - INFO - - Régularisation L1: 2.9380279387035354e-06, L2: 2.9375384576328313e-06
+2025-04-01 11:44:27,933 - __main__ - INFO - - Patience EarlyStopping: 10
+2025-04-01 11:44:27,933 - __main__ - INFO - Attempting to load data from: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data
+2025-04-01 11:44:27,935 - __main__ - ERROR - Unexpected error loading C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data: [Errno 13] Permission denied: 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\market_data'
+2025-04-01 11:44:27,935 - __main__ - CRITICAL - Erreur inattendue pendant l'entraînement: Unexpected error loading C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data: [Errno 13] Permission denied: 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\market_data'
+Traceback (most recent call last):
+  File "C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py", line 73, in load_data
+    df = pd.read_csv(data_path)
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\timot\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\pandas\io\parsers\readers.py", line 1026, in read_csv
+    return _read(filepath_or_buffer, kwds)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\timot\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\pandas\io\parsers\readers.py", line 620, in _read
+    parser = TextFileReader(filepath_or_buffer, **kwds)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\timot\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\pandas\io\parsers\readers.py", line 1620, in __init__
+    self._engine = self._make_engine(f, self.engine)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\timot\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\pandas\io\parsers\readers.py", line 1880, in _make_engine
+    self.handles = get_handle(
+                   ^^^^^^^^^^^
+  File "C:\Users\timot\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\pandas\io\common.py", line 873, in get_handle
+    handle = open(
+             ^^^^^
+PermissionError: [Errno 13] Permission denied: 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\market_data'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py", line 455, in <module>
+    train_model(args) # Passer l'objet args directement
+    ^^^^^^^^^^^^^^^^^
+  File "C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py", line 284, in train_model
+    df = load_data(data_path)
+         ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py", line 110, in load_data
+    raise Exception(error_msg)
+Exception: Unexpected error loading C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data: [Errno 13] Permission denied: 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\market_data'
+2025-04-01 11:44:28,367 - INFO - Entraînement - Tentative 3/3
+2025-04-01 11:44:28,368 - INFO - Utilisation des paramètres optimisés transformés pour CLI: {'lstm_units': '136,68,34', 'learning_rate': 0.00015751320499779721, 'batch_size': 32, 'l1_reg': 2.9380279387035354e-06, 'l2_reg': 2.9375384576328313e-06}
+2025-04-01 11:44:28,368 - DEBUG - Commande d'entraînement finale: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py --symbol BTCUSDT --timeframe 15m --data_path C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data --lstm_units 136,68,34 --learning_rate 0.00015751320499779721 --batch_size 32 --l1_reg 2.9380279387035354e-06 --l2_reg 2.9375384576328313e-06
+2025-04-01 11:44:33,099 - ERROR - Erreur lors de l'entraînement (Tentative 3, Code: 1): Command '['C:\\Users\\timot\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe', 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\train_model.py', '--symbol', 'BTCUSDT', '--timeframe', '15m', '--data_path', 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\market_data', '--lstm_units', '136,68,34', '--learning_rate', '0.00015751320499779721', '--batch_size', '32', '--l1_reg', '2.9380279387035354e-06', '--l2_reg', '2.9375384576328313e-06']' returned non-zero exit status 1.
+2025-04-01 11:44:33,100 - ERROR - Sortie stderr Entraînement:
+2025-04-01 11:44:29.298343: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-04-01 11:44:30.080741: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-04-01 11:44:32,512 - enhanced_lstm_model - [93mWARNING[0m - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:44:32,643 - __main__ - INFO - Début de l'entraînement du modèle pour BTCUSDT 15m
+2025-04-01 11:44:32,643 - __main__ - INFO - Paramètres optimisés chargés pour 15m
+2025-04-01 11:44:32,643 - __main__ - INFO - Utilisation de 'lstm_units' depuis la ligne de commande: 136,68,34
+2025-04-01 11:44:32,643 - __main__ - INFO - Utilisation de 'dropout' depuis la ligne de commande: 0.2
+2025-04-01 11:44:32,643 - __main__ - INFO - Utilisation de 'learning_rate' depuis les paramètres optimisés: 0.00015751320499779721
+2025-04-01 11:44:32,643 - __main__ - INFO - Utilisation de 'optimizer' par défaut: adam
+2025-04-01 11:44:32,643 - __main__ - INFO - Utilisation de 'use_attention' depuis la ligne de commande: False
+2025-04-01 11:44:32,643 - __main__ - INFO - Utilisation de 'sequence_length' par défaut: 60
+2025-04-01 11:44:32,643 - __main__ - INFO - Utilisation de 'batch_size' depuis la ligne de commande: 32
+2025-04-01 11:44:32,643 - __main__ - INFO - Utilisation de 'validation_split' par défaut: 0.2
+2025-04-01 11:44:32,643 - __main__ - INFO - Utilisation de 'l1_reg' depuis la ligne de commande: 2.9380279387035354e-06
+2025-04-01 11:44:32,643 - __main__ - INFO - Utilisation de 'l2_reg' depuis la ligne de commande: 2.9375384576328313e-06
+2025-04-01 11:44:32,643 - __main__ - INFO - Utilisation de 'patience' depuis la ligne de commande: 10
+2025-04-01 11:44:32,643 - __main__ - INFO - Paramètres finaux pour l'entraînement:
+2025-04-01 11:44:32,643 - __main__ - INFO - - Unités LSTM: [136, 68, 34]
+2025-04-01 11:44:32,643 - __main__ - INFO - - Dropout: 0.2
+2025-04-01 11:44:32,643 - __main__ - INFO - - Taux d'apprentissage: 0.00015751320499779721
+2025-04-01 11:44:32,643 - __main__ - INFO - - Optimiseur: adam
+2025-04-01 11:44:32,643 - __main__ - INFO - - Utiliser Attention: False
+2025-04-01 11:44:32,643 - __main__ - INFO - - Longueur Séquence: 60
+2025-04-01 11:44:32,643 - __main__ - INFO - - Taille Batch: 32
+2025-04-01 11:44:32,643 - __main__ - INFO - - Split Validation: 0.2
+2025-04-01 11:44:32,644 - __main__ - INFO - - Régularisation L1: 2.9380279387035354e-06, L2: 2.9375384576328313e-06
+2025-04-01 11:44:32,644 - __main__ - INFO - - Patience EarlyStopping: 10
+2025-04-01 11:44:32,644 - __main__ - INFO - Attempting to load data from: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data
+2025-04-01 11:44:32,645 - __main__ - ERROR - Unexpected error loading C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data: [Errno 13] Permission denied: 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\market_data'
+2025-04-01 11:44:32,645 - __main__ - CRITICAL - Erreur inattendue pendant l'entraînement: Unexpected error loading C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data: [Errno 13] Permission denied: 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\market_data'
+Traceback (most recent call last):
+  File "C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py", line 73, in load_data
+    df = pd.read_csv(data_path)
+         ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\timot\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\pandas\io\parsers\readers.py", line 1026, in read_csv
+    return _read(filepath_or_buffer, kwds)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\timot\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\pandas\io\parsers\readers.py", line 620, in _read
+    parser = TextFileReader(filepath_or_buffer, **kwds)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\timot\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\pandas\io\parsers\readers.py", line 1620, in __init__
+    self._engine = self._make_engine(f, self.engine)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\timot\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\pandas\io\parsers\readers.py", line 1880, in _make_engine
+    self.handles = get_handle(
+                   ^^^^^^^^^^^
+  File "C:\Users\timot\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\pandas\io\common.py", line 873, in get_handle
+    handle = open(
+             ^^^^^
+PermissionError: [Errno 13] Permission denied: 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\market_data'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py", line 455, in <module>
+    train_model(args) # Passer l'objet args directement
+    ^^^^^^^^^^^^^^^^^
+  File "C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py", line 284, in train_model
+    df = load_data(data_path)
+         ^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py", line 110, in load_data
+    raise Exception(error_msg)
+Exception: Unexpected error loading C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data: [Errno 13] Permission denied: 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\market_data'
+2025-04-01 11:44:33,109 - ERROR - Échec de l'entraînement après 3 tentatives.
+2025-04-01 11:44:33,109 - ERROR - L'entraînement a échoué.
+2025-04-01 11:44:33,109 - ERROR - ❌ Exécution du pipeline terminée avec des erreurs. Consultez les logs.
+2025-04-01 11:47:49,148 - INFO - Début de l'exécution du pipeline.
+2025-04-01 11:47:49,149 - INFO - Début du téléchargement des données...
+2025-04-01 11:47:49,149 - DEBUG - Commande de téléchargement: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\download_data.py --symbol BTCUSDT --interval 15m --start 2024-01-01 --end 2024-02-29
+2025-04-01 11:47:54,689 - INFO - Sortie stdout du téléchargement: Downloading BTCUSDT 15m data from 2024-01-01 00:00:00 to 2024-02-29 00:00:00
+  Fetching chunk: 2024-01-01 00:00:00 to 2024-02-29 00:00:00
+Downloaded 5665 candles
+Data saved to C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+
+2025-04-01 11:47:54,690 - INFO - Téléchargement terminé.
+2025-04-01 11:47:54,690 - INFO - Téléchargement des données réussi.
+2025-04-01 11:47:54,690 - INFO - Début de l'entraînement...
+2025-04-01 11:47:54,691 - INFO - Entraînement - Tentative 1/3
+2025-04-01 11:47:54,691 - INFO - Utilisation des paramètres optimisés transformés pour CLI: {'lstm_units': '136,68,34', 'learning_rate': 0.00015751320499779721, 'batch_size': 32, 'l1_reg': 2.9380279387035354e-06, 'l2_reg': 2.9375384576328313e-06}
+2025-04-01 11:47:54,692 - DEBUG - Commande d'entraînement finale: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py --symbol BTCUSDT --timeframe 15m --data_path C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data --lstm_units 136,68,34 --learning_rate 0.00015751320499779721 --batch_size 32 --l1_reg 2.9380279387035354e-06 --l2_reg 2.9375384576328313e-06
+2025-04-01 11:47:59,726 - ERROR - Erreur lors de l'entraînement (Tentative 1, Code: 1): Command '['C:\\Users\\timot\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe', 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\train_model.py', '--symbol', 'BTCUSDT', '--timeframe', '15m', '--data_path', 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\market_data', '--lstm_units', '136,68,34', '--learning_rate', '0.00015751320499779721', '--batch_size', '32', '--l1_reg', '2.9380279387035354e-06', '--l2_reg', '2.9375384576328313e-06']' returned non-zero exit status 1.
+2025-04-01 11:47:59,727 - ERROR - Sortie stderr Entraînement:
+2025-04-01 11:47:55.520671: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-04-01 11:47:56.307401: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-04-01 11:47:58,688 - enhanced_lstm_model - [93mWARNING[0m - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:47:58,828 - __main__ - INFO - Début de l'entraînement du modèle pour BTCUSDT 15m
+2025-04-01 11:47:58,828 - __main__ - INFO - Paramètres optimisés chargés pour 15m
+2025-04-01 11:47:58,828 - __main__ - INFO - Utilisation de 'lstm_units' depuis la ligne de commande: 136,68,34
+2025-04-01 11:47:58,828 - __main__ - INFO - Utilisation de 'dropout' depuis la ligne de commande: 0.2
+2025-04-01 11:47:58,828 - __main__ - INFO - Utilisation de 'learning_rate' depuis les paramètres optimisés: 0.00015751320499779721
+2025-04-01 11:47:58,828 - __main__ - INFO - Utilisation de 'optimizer' par défaut: adam
+2025-04-01 11:47:58,828 - __main__ - INFO - Utilisation de 'use_attention' depuis la ligne de commande: False
+2025-04-01 11:47:58,828 - __main__ - INFO - Utilisation de 'sequence_length' par défaut: 60
+2025-04-01 11:47:58,828 - __main__ - INFO - Utilisation de 'batch_size' depuis la ligne de commande: 32
+2025-04-01 11:47:58,828 - __main__ - INFO - Utilisation de 'validation_split' par défaut: 0.2
+2025-04-01 11:47:58,828 - __main__ - INFO - Utilisation de 'l1_reg' depuis la ligne de commande: 2.9380279387035354e-06
+2025-04-01 11:47:58,829 - __main__ - INFO - Utilisation de 'l2_reg' depuis la ligne de commande: 2.9375384576328313e-06
+2025-04-01 11:47:58,829 - __main__ - INFO - Utilisation de 'patience' depuis la ligne de commande: 10
+2025-04-01 11:47:58,829 - __main__ - INFO - Paramètres finaux pour l'entraînement:
+2025-04-01 11:47:58,829 - __main__ - INFO - - Unités LSTM: [136, 68, 34]
+2025-04-01 11:47:58,829 - __main__ - INFO - - Dropout: 0.2
+2025-04-01 11:47:58,829 - __main__ - INFO - - Taux d'apprentissage: 0.00015751320499779721
+2025-04-01 11:47:58,829 - __main__ - INFO - - Optimiseur: adam
+2025-04-01 11:47:58,829 - __main__ - INFO - - Utiliser Attention: False
+2025-04-01 11:47:58,829 - __main__ - INFO - - Longueur Séquence: 60
+2025-04-01 11:47:58,829 - __main__ - INFO - - Taille Batch: 32
+2025-04-01 11:47:58,829 - __main__ - INFO - - Split Validation: 0.2
+2025-04-01 11:47:58,829 - __main__ - INFO - - Régularisation L1: 2.9380279387035354e-06, L2: 2.9375384576328313e-06
+2025-04-01 11:47:58,829 - __main__ - INFO - - Patience EarlyStopping: 10
+2025-04-01 11:47:58,829 - __main__ - INFO - Construction du chemin de fichier : C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-04-01 11:47:58,829 - __main__ - INFO - Tentative de chargement des données depuis : C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-04-01 11:47:58,855 - __main__ - INFO - Données chargées avec succès avec 5665 lignes depuis C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-04-01 11:47:58,855 - feature_engineering - [92mINFO[0m - Configuration locale non trouvée, utilisation de la configuration centralisée: 89 features
+2025-04-01 11:47:59,238 - feature_engineering - [92mINFO[0m - Nombre de features généré avant harmonisation: 91
+2025-04-01 11:47:59,238 - feature_engineering - [92mINFO[0m - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 11:47:59,238 - feature_engineering - [92mINFO[0m - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 11:47:59,265 - feature_engineering - [92mINFO[0m - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 11:47:59,289 - __main__ - WARNING - Tentative de réharmonisation des caractéristiques...
+2025-04-01 11:47:59,293 - __main__ - INFO - Réharmonisation réussie avec 89 caractéristiques
+2025-04-01 11:47:59,293 - __main__ - CRITICAL - Erreur inattendue pendant l'entraînement: split_data() got an unexpected keyword argument 'validation_split'
+Traceback (most recent call last):
+  File "C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py", line 529, in <module>
+    train_model(args)
+  File "C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py", line 394, in train_model
+    X_train, X_val, X_test, y_train, y_val, y_test = split_data(
+                                                     ^^^^^^^^^^^
+TypeError: split_data() got an unexpected keyword argument 'validation_split'
+2025-04-01 11:47:59,733 - INFO - Entraînement - Tentative 2/3
+2025-04-01 11:47:59,734 - INFO - Utilisation des paramètres optimisés transformés pour CLI: {'lstm_units': '136,68,34', 'learning_rate': 0.00015751320499779721, 'batch_size': 32, 'l1_reg': 2.9380279387035354e-06, 'l2_reg': 2.9375384576328313e-06}
+2025-04-01 11:47:59,734 - DEBUG - Commande d'entraînement finale: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py --symbol BTCUSDT --timeframe 15m --data_path C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data --lstm_units 136,68,34 --learning_rate 0.00015751320499779721 --batch_size 32 --l1_reg 2.9380279387035354e-06 --l2_reg 2.9375384576328313e-06
+2025-04-01 11:48:04,684 - ERROR - Erreur lors de l'entraînement (Tentative 2, Code: 1): Command '['C:\\Users\\timot\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe', 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\train_model.py', '--symbol', 'BTCUSDT', '--timeframe', '15m', '--data_path', 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\market_data', '--lstm_units', '136,68,34', '--learning_rate', '0.00015751320499779721', '--batch_size', '32', '--l1_reg', '2.9380279387035354e-06', '--l2_reg', '2.9375384576328313e-06']' returned non-zero exit status 1.
+2025-04-01 11:48:04,685 - ERROR - Sortie stderr Entraînement:
+2025-04-01 11:48:00.533790: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-04-01 11:48:01.323883: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-04-01 11:48:03,677 - enhanced_lstm_model - [93mWARNING[0m - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:48:03,813 - __main__ - INFO - Début de l'entraînement du modèle pour BTCUSDT 15m
+2025-04-01 11:48:03,813 - __main__ - INFO - Paramètres optimisés chargés pour 15m
+2025-04-01 11:48:03,813 - __main__ - INFO - Utilisation de 'lstm_units' depuis la ligne de commande: 136,68,34
+2025-04-01 11:48:03,813 - __main__ - INFO - Utilisation de 'dropout' depuis la ligne de commande: 0.2
+2025-04-01 11:48:03,813 - __main__ - INFO - Utilisation de 'learning_rate' depuis les paramètres optimisés: 0.00015751320499779721
+2025-04-01 11:48:03,813 - __main__ - INFO - Utilisation de 'optimizer' par défaut: adam
+2025-04-01 11:48:03,813 - __main__ - INFO - Utilisation de 'use_attention' depuis la ligne de commande: False
+2025-04-01 11:48:03,813 - __main__ - INFO - Utilisation de 'sequence_length' par défaut: 60
+2025-04-01 11:48:03,814 - __main__ - INFO - Utilisation de 'batch_size' depuis la ligne de commande: 32
+2025-04-01 11:48:03,814 - __main__ - INFO - Utilisation de 'validation_split' par défaut: 0.2
+2025-04-01 11:48:03,814 - __main__ - INFO - Utilisation de 'l1_reg' depuis la ligne de commande: 2.9380279387035354e-06
+2025-04-01 11:48:03,814 - __main__ - INFO - Utilisation de 'l2_reg' depuis la ligne de commande: 2.9375384576328313e-06
+2025-04-01 11:48:03,814 - __main__ - INFO - Utilisation de 'patience' depuis la ligne de commande: 10
+2025-04-01 11:48:03,814 - __main__ - INFO - Paramètres finaux pour l'entraînement:
+2025-04-01 11:48:03,814 - __main__ - INFO - - Unités LSTM: [136, 68, 34]
+2025-04-01 11:48:03,814 - __main__ - INFO - - Dropout: 0.2
+2025-04-01 11:48:03,814 - __main__ - INFO - - Taux d'apprentissage: 0.00015751320499779721
+2025-04-01 11:48:03,814 - __main__ - INFO - - Optimiseur: adam
+2025-04-01 11:48:03,814 - __main__ - INFO - - Utiliser Attention: False
+2025-04-01 11:48:03,814 - __main__ - INFO - - Longueur Séquence: 60
+2025-04-01 11:48:03,814 - __main__ - INFO - - Taille Batch: 32
+2025-04-01 11:48:03,814 - __main__ - INFO - - Split Validation: 0.2
+2025-04-01 11:48:03,814 - __main__ - INFO - - Régularisation L1: 2.9380279387035354e-06, L2: 2.9375384576328313e-06
+2025-04-01 11:48:03,814 - __main__ - INFO - - Patience EarlyStopping: 10
+2025-04-01 11:48:03,814 - __main__ - INFO - Construction du chemin de fichier : C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-04-01 11:48:03,814 - __main__ - INFO - Tentative de chargement des données depuis : C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-04-01 11:48:03,832 - __main__ - INFO - Données chargées avec succès avec 5665 lignes depuis C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-04-01 11:48:03,833 - feature_engineering - [92mINFO[0m - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 11:48:03,834 - feature_engineering - [92mINFO[0m - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 11:48:04,188 - feature_engineering - [92mINFO[0m - Nombre de features généré avant harmonisation: 91
+2025-04-01 11:48:04,188 - feature_engineering - [92mINFO[0m - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 11:48:04,188 - feature_engineering - [92mINFO[0m - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 11:48:04,215 - feature_engineering - [92mINFO[0m - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 11:48:04,241 - __main__ - WARNING - Tentative de réharmonisation des caractéristiques...
+2025-04-01 11:48:04,245 - __main__ - INFO - Réharmonisation réussie avec 89 caractéristiques
+2025-04-01 11:48:04,245 - __main__ - CRITICAL - Erreur inattendue pendant l'entraînement: split_data() got an unexpected keyword argument 'validation_split'
+Traceback (most recent call last):
+  File "C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py", line 529, in <module>
+    train_model(args)
+  File "C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py", line 394, in train_model
+    X_train, X_val, X_test, y_train, y_val, y_test = split_data(
+                                                     ^^^^^^^^^^^
+TypeError: split_data() got an unexpected keyword argument 'validation_split'
+2025-04-01 11:48:04,693 - INFO - Entraînement - Tentative 3/3
+2025-04-01 11:48:04,694 - INFO - Utilisation des paramètres optimisés transformés pour CLI: {'lstm_units': '136,68,34', 'learning_rate': 0.00015751320499779721, 'batch_size': 32, 'l1_reg': 2.9380279387035354e-06, 'l2_reg': 2.9375384576328313e-06}
+2025-04-01 11:48:04,694 - DEBUG - Commande d'entraînement finale: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py --symbol BTCUSDT --timeframe 15m --data_path C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data --lstm_units 136,68,34 --learning_rate 0.00015751320499779721 --batch_size 32 --l1_reg 2.9380279387035354e-06 --l2_reg 2.9375384576328313e-06
+2025-04-01 11:48:09,911 - ERROR - Erreur lors de l'entraînement (Tentative 3, Code: 1): Command '['C:\\Users\\timot\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe', 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\train_model.py', '--symbol', 'BTCUSDT', '--timeframe', '15m', '--data_path', 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\market_data', '--lstm_units', '136,68,34', '--learning_rate', '0.00015751320499779721', '--batch_size', '32', '--l1_reg', '2.9380279387035354e-06', '--l2_reg', '2.9375384576328313e-06']' returned non-zero exit status 1.
+2025-04-01 11:48:09,912 - ERROR - Sortie stderr Entraînement:
+2025-04-01 11:48:05.529732: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-04-01 11:48:06.352633: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-04-01 11:48:08,769 - enhanced_lstm_model - [93mWARNING[0m - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:48:08,912 - __main__ - INFO - Début de l'entraînement du modèle pour BTCUSDT 15m
+2025-04-01 11:48:08,913 - __main__ - INFO - Paramètres optimisés chargés pour 15m
+2025-04-01 11:48:08,913 - __main__ - INFO - Utilisation de 'lstm_units' depuis la ligne de commande: 136,68,34
+2025-04-01 11:48:08,913 - __main__ - INFO - Utilisation de 'dropout' depuis la ligne de commande: 0.2
+2025-04-01 11:48:08,913 - __main__ - INFO - Utilisation de 'learning_rate' depuis les paramètres optimisés: 0.00015751320499779721
+2025-04-01 11:48:08,913 - __main__ - INFO - Utilisation de 'optimizer' par défaut: adam
+2025-04-01 11:48:08,913 - __main__ - INFO - Utilisation de 'use_attention' depuis la ligne de commande: False
+2025-04-01 11:48:08,913 - __main__ - INFO - Utilisation de 'sequence_length' par défaut: 60
+2025-04-01 11:48:08,913 - __main__ - INFO - Utilisation de 'batch_size' depuis la ligne de commande: 32
+2025-04-01 11:48:08,913 - __main__ - INFO - Utilisation de 'validation_split' par défaut: 0.2
+2025-04-01 11:48:08,913 - __main__ - INFO - Utilisation de 'l1_reg' depuis la ligne de commande: 2.9380279387035354e-06
+2025-04-01 11:48:08,913 - __main__ - INFO - Utilisation de 'l2_reg' depuis la ligne de commande: 2.9375384576328313e-06
+2025-04-01 11:48:08,913 - __main__ - INFO - Utilisation de 'patience' depuis la ligne de commande: 10
+2025-04-01 11:48:08,913 - __main__ - INFO - Paramètres finaux pour l'entraînement:
+2025-04-01 11:48:08,913 - __main__ - INFO - - Unités LSTM: [136, 68, 34]
+2025-04-01 11:48:08,913 - __main__ - INFO - - Dropout: 0.2
+2025-04-01 11:48:08,913 - __main__ - INFO - - Taux d'apprentissage: 0.00015751320499779721
+2025-04-01 11:48:08,913 - __main__ - INFO - - Optimiseur: adam
+2025-04-01 11:48:08,913 - __main__ - INFO - - Utiliser Attention: False
+2025-04-01 11:48:08,913 - __main__ - INFO - - Longueur Séquence: 60
+2025-04-01 11:48:08,913 - __main__ - INFO - - Taille Batch: 32
+2025-04-01 11:48:08,913 - __main__ - INFO - - Split Validation: 0.2
+2025-04-01 11:48:08,913 - __main__ - INFO - - Régularisation L1: 2.9380279387035354e-06, L2: 2.9375384576328313e-06
+2025-04-01 11:48:08,913 - __main__ - INFO - - Patience EarlyStopping: 10
+2025-04-01 11:48:08,913 - __main__ - INFO - Construction du chemin de fichier : C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-04-01 11:48:08,913 - __main__ - INFO - Tentative de chargement des données depuis : C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-04-01 11:48:08,937 - __main__ - INFO - Données chargées avec succès avec 5665 lignes depuis C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-04-01 11:48:08,938 - feature_engineering - [92mINFO[0m - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 11:48:08,939 - feature_engineering - [92mINFO[0m - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 11:48:09,343 - feature_engineering - [92mINFO[0m - Nombre de features généré avant harmonisation: 91
+2025-04-01 11:48:09,343 - feature_engineering - [92mINFO[0m - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 11:48:09,343 - feature_engineering - [92mINFO[0m - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 11:48:09,370 - feature_engineering - [92mINFO[0m - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 11:48:09,400 - __main__ - WARNING - Tentative de réharmonisation des caractéristiques...
+2025-04-01 11:48:09,405 - __main__ - INFO - Réharmonisation réussie avec 89 caractéristiques
+2025-04-01 11:48:09,405 - __main__ - CRITICAL - Erreur inattendue pendant l'entraînement: split_data() got an unexpected keyword argument 'validation_split'
+Traceback (most recent call last):
+  File "C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py", line 529, in <module>
+    train_model(args)
+  File "C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py", line 394, in train_model
+    X_train, X_val, X_test, y_train, y_val, y_test = split_data(
+                                                     ^^^^^^^^^^^
+TypeError: split_data() got an unexpected keyword argument 'validation_split'
+2025-04-01 11:48:09,919 - ERROR - Échec de l'entraînement après 3 tentatives.
+2025-04-01 11:48:09,920 - ERROR - L'entraînement a échoué.
+2025-04-01 11:48:09,920 - ERROR - ❌ Exécution du pipeline terminée avec des erreurs. Consultez les logs.
+2025-04-01 11:50:32,735 - INFO - Début de l'exécution du pipeline.
+2025-04-01 11:50:32,735 - INFO - Début du téléchargement des données...
+2025-04-01 11:50:32,735 - DEBUG - Commande de téléchargement: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\download_data.py --symbol BTCUSDT --interval 15m --start 2024-01-01 --end 2024-02-29
+2025-04-01 11:50:38,283 - INFO - Sortie stdout du téléchargement: Downloading BTCUSDT 15m data from 2024-01-01 00:00:00 to 2024-02-29 00:00:00
+  Fetching chunk: 2024-01-01 00:00:00 to 2024-02-29 00:00:00
+Downloaded 5665 candles
+Data saved to C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+
+2025-04-01 11:50:38,284 - INFO - Téléchargement terminé.
+2025-04-01 11:50:38,284 - INFO - Téléchargement des données réussi.
+2025-04-01 11:50:38,285 - INFO - Début de l'entraînement...
+2025-04-01 11:50:38,285 - INFO - Entraînement - Tentative 1/3
+2025-04-01 11:50:38,285 - INFO - Utilisation des paramètres optimisés transformés pour CLI: {'lstm_units': '136,68,34', 'learning_rate': 0.00015751320499779721, 'batch_size': 32, 'l1_reg': 2.9380279387035354e-06, 'l2_reg': 2.9375384576328313e-06}
+2025-04-01 11:50:38,286 - DEBUG - Commande d'entraînement finale: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py --symbol BTCUSDT --timeframe 15m --data_path C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data --lstm_units 136,68,34 --learning_rate 0.00015751320499779721 --batch_size 32 --l1_reg 2.9380279387035354e-06 --l2_reg 2.9375384576328313e-06
+2025-04-01 11:50:43,387 - ERROR - Erreur lors de l'entraînement (Tentative 1, Code: 1): Command '['C:\\Users\\timot\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe', 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\train_model.py', '--symbol', 'BTCUSDT', '--timeframe', '15m', '--data_path', 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\market_data', '--lstm_units', '136,68,34', '--learning_rate', '0.00015751320499779721', '--batch_size', '32', '--l1_reg', '2.9380279387035354e-06', '--l2_reg', '2.9375384576328313e-06']' returned non-zero exit status 1.
+2025-04-01 11:50:43,388 - ERROR - Sortie stderr Entraînement:
+2025-04-01 11:50:39.089410: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-04-01 11:50:39.879568: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-04-01 11:50:42,341 - enhanced_lstm_model - [93mWARNING[0m - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:50:42,471 - __main__ - INFO - Début de l'entraînement du modèle pour BTCUSDT 15m
+2025-04-01 11:50:42,472 - __main__ - INFO - Paramètres optimisés chargés pour 15m
+2025-04-01 11:50:42,472 - __main__ - INFO - Utilisation de 'lstm_units' depuis la ligne de commande: 136,68,34
+2025-04-01 11:50:42,472 - __main__ - INFO - Utilisation de 'dropout' depuis la ligne de commande: 0.2
+2025-04-01 11:50:42,472 - __main__ - INFO - Utilisation de 'learning_rate' depuis les paramètres optimisés: 0.00015751320499779721
+2025-04-01 11:50:42,472 - __main__ - INFO - Utilisation de 'optimizer' par défaut: adam
+2025-04-01 11:50:42,472 - __main__ - INFO - Utilisation de 'use_attention' depuis la ligne de commande: False
+2025-04-01 11:50:42,472 - __main__ - INFO - Utilisation de 'sequence_length' par défaut: 60
+2025-04-01 11:50:42,472 - __main__ - INFO - Utilisation de 'batch_size' depuis la ligne de commande: 32
+2025-04-01 11:50:42,472 - __main__ - INFO - Utilisation de 'validation_split' par défaut: 0.2
+2025-04-01 11:50:42,472 - __main__ - INFO - Utilisation de 'l1_reg' depuis la ligne de commande: 2.9380279387035354e-06
+2025-04-01 11:50:42,472 - __main__ - INFO - Utilisation de 'l2_reg' depuis la ligne de commande: 2.9375384576328313e-06
+2025-04-01 11:50:42,472 - __main__ - INFO - Utilisation de 'patience' depuis la ligne de commande: 10
+2025-04-01 11:50:42,472 - __main__ - INFO - Paramètres finaux pour l'entraînement:
+2025-04-01 11:50:42,472 - __main__ - INFO - - Unités LSTM: [136, 68, 34]
+2025-04-01 11:50:42,472 - __main__ - INFO - - Dropout: 0.2
+2025-04-01 11:50:42,472 - __main__ - INFO - - Taux d'apprentissage: 0.00015751320499779721
+2025-04-01 11:50:42,472 - __main__ - INFO - - Optimiseur: adam
+2025-04-01 11:50:42,472 - __main__ - INFO - - Utiliser Attention: False
+2025-04-01 11:50:42,472 - __main__ - INFO - - Longueur Séquence: 60
+2025-04-01 11:50:42,472 - __main__ - INFO - - Taille Batch: 32
+2025-04-01 11:50:42,472 - __main__ - INFO - - Split Validation: 0.2
+2025-04-01 11:50:42,472 - __main__ - INFO - - Régularisation L1: 2.9380279387035354e-06, L2: 2.9375384576328313e-06
+2025-04-01 11:50:42,472 - __main__ - INFO - - Patience EarlyStopping: 10
+2025-04-01 11:50:42,472 - __main__ - INFO - Construction du chemin de fichier : C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-04-01 11:50:42,472 - __main__ - INFO - Tentative de chargement des données depuis : C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-04-01 11:50:42,491 - __main__ - INFO - Données chargées avec succès avec 5665 lignes depuis C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-04-01 11:50:42,492 - feature_engineering - [92mINFO[0m - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 11:50:42,492 - feature_engineering - [92mINFO[0m - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 11:50:42,865 - feature_engineering - [92mINFO[0m - Nombre de features généré avant harmonisation: 91
+2025-04-01 11:50:42,865 - feature_engineering - [92mINFO[0m - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 11:50:42,865 - feature_engineering - [92mINFO[0m - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 11:50:42,900 - feature_engineering - [92mINFO[0m - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 11:50:42,931 - __main__ - WARNING - Tentative de réharmonisation des caractéristiques...
+2025-04-01 11:50:42,934 - __main__ - INFO - Réharmonisation réussie avec 89 caractéristiques
+2025-04-01 11:50:42,934 - __main__ - CRITICAL - Erreur inattendue pendant l'entraînement: split_data() got an unexpected keyword argument 'val_size'
+Traceback (most recent call last):
+  File "C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py", line 521, in <module>
+    train_model(args)
+  File "C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py", line 343, in train_model
+    X_train, X_val, X_test, y_train, y_val, y_test = split_data(
+                                                     ^^^^^^^^^^^
+TypeError: split_data() got an unexpected keyword argument 'val_size'
+2025-04-01 11:50:43,395 - INFO - Entraînement - Tentative 2/3
+2025-04-01 11:50:43,395 - INFO - Utilisation des paramètres optimisés transformés pour CLI: {'lstm_units': '136,68,34', 'learning_rate': 0.00015751320499779721, 'batch_size': 32, 'l1_reg': 2.9380279387035354e-06, 'l2_reg': 2.9375384576328313e-06}
+2025-04-01 11:50:43,396 - DEBUG - Commande d'entraînement finale: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py --symbol BTCUSDT --timeframe 15m --data_path C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data --lstm_units 136,68,34 --learning_rate 0.00015751320499779721 --batch_size 32 --l1_reg 2.9380279387035354e-06 --l2_reg 2.9375384576328313e-06
+2025-04-01 11:50:48,369 - ERROR - Erreur lors de l'entraînement (Tentative 2, Code: 1): Command '['C:\\Users\\timot\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe', 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\train_model.py', '--symbol', 'BTCUSDT', '--timeframe', '15m', '--data_path', 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\market_data', '--lstm_units', '136,68,34', '--learning_rate', '0.00015751320499779721', '--batch_size', '32', '--l1_reg', '2.9380279387035354e-06', '--l2_reg', '2.9375384576328313e-06']' returned non-zero exit status 1.
+2025-04-01 11:50:48,370 - ERROR - Sortie stderr Entraînement:
+2025-04-01 11:50:44.192307: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-04-01 11:50:44.955131: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-04-01 11:50:47,349 - enhanced_lstm_model - [93mWARNING[0m - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:50:47,479 - __main__ - INFO - Début de l'entraînement du modèle pour BTCUSDT 15m
+2025-04-01 11:50:47,479 - __main__ - INFO - Paramètres optimisés chargés pour 15m
+2025-04-01 11:50:47,479 - __main__ - INFO - Utilisation de 'lstm_units' depuis la ligne de commande: 136,68,34
+2025-04-01 11:50:47,479 - __main__ - INFO - Utilisation de 'dropout' depuis la ligne de commande: 0.2
+2025-04-01 11:50:47,479 - __main__ - INFO - Utilisation de 'learning_rate' depuis les paramètres optimisés: 0.00015751320499779721
+2025-04-01 11:50:47,479 - __main__ - INFO - Utilisation de 'optimizer' par défaut: adam
+2025-04-01 11:50:47,479 - __main__ - INFO - Utilisation de 'use_attention' depuis la ligne de commande: False
+2025-04-01 11:50:47,479 - __main__ - INFO - Utilisation de 'sequence_length' par défaut: 60
+2025-04-01 11:50:47,479 - __main__ - INFO - Utilisation de 'batch_size' depuis la ligne de commande: 32
+2025-04-01 11:50:47,479 - __main__ - INFO - Utilisation de 'validation_split' par défaut: 0.2
+2025-04-01 11:50:47,479 - __main__ - INFO - Utilisation de 'l1_reg' depuis la ligne de commande: 2.9380279387035354e-06
+2025-04-01 11:50:47,479 - __main__ - INFO - Utilisation de 'l2_reg' depuis la ligne de commande: 2.9375384576328313e-06
+2025-04-01 11:50:47,479 - __main__ - INFO - Utilisation de 'patience' depuis la ligne de commande: 10
+2025-04-01 11:50:47,479 - __main__ - INFO - Paramètres finaux pour l'entraînement:
+2025-04-01 11:50:47,479 - __main__ - INFO - - Unités LSTM: [136, 68, 34]
+2025-04-01 11:50:47,480 - __main__ - INFO - - Dropout: 0.2
+2025-04-01 11:50:47,480 - __main__ - INFO - - Taux d'apprentissage: 0.00015751320499779721
+2025-04-01 11:50:47,480 - __main__ - INFO - - Optimiseur: adam
+2025-04-01 11:50:47,480 - __main__ - INFO - - Utiliser Attention: False
+2025-04-01 11:50:47,480 - __main__ - INFO - - Longueur Séquence: 60
+2025-04-01 11:50:47,480 - __main__ - INFO - - Taille Batch: 32
+2025-04-01 11:50:47,480 - __main__ - INFO - - Split Validation: 0.2
+2025-04-01 11:50:47,480 - __main__ - INFO - - Régularisation L1: 2.9380279387035354e-06, L2: 2.9375384576328313e-06
+2025-04-01 11:50:47,480 - __main__ - INFO - - Patience EarlyStopping: 10
+2025-04-01 11:50:47,480 - __main__ - INFO - Construction du chemin de fichier : C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-04-01 11:50:47,480 - __main__ - INFO - Tentative de chargement des données depuis : C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-04-01 11:50:47,498 - __main__ - INFO - Données chargées avec succès avec 5665 lignes depuis C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-04-01 11:50:47,499 - feature_engineering - [92mINFO[0m - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 11:50:47,499 - feature_engineering - [92mINFO[0m - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 11:50:47,850 - feature_engineering - [92mINFO[0m - Nombre de features généré avant harmonisation: 91
+2025-04-01 11:50:47,850 - feature_engineering - [92mINFO[0m - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 11:50:47,850 - feature_engineering - [92mINFO[0m - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 11:50:47,876 - feature_engineering - [92mINFO[0m - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 11:50:47,902 - __main__ - WARNING - Tentative de réharmonisation des caractéristiques...
+2025-04-01 11:50:47,906 - __main__ - INFO - Réharmonisation réussie avec 89 caractéristiques
+2025-04-01 11:50:47,906 - __main__ - CRITICAL - Erreur inattendue pendant l'entraînement: split_data() got an unexpected keyword argument 'val_size'
+Traceback (most recent call last):
+  File "C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py", line 521, in <module>
+    train_model(args)
+  File "C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py", line 343, in train_model
+    X_train, X_val, X_test, y_train, y_val, y_test = split_data(
+                                                     ^^^^^^^^^^^
+TypeError: split_data() got an unexpected keyword argument 'val_size'
+2025-04-01 11:50:48,377 - INFO - Entraînement - Tentative 3/3
+2025-04-01 11:50:48,378 - INFO - Utilisation des paramètres optimisés transformés pour CLI: {'lstm_units': '136,68,34', 'learning_rate': 0.00015751320499779721, 'batch_size': 32, 'l1_reg': 2.9380279387035354e-06, 'l2_reg': 2.9375384576328313e-06}
+2025-04-01 11:50:48,378 - DEBUG - Commande d'entraînement finale: C:\Users\timot\AppData\Local\Microsoft\WindowsApps\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\python.exe C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py --symbol BTCUSDT --timeframe 15m --data_path C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data --lstm_units 136,68,34 --learning_rate 0.00015751320499779721 --batch_size 32 --l1_reg 2.9380279387035354e-06 --l2_reg 2.9375384576328313e-06
+2025-04-01 11:50:53,550 - ERROR - Erreur lors de l'entraînement (Tentative 3, Code: 1): Command '['C:\\Users\\timot\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe', 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\train_model.py', '--symbol', 'BTCUSDT', '--timeframe', '15m', '--data_path', 'C:\\Users\\timot\\OneDrive\\Bureau\\BOT TRADING BIG 2025\\crypto_trading_bot_CLAUDE\\data\\market_data', '--lstm_units', '136,68,34', '--learning_rate', '0.00015751320499779721', '--batch_size', '32', '--l1_reg', '2.9380279387035354e-06', '--l2_reg', '2.9375384576328313e-06']' returned non-zero exit status 1.
+2025-04-01 11:50:53,550 - ERROR - Sortie stderr Entraînement:
+2025-04-01 11:50:49.193681: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-04-01 11:50:49.981043: I tensorflow/core/util/port.cc:113] oneDNN custom operations are on. You may see slightly different numerical results due to floating-point round-off errors from different computation orders. To turn them off, set the environment variable `TF_ENABLE_ONEDNN_OPTS=0`.
+2025-04-01 11:50:52,415 - enhanced_lstm_model - [93mWARNING[0m - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-01 11:50:52,546 - __main__ - INFO - Début de l'entraînement du modèle pour BTCUSDT 15m
+2025-04-01 11:50:52,546 - __main__ - INFO - Paramètres optimisés chargés pour 15m
+2025-04-01 11:50:52,546 - __main__ - INFO - Utilisation de 'lstm_units' depuis la ligne de commande: 136,68,34
+2025-04-01 11:50:52,546 - __main__ - INFO - Utilisation de 'dropout' depuis la ligne de commande: 0.2
+2025-04-01 11:50:52,546 - __main__ - INFO - Utilisation de 'learning_rate' depuis les paramètres optimisés: 0.00015751320499779721
+2025-04-01 11:50:52,546 - __main__ - INFO - Utilisation de 'optimizer' par défaut: adam
+2025-04-01 11:50:52,546 - __main__ - INFO - Utilisation de 'use_attention' depuis la ligne de commande: False
+2025-04-01 11:50:52,546 - __main__ - INFO - Utilisation de 'sequence_length' par défaut: 60
+2025-04-01 11:50:52,546 - __main__ - INFO - Utilisation de 'batch_size' depuis la ligne de commande: 32
+2025-04-01 11:50:52,546 - __main__ - INFO - Utilisation de 'validation_split' par défaut: 0.2
+2025-04-01 11:50:52,546 - __main__ - INFO - Utilisation de 'l1_reg' depuis la ligne de commande: 2.9380279387035354e-06
+2025-04-01 11:50:52,546 - __main__ - INFO - Utilisation de 'l2_reg' depuis la ligne de commande: 2.9375384576328313e-06
+2025-04-01 11:50:52,546 - __main__ - INFO - Utilisation de 'patience' depuis la ligne de commande: 10
+2025-04-01 11:50:52,547 - __main__ - INFO - Paramètres finaux pour l'entraînement:
+2025-04-01 11:50:52,547 - __main__ - INFO - - Unités LSTM: [136, 68, 34]
+2025-04-01 11:50:52,547 - __main__ - INFO - - Dropout: 0.2
+2025-04-01 11:50:52,547 - __main__ - INFO - - Taux d'apprentissage: 0.00015751320499779721
+2025-04-01 11:50:52,547 - __main__ - INFO - - Optimiseur: adam
+2025-04-01 11:50:52,547 - __main__ - INFO - - Utiliser Attention: False
+2025-04-01 11:50:52,547 - __main__ - INFO - - Longueur Séquence: 60
+2025-04-01 11:50:52,547 - __main__ - INFO - - Taille Batch: 32
+2025-04-01 11:50:52,547 - __main__ - INFO - - Split Validation: 0.2
+2025-04-01 11:50:52,547 - __main__ - INFO - - Régularisation L1: 2.9380279387035354e-06, L2: 2.9375384576328313e-06
+2025-04-01 11:50:52,547 - __main__ - INFO - - Patience EarlyStopping: 10
+2025-04-01 11:50:52,547 - __main__ - INFO - Construction du chemin de fichier : C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-04-01 11:50:52,547 - __main__ - INFO - Tentative de chargement des données depuis : C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-04-01 11:50:52,565 - __main__ - INFO - Données chargées avec succès avec 5665 lignes depuis C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data\BTCUSDT_15m.csv
+2025-04-01 11:50:52,566 - feature_engineering - [92mINFO[0m - Métadonnées des caractéristiques chargées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 11:50:52,566 - feature_engineering - [92mINFO[0m - Utilisation de FIXED_FEATURES actuel avec 89 colonnes
+2025-04-01 11:50:52,983 - feature_engineering - [92mINFO[0m - Nombre de features généré avant harmonisation: 91
+2025-04-01 11:50:52,983 - feature_engineering - [92mINFO[0m - Utilisation de la liste fixe de caractéristiques (configuration existante)
+2025-04-01 11:50:52,983 - feature_engineering - [92mINFO[0m - DataFrame harmonisé conservant toutes les caractéristiques: 91 colonnes
+2025-04-01 11:50:53,010 - feature_engineering - [92mINFO[0m - Métadonnées des caractéristiques enregistrées: C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\models\scalers\feature_metadata.json
+2025-04-01 11:50:53,035 - __main__ - WARNING - Tentative de réharmonisation des caractéristiques...
+2025-04-01 11:50:53,038 - __main__ - INFO - Réharmonisation réussie avec 89 caractéristiques
+2025-04-01 11:50:53,038 - __main__ - CRITICAL - Erreur inattendue pendant l'entraînement: split_data() got an unexpected keyword argument 'val_size'
+Traceback (most recent call last):
+  File "C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py", line 521, in <module>
+    train_model(args)
+  File "C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\train_model.py", line 343, in train_model
+    X_train, X_val, X_test, y_train, y_val, y_test = split_data(
+                                                     ^^^^^^^^^^^
+TypeError: split_data() got an unexpected keyword argument 'val_size'
+2025-04-01 11:50:53,557 - ERROR - Échec de l'entraînement après 3 tentatives.
+2025-04-01 11:50:53,557 - ERROR - L'entraînement a échoué.
+2025-04-01 11:50:53,557 - ERROR - ❌ Exécution du pipeline terminée avec des erreurs. Consultez les logs.

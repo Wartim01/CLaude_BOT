@@ -8,6 +8,7 @@ import pandas as pd
 from typing import Dict, List, Tuple, Union, Optional
 from datetime import datetime, timedelta
 import sys  # Ajout de l'import manquant
+import inspect  # added for debugging
 try:
     import talib
 except ImportError as e:
@@ -24,13 +25,23 @@ from indicators.trend import calculate_ema, calculate_adx, calculate_macd
 from indicators.momentum import calculate_rsi, calculate_stochastic
 from indicators.volatility import calculate_bollinger_bands, calculate_atr
 from indicators.volume import calculate_obv, calculate_vwap
-from config.config import DATA_DIR
 from utils.logger import setup_logger
 from config.feature_config import get_optimal_feature_count, update_optimal_feature_count
 from config.feature_config import FEATURE_COLUMNS
 from config.feature_config import FEATURE_COLUMNS as FIXED_FEATURES  # Import the fixed list
+from utils.path_utils import get_path, build_path, get_scaler_path
 
 logger = setup_logger("feature_engineering")
+
+# Add file handler so logs are stored in the dedicated logs folder
+import logging
+log_dir = r"c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\logs"
+os.makedirs(log_dir, exist_ok=True)
+file_handler = logging.FileHandler(os.path.join(log_dir, "feature_engineering.log"))
+file_handler.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
 
 class FeatureEngineering:
     """
@@ -55,11 +66,13 @@ class FeatureEngineering:
         self.auto_optimize = auto_optimize
         self.optimal_feature_count = None
         self.scalers = {}
-        self.scalers_path = os.path.join(DATA_DIR, "models", "scalers")
+        
+        # Utiliser utils.path_utils au lieu de DATA_DIR codé en dur
+        self.scalers_path = get_path("scalers")
         self.feature_importances = {}  # Stockage des importances de features
         
         # Créer le répertoire pour les scalers si nécessaire
-        if save_scalers and not os.path.exists(self.scalers_path):
+        if save_scalers:
             os.makedirs(self.scalers_path, exist_ok=True)
         
         # Chargement de la configuration toujours après l'initialisation des fixed_features
@@ -761,9 +774,9 @@ class FeatureEngineering:
             # Ajuster le scaler sur les données d'entraînement
             scaler.fit(data[feature_cols])
             
-            # Sauvegarder le scaler
+            # Sauvegarder le scaler avec un chemin portable
             if self.save_scalers:
-                scaler_path = os.path.join(self.scalers_path, f"{feature_group}_{method}_scaler.pkl")
+                scaler_path = build_path(f"{feature_group}_{method}_scaler.pkl", base="scalers")
                 with open(scaler_path, 'wb') as f:
                     pickle.dump(scaler, f)
             
@@ -778,9 +791,9 @@ class FeatureEngineering:
             if scaler_key in self.scalers:
                 scaler = self.scalers[scaler_key]
             
-            # Sinon, charger depuis le disque
+            # Sinon, charger depuis le disque avec un chemin portable
             else:
-                scaler_path = os.path.join(self.scalers_path, f"{feature_group}_{method}_scaler.pkl")
+                scaler_path = build_path(f"{feature_group}_{method}_scaler.pkl", base="scalers")
                 if os.path.exists(scaler_path):
                     with open(scaler_path, 'rb') as f:
                         scaler = pickle.load(f)
@@ -877,9 +890,9 @@ class FeatureEngineering:
         return X, y
     
     def create_multi_horizon_data(self, data: pd.DataFrame, 
-                               sequence_length: int = 60,
-                               horizons: List[int] = [12, 24, 96],
-                               is_training: bool = True) -> Tuple:
+                              sequence_length: int = 60,
+                              horizons: List[int] = [12, 24, 96],
+                              is_training: bool = True) -> Tuple:
         """
         Prépare les données pour une prédiction multi-horizon
         
@@ -892,12 +905,23 @@ class FeatureEngineering:
         Returns:
             Tuple (X, y_list) pour l'entraînement ou (X, None) pour la prédiction
         """
+        # Debugging statements to inspect received arguments
+        print("DEBUG: In create_multi_horizon_data")
+        print("DEBUG: data type:", type(data), "data shape:", data.shape)
+        print("DEBUG: sequence_length:", sequence_length)
+        print("DEBUG: horizons:", horizons)
+        print("DEBUG: is_training:", is_training)
+        print("DEBUG: Caller info:", inspect.stack()[1])
+        
         # Force columns to match FEATURE_COLUMNS
         data = data.reindex(columns=FEATURE_COLUMNS, fill_value=0).copy()
-        if data.shape[1] != len(FEATURE_COLUMNS):
-            logger.warning(f"Feature mismatch: expected {len(FEATURE_COLUMNS)}, found {data.shape[1]}")
+        logger.info(f"After reindex, data has {data.shape[1]} columns (expected {len(FEATURE_COLUMNS)})")
         
-        # Vérification de la suffisance des données et ajustement dynamique des horizons
+        # Use all columns from data after reindexing
+        feature_cols_to_use = data.columns.tolist()
+        logger.info(f"Using {len(feature_cols_to_use)} feature columns for sequence creation")
+        
+        # ...existing code for validating data sufficiency and adjusting horizons...
         if len(data) < sequence_length:
             raise ValueError(f"Not enough data: requires at least {sequence_length} rows, got {len(data)} rows.")
         required_samples = sequence_length + max(horizons)
@@ -908,36 +932,22 @@ class FeatureEngineering:
             horizons = [min(h, new_max) for h in horizons]
             logger.info(f"Adjusted horizons: {horizons}")
         
-        # Calcul du nombre d'échantillons en fonction du mode (entraînement ou prédiction)
         if is_training:
             num_samples = len(data) - sequence_length - max(horizons)
         else:
             num_samples = len(data) - sequence_length
         
-        # Sélectionner les colonnes de caractéristiques
-        feature_cols = data.select_dtypes(include=['float64', 'int64']).columns.tolist()
-        cols_to_exclude = ['timestamp', 'date']
-        feature_cols = [col for col in feature_cols if col not in cols_to_exclude]
-        
-        if is_training:
-            # Use the maximum horizon to ensure alignment across toutes les sorties
-            max_horizon = max(horizons)
-            num_samples = len(data) - sequence_length - max_horizon
-        else:
-            num_samples = len(data) - sequence_length
-        
-        # Créer les séquences d'entrée avec num_samples
+        # Create sequences using the full feature_cols_to_use list (ensuring 89 columns)
         X = []
         for i in range(num_samples):
-            X.append(data[feature_cols].iloc[i:i+sequence_length].values.astype(np.float32))
+            X.append(data[feature_cols_to_use].iloc[i:i+sequence_length].values.astype(np.float32))
         X = np.array(X)
         
         if not is_training:
-            # Instead of just returning X, return a tuple (X, None) for consistency
             logger.debug(f"Returning prediction data without labels: X shape {X.shape}")
             return X, None
         
-        # Créer les labels pour chaque horizon avec the same num_samples
+        # ...existing code to build labels (y_list) remains unchanged...
         y_list = []
         for horizon in horizons:
             y_direction = []
@@ -959,28 +969,22 @@ class FeatureEngineering:
                 price_change_pct = (future_price - current_price) / current_price
                 momentum = np.tanh(price_change_pct * 5)
                 y_momentum.append(momentum)
-            
             y_list.extend([np.array(y_direction), np.array(y_volatility), np.array(y_volume), np.array(y_momentum)])
         
-        # Before returning, ensure X has the right dimensions (3D)
+        # ...existing shape validations and logging...
         if len(X.shape) == 2:
-            # If X is 2D (n_samples, n_features), reshape to 3D
-            # This can happen with some data preparation methods
             n_samples, n_features = X.shape
             X = X.reshape(n_samples, 1, n_features)
             logger.debug(f"Reshaped X from 2D to 3D: {X.shape}")
         
-        # Validate dimensions before return
         if len(X.shape) != 3:
             error_msg = f"Expected X to be 3D, but got shape {X.shape} with dimensions {len(X.shape)}"
             logger.error(error_msg)
             raise ValueError(error_msg)
         
-        # Verify we have data to return
         if len(X) == 0:
             logger.warning("No sequences were generated - input data may be too short")
             
-        # Log the return shape
         logger.debug(f"Returning training data: X shape {X.shape}, y_list length {len(y_list)}")
         return X, y_list
 
@@ -1104,6 +1108,7 @@ class FeatureEngineering:
                 "outliers": outliers_check
             }
             
+            
         except Exception as e:
             return {"consistent": False, "reason": str(e)}
 
@@ -1115,7 +1120,6 @@ def add_market_sentiment_features(df: pd.DataFrame) -> pd.DataFrame:
     # Calculer la divergence entre les variations de prix et de volume
     df['price_volume_divergence'] = df['close'].pct_change() * df['volume'].pct_change()
     
-    # Si les indicateurs MACD sont présents, créer une caractéristique de crossover
     # Si les indicateurs MACD sont présents, créer une caractéristique de crossover
     if 'macd' in df.columns and 'macd_signal' in df.columns:
         df['macd_crossover'] = (df['macd'] - df['macd_signal']).apply(lambda x: 1 if x > 0 else -1)
@@ -1137,8 +1141,9 @@ def create_multi_horizon_data(self, data: pd.DataFrame,
     Returns:
         Tuple (X, y_list) pour l'entraînement ou (X, None) pour la prédiction
     """
-    # Extract horizons from tuples if needed, for backwards compatibility
+    # Initialize numeric_horizons list
     numeric_horizons = []
+    # Extract horizons from tuples if needed, for backwards compatibility
     for h in horizons:
         if isinstance(h, tuple) and len(h) >= 1:
             numeric_horizons.append(h[0])
@@ -1146,6 +1151,7 @@ def create_multi_horizon_data(self, data: pd.DataFrame,
             numeric_horizons.append(h)
         else:
             logger.warning(f"Invalid horizon format: {h}, using default")
+            numeric_horizons.append(12)  # Default horizon
             numeric_horizons.append(12)  # Default horizon
     
     # Use the numeric horizons for actual calculations

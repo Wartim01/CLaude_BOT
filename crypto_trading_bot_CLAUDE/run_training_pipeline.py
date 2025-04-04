@@ -1,432 +1,552 @@
-import subprocess
-import sys
-import os
-import logging
+# Dans train_model.py
+
 import argparse
 import pandas as pd
+import logging
+import os
 import json
-import re
+import numpy as np
+import psutil
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, Callback, CSVLogger # type: ignore
+from tensorflow.keras.optimizers import Adam, RMSprop # type: ignore
+from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score
+from sklearn.utils.class_weight import compute_class_weight
+import sys
 
-from utils.logger import setup_logger
-from config.config import DATA_DIR
+# Assurez-vous que les imports locaux fonctionnent
+# Ajouter le répertoire racine au path si nécessaire
+# root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# if root_dir not in sys.path:
+#     sys.path.insert(0, root_dir)
 
-# Configure pipeline logger with file and console output
-pipeline_log_path = os.path.join(os.path.dirname(__file__), "pipeline.log")
-pipeline_logger = logging.getLogger("pipeline")
-pipeline_logger.setLevel(logging.DEBUG)
-if not pipeline_logger.handlers:
-    file_handler = logging.FileHandler(pipeline_log_path)
-    file_handler.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    file_handler.setFormatter(formatter)
-    pipeline_logger.addHandler(file_handler)
-    # Add console handler to print all logs to the console
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.DEBUG)
-    console_handler.setFormatter(formatter)
-    pipeline_logger.addHandler(console_handler)
+from ai.models.feature_engineering import FeatureEngineering
+# Assurez-vous que ces fonctions existent bien dans lstm_model.py
+# Si elles sont dans une classe, adaptez l'import/appel
+# Note: Si create_lstm_model et create_attention_lstm_model sont dans la classe LSTMModel,
+# il faudra les appeler différemment ou les sortir de la classe.
+# Supposons qu'elles sont importables directement pour l'instant.
+from ai.models.lstm_model import create_lstm_model, create_attention_lstm_model
+# Correction: Importer split_data correctement
+from utils.data_splitting import split_data # Assurez-vous que ce chemin est correct
+from config.model_params import LSTM_DEFAULT_PARAMS, LSTM_OPTIMIZED_PARAMS
+from config.feature_config import FIXED_FEATURES
 
-# Common arguments restent disponibles pour download_data.py
-common_args = {
-    "--symbol": "BTCUSDT",
-    "--timeframe": "15m",
-    "--start-date": "2024-01-01",
-    "--end-date": "2024-02-29",   # corrigé (2024 est bissextile)
-    "--data_path": r"C:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data"
-}
+# Configuration du logger
+if not logging.getLogger(__name__).hasHandlers():
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
-def build_common_args():
-    """Retourne la liste d'arguments communs pour download_data.py, gardant --start-date et --end-date."""
-    args_list = []
-    for key, value in common_args.items():
-        args_list.extend([key, value])
-    return args_list
+# Add file handler so logs are stored in the dedicated logs folder
+log_dir = r"c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\logs"
+os.makedirs(log_dir, exist_ok=True)
+file_handler = logging.FileHandler(os.path.join(log_dir, "run_training_pipeline.log"))
+file_handler.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
 
-def build_download_args():
-    """Retourne la liste d'arguments pour download_data.py qui utilise --start et --end."""
-    download_args = {
-        "--symbol": common_args["--symbol"],
-        "--interval": common_args["--timeframe"],
-        "--start": common_args["--start-date"],
-        "--end": common_args["--end-date"]
-    }
-    args_list = []
-    for key, value in download_args.items():
-        args_list.extend([key, value])
-    return args_list
+# --- Fonction parse_args (inchangée) ---
+def parse_args():
+    parser = argparse.ArgumentParser(description="Entraînement et évaluation du modèle de prédiction")
+    parser.add_argument("--symbol", type=str, required=True, help="Paire de trading (ex: BTCUSDT)")
+    parser.add_argument("--timeframe", type=str, required=True, help="Intervalle de temps (ex: 15m, 1h)")
+    parser.add_argument("--data_path", type=str, required=True, help="Répertoire des données de marché")
+    parser.add_argument("--model_path", type=str, default=None, help="Chemin pour sauvegarder le modèle")
+    parser.add_argument("--model_type", type=str, default="lstm", choices=["lstm", "transformer"], help="Type de modèle ('lstm' ou 'transformer')")
+    # Note: L'argument de ligne de commande s'appelle toujours --validation_split
+    parser.add_argument("--validation_split", type=float, default=0.2, help="Fraction pour validation")
+    parser.add_argument("--epochs", type=int, default=100, help="Nombre d'époques")
+    parser.add_argument("--batch_size", type=int, default=64, help="Taille du batch")
+    parser.add_argument("--lstm_units", type=str, default="128,64,32", help="Unités LSTM (ex: '128,64')")
+    parser.add_argument("--dropout", type=float, default=0.2, help="Taux de dropout")
+    parser.add_argument("--learning_rate", type=float, default=0.001, help="Taux d'apprentissage")
+    parser.add_argument("--use_attention", action="store_true", help="Utiliser l'attention")
+    parser.add_argument("--optimizer", type=str, default="adam", help="Optimiseur (adam, rmsprop)")
+    parser.add_argument("--no_early_stopping", action="store_false", dest="use_early_stopping", help="Désactiver EarlyStopping")
+    parser.add_argument("--patience", type=int, default=10, help="Patience pour EarlyStopping")
+    parser.add_argument("--verbose", type=int, default=1, choices=[0, 1, 2], help="Verbosité Keras")
+    parser.add_argument("--sequence_length", type=int, default=60, help="Longueur de séquence")
+    parser.add_argument("--test_size", type=float, default=0.2, help="Split de test")
+    parser.add_argument("--random_state", type=int, default=42, help="Graine aléatoire")
+    parser.add_argument("--feature_scaler", type=str, default="standard", help="Scaler features (standard, minmax)")
+    parser.add_argument("--train_val_split_method", type=str, default="time", help="Méthode split (time, random)")
+    parser.add_argument("--l1_reg", type=float, default=None, help="Régularisation L1 (optionnel, priorité sur config)")
+    parser.add_argument("--l2_reg", type=float, default=None, help="Régularisation L2 (optionnel, priorité sur config)")
+    return parser.parse_args()
 
-# Nouveaux helpers pour train_model.py et evaluate_model.py
-def build_train_args():
-    """Arguments pour train_model.py; inclut --symbol, --timeframe et --data_path."""
-    return [
-        "--symbol", common_args["--symbol"],
-        "--timeframe", common_args["--timeframe"],
-        "--data_path", common_args["--data_path"]
-    ]
-
-def build_evaluate_args():
-    """Arguments pour evaluate_model.py; inclut --symbol, --timeframe, --start-date, --end-date et --data_path."""
-    return [
-        "--symbol", common_args["--symbol"],
-        "--timeframe", common_args["--timeframe"],
-        "--start-date", common_args["--start-date"],
-        "--end-date", common_args["--end-date"],
-        "--data_path", common_args["--data_path"]
-    ]
-
-def run_download_data():
+# --- Fonction load_data (inchangée) ---
+def load_data(data_dir_path, symbol, timeframe):
+    """
+    Load market data from CSV file within a directory.
+    """
+    file_name = f"{symbol}_{timeframe}.csv"
+    file_path = os.path.join(data_dir_path, file_name)
+    logger.info(f"Construction du chemin de fichier : {file_path}")
     try:
-        pipeline_logger.info("Début du téléchargement des données...")
-        cmd = [sys.executable, "download_data.py"] + build_download_args()
-        pipeline_logger.debug("Commande de téléchargement: " + " ".join(cmd))
-        
-        env = os.environ.copy()
-        env["PYTHONIOENCODING"] = "utf-8"
-        
-        result = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', env=env, check=True)
-        pipeline_logger.info("Sortie stdout du téléchargement: " + result.stdout)
-        pipeline_logger.info("Téléchargement terminé.")
-        return True
-    except subprocess.CalledProcessError as e:
-        pipeline_logger.error(f"Erreur lors du téléchargement des données: {e}")
-        pipeline_logger.error(f"Sortie stderr: {e.stderr}")
-        return False
-
-def clean_params_for_saving(params: dict) -> dict:
-    """Convert hyperparameter keys to the format expected by train_model.py
-    for saving to optimized_params.json"""
-    cleaned = {}
-    
-    # Keep track of F1 score and optimization timestamp
-    if "f1_score" in params:
-        cleaned["f1_score"] = params["f1_score"]
-    if "last_optimized" in params:
-        cleaned["last_optimized"] = params["last_optimized"]
-    
-    # Convert lstm_units_first and lstm_layers into the expected lstm_units format
-    if "lstm_units_first" in params and "lstm_layers" in params:
-        first_layer = int(params["lstm_units_first"])
-        num_layers = int(params["lstm_layers"])
-        
-        # Create a decreasing sequence of units
-        units = []
-        current_units = first_layer
-        for _ in range(num_layers):
-            units.append(current_units)
-            current_units = current_units // 2
-            
-        cleaned["lstm_units"] = units  # Store as a list that train_model.py can understand
-    
-    # Direct mappings with standardized names
-    name_mappings = {
-        "dropout_rate": "dropout",
-        "learning_rate": "learning_rate",
-        "batch_size": "batch_size",
-        "early_stopping_patience": "patience",
-        "epochs": "epochs"
-    }
-    
-    # Apply mappings
-    for old_key, new_key in name_mappings.items():
-        if old_key in params:
-            cleaned[new_key] = params[old_key]
-    
-    return cleaned
-
-def process_hyperparameter_result(output: str) -> None:
-    """Process the output from hyperparameter search and clean the parameters before saving"""
-    # Check if hyperparameter output indicates parameters were saved
-    if "Saving best parameters" in output:
-        # Try to find the path where parameters were saved
-        optimized_params_path = os.path.join("config", "optimized_params.json")
-        
-        if os.path.exists(optimized_params_path):
-            pipeline_logger.info(f"Found optimized parameters file: {optimized_params_path}")
-            
-            try:
-                # Load the current parameters
-                with open(optimized_params_path, 'r') as f:
-                    params_data = json.load(f)
-                
-                # Process each timeframe's parameters
-                cleaned_params = {}
-                for timeframe, params in params_data.items():
-                    cleaned_params[timeframe] = clean_params_for_saving(params)
-                
-                # Save the cleaned parameters back to the file
-                with open(optimized_params_path, 'w') as f:
-                    json.dump(cleaned_params, f, indent=2)
-                
-                pipeline_logger.info(f"Saved cleaned parameters to {optimized_params_path}")
-            except Exception as e:
-                pipeline_logger.error(f"Error processing hyperparameter results: {e}")
-
-def run_hyperparameter_search():
-    """Run hyperparameter search with early stopping when F1≥0.70 is reached or after max iterations"""
-    max_iterations = 5  # Maximum number of search iterations to prevent infinite loops
-    current_iteration = 0
-    
-    while current_iteration < max_iterations:
-        current_iteration += 1
-        pipeline_logger.info(f"Recherche d'hyperparamètres - Itération {current_iteration}/{max_iterations}")
-        cmd = [sys.executable, "hyperparameter_search.py"] + build_common_args()
-        pipeline_logger.debug("Commande de recherche d'hyperparamètres: " + " ".join(cmd))
-        
-        env = os.environ.copy()
-        env["PYTHONIOENCODING"] = "utf-8"
-        
+        logger.info(f"Tentative de chargement des données depuis : {file_path}")
+        if not os.path.isfile(file_path):
+             found_file = None
+             if os.path.isdir(data_dir_path):
+                 for f in os.listdir(data_dir_path):
+                     if f.lower() == file_name.lower():
+                         found_file = os.path.join(data_dir_path, f)
+                         logger.info(f"Fichier trouvé avec recherche insensible à la casse: {found_file}")
+                         break
+             if not found_file:
+                 error_msg = f"Fichier de données non trouvé : {file_path}"
+                 logger.error(error_msg)
+                 raise FileNotFoundError(error_msg)
+             file_path = found_file
+        df = pd.read_csv(file_path)
+        if df.empty:
+            error_msg = f"Le fichier {file_path} est vide"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        df.columns = [col.lower() for col in df.columns]
+        time_col = None
+        for possible_col in ['timestamp', 'date', 'time', 'datetime']:
+            if possible_col in df.columns:
+                time_col = possible_col
+                break
+        if time_col is None:
+            error_msg = f"Aucune colonne timestamp/date trouvée dans {file_path}. Colonnes disponibles : {df.columns.tolist()}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', env=env, check=True)
-            stdout = result.stdout
-            pipeline_logger.info(f"Sortie stdout: {stdout}")
-            
-            # Process and clean the hyperparameters that were saved
-            process_hyperparameter_result(stdout)
-            
-            # Check if we've reached the desired F1 score
-            match = re.search(r'F1=([0-9]+\.[0-9]+)', stdout)
-            if match and float(match.group(1)) >= 0.70:
-                pipeline_logger.info(f"F1 ≥ 0.70 atteint ({match.group(1)}), fin de la recherche d'hyperparamètres.")
-                return True
-                
-            pipeline_logger.info("F1 < 0.70, nouvelle itération de recherche si nécessaire.")
-            
-            # If we reach the max iterations, log it
-            if current_iteration >= max_iterations:
-                pipeline_logger.warning(f"Nombre maximum d'itérations atteint ({max_iterations}). "
-                                      f"Meilleur F1 score obtenu < 0.70. Utilisation des meilleurs paramètres trouvés.")
-                return False
-                
+            df[time_col] = pd.to_datetime(df[time_col], errors='coerce')
+            df.dropna(subset=[time_col], inplace=True)
+            df.set_index(time_col, inplace=True)
+            df.sort_index(inplace=True)
+            logger.info(f"Données chargées avec succès avec {len(df)} lignes depuis {file_path}")
+            return df
         except Exception as e:
-            pipeline_logger.error(f"Erreur lors de la recherche d'hyperparamètres: {e}")
-            return False
-    
-    return False  # Should not reach here but just in case
-
-def transform_optimized_params(params: dict) -> dict:
-    """Transform hyperparameter keys from hyperparameter_search to train_model.py format."""
-    transformed = {}
-    
-    # Create LSTM units parameter
-    if "lstm_units_first" in params and "lstm_layers" in params:
-        first_layer = int(params["lstm_units_first"])
-        num_layers = int(params["lstm_layers"])
-        
-        # Create decreasing units list
-        units = []
-        current_units = first_layer
-        for _ in range(num_layers):
-            units.append(str(current_units))
-            current_units = current_units // 2
-        
-        # Join with commas as expected by train_model.py
-        transformed["lstm_units"] = ",".join(units)
-    
-    # Map parameter names
-    name_mapping = {
-        "dropout_rate": "dropout",
-        "learning_rate": "learning_rate",
-        "batch_size": "batch_size"
-    }
-    
-    # Apply mappings for direct parameters
-    for source_key, target_key in name_mapping.items():
-        if source_key in params:
-            transformed[target_key] = params[source_key]
-    
-    # Add patience parameter if available
-    if "early_stopping_patience" in params:
-        transformed["patience"] = params["early_stopping_patience"]
-    
-    return transformed
-
-def run_training():
-    """Run model training with optimized hyperparameters, with retry logic if F1<0.70"""
-    max_attempts = 3
-    current_attempt = 0
-    
-    while current_attempt < max_attempts:
-        current_attempt += 1
-        pipeline_logger.info(f"Entraînement - Tentative {current_attempt}/{max_attempts}")
-        
-        # Start with base command
-        cmd = [sys.executable, "train_model.py"]
-        
-        # Dictionary to store ONLY valid arguments that train_model.py can recognize
-        valid_args = {
-            "--symbol": common_args["--symbol"],
-            "--timeframe": common_args["--timeframe"],
-            "--data_path": common_args["--data_path"],
-            "--verbose": "2"  # Always use verbose=2 for detailed output
-        }
-        
-        # Load parameters from optimized_params.json
-        try:
-            optimized_params_path = os.path.join("config", "optimized_params.json")
-            if os.path.exists(optimized_params_path):
-                with open(optimized_params_path, 'r') as f:
-                    opt = json.load(f)
-                
-                # Get parameters for current timeframe
-                timeframe = common_args["--timeframe"]
-                if timeframe in opt:
-                    # Process the raw parameters from JSON file
-                    raw_params = opt[timeframe]
-                    pipeline_logger.info(f"Paramètres bruts trouvés pour {timeframe}")
-                    
-                    # Transform parameters to the format train_model.py expects
-                    transformed_params = transform_optimized_params(raw_params)
-                    pipeline_logger.info(f"Paramètres transformés: {transformed_params}")
-                    
-                    # Add only the transformed parameters to valid_args
-                    for key, value in transformed_params.items():
-                        valid_args[f"--{key}"] = str(value)
-        except Exception as e:
-            pipeline_logger.error(f"Erreur lors du chargement des paramètres optimisés: {e}")
-        
-        # Build the final command using only valid parameters
-        command_args = []
-        for key, value in valid_args.items():
-            command_args.extend([key, str(value)])
-        
-        # Final command with all valid arguments
-        cmd.extend(command_args)
-        
-        pipeline_logger.info("Commande d'entraînement construite avec uniquement les arguments valides")
-        pipeline_logger.debug("Commande d'entraînement: " + " ".join(cmd))
-        
-        # Execute training process
-        env = os.environ.copy()
-        env["PYTHONIOENCODING"] = "utf-8"
-        
-        # Run the command
-        result = subprocess.run(
-            cmd,
-            check=False,
-            text=True,
-            encoding='utf-8',
-            errors='replace',
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            env=env
-        )
-        
-        # Check for errors first
-        if result.returncode != 0:
-            pipeline_logger.error(f"Erreur lors de l'entraînement (code {result.returncode})")
-            if result.stderr:
-                pipeline_logger.error(f"Stderr: {result.stderr}")
-            # Continue with next attempt despite error
-            continue
-        
-        # Check F1 score from output
-        stdout = result.stdout if result.stdout else ""
-        match = re.search(r'F1=([0-9]+\.[0-9]+)', stdout)
-        if match and float(match.group(1)) >= 0.70:
-            pipeline_logger.info(f"F1 ≥ 0.70 atteint ({match.group(1)}), entraînement réussi!")
-            return True
-            
-        pipeline_logger.info("F1 < 0.70 après l'entraînement.")
-        
-        # If we've reached max attempts, log it but still return True to continue pipeline
-        if current_attempt >= max_attempts:
-            pipeline_logger.warning(f"Nombre maximum de tentatives d'entraînement atteint ({max_attempts}). "
-                                  f"Meilleur F1 score < 0.70. L'entraînement est considéré comme terminé.")
-    
-    # If we get here, all attempts were made without reaching F1 ≥ 0.70
-    pipeline_logger.info("Entraînement terminé sans atteindre F1 ≥ 0.70.")
-    return True  # Return success anyway to continue pipeline
-
-def run_evaluation():
-    try:
-        pipeline_logger.info("Début de l'évaluation du modèle...")
-        # Préfixer d'abord le sous-commande "evaluate" pour evaluate_model.py et appliquer build_evaluate_args
-        cmd = [sys.executable, "evaluate_model.py", "evaluate"] + build_evaluate_args()
-        pipeline_logger.debug("Commande d'évaluation: " + " ".join(cmd))
-        
-        env = os.environ.copy()
-        env["PYTHONIOENCODING"] = "utf-8"
-        
-        result = subprocess.run(
-            cmd,
-            check=False,
-            text=True,
-            encoding='utf-8',
-            errors='replace',
-            env=env
-        )
-        
-        if result.returncode != 0:
-            pipeline_logger.error(f"Erreur lors de l'évaluation (code {result.returncode})")
-            if result.stderr:
-                pipeline_logger.error(f"Erreur: {result.stderr}")
-            return False
-            
-        if result.stdout:
-            pipeline_logger.info("Sortie de l'évaluation: " + result.stdout)
-        
-        pipeline_logger.info("Évaluation terminée.")
-        return True
+            error_msg = f"Erreur lors de la conversion de {time_col} en datetime dans {file_path}: {str(e)}"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Fichier de données non trouvé : {file_path}")
+    except pd.errors.ParserError as e:
+        error_msg = f"Erreur lors de l'analyse du fichier CSV {file_path}: {str(e)}"
+        logger.error(error_msg)
+        raise ValueError(error_msg)
     except Exception as e:
-        pipeline_logger.error(f"Erreur lors de l'évaluation: {e}")
-        return False
+        error_msg = f"Erreur inattendue lors du chargement de {file_path}: {str(e)}"
+        logger.error(error_msg)
+        raise type(e)(error_msg)
 
-def run_pipeline():
-    parser = argparse.ArgumentParser(description="Pipeline complet d'entraînement")
-    # Consolidate hyperparameter search flags into one clear option
-    parser.add_argument("--hyperparameter-search", action="store_true",
-                        help="Lance la recherche d'hyperparamètres avant l'entraînement (F1≥0.70 arrête automatiquement)")
-    parser.add_argument("--model-type", type=str, default="lstm", help="Type de modèle (lstm, transformer, etc.)")
-    parser.add_argument("--data-path", type=str, default=os.path.join(DATA_DIR, "market_data"), help="Chemin des données de marché")
-    parser.add_argument("--skip-download", action="store_true", help="Sauter l'étape de téléchargement des données")
-    parser.add_argument("--skip-training", action="store_true", help="Sauter l'étape d'entraînement")
-    parser.add_argument("--skip-evaluation", action="store_true", help="Sauter l'étape d'évaluation")
-    parser.add_argument("--max-hp-iterations", type=int, default=5, 
-                        help="Nombre maximum d'itérations pour la recherche d'hyperparamètres")
 
-    args = parser.parse_args()
+# --- Callbacks (inchangés) ---
+class EarlyStoppingOnMemoryLeak(Callback):
+    # ... (code inchangé) ...
+    """Arrête l'entraînement si une fuite mémoire est détectée"""
+    def __init__(self, patience=3, threshold_mb=300, monitor_interval=1):
+        super(EarlyStoppingOnMemoryLeak, self).__init__()
+        self.patience = patience
+        self.threshold_mb = threshold_mb
+        self.monitor_interval = monitor_interval
+        self.last_usage = []
+        self.epochs_increasing = 0
+    def on_epoch_begin(self, epoch, logs=None):
+        if epoch % self.monitor_interval == 0:
+            process = psutil.Process(os.getpid())
+            memory_usage_mb = process.memory_info().rss / (1024 * 1024)
+            logger.info(f"Utilisation mémoire au début époque {epoch+1}: {memory_usage_mb:.2f} MB")
+            self.last_usage.append(memory_usage_mb)
+            if len(self.last_usage) > self.patience + 2:
+                self.last_usage.pop(0)
+            if len(self.last_usage) >= 3:
+                increasing = True
+                for i in range(1, len(self.last_usage)):
+                    if self.last_usage[i] - self.last_usage[i-1] < self.threshold_mb:
+                        increasing = False
+                        break
+                if increasing:
+                    self.epochs_increasing += 1
+                    logger.warning(f"Augmentation continue de mémoire (> {self.threshold_mb}MB) détectée: {self.epochs_increasing}/{self.patience}")
+                    if self.epochs_increasing >= self.patience:
+                        logger.error(f"Fuite mémoire suspectée - arrêt de l'entraînement")
+                        self.model.stop_training = True
+                else:
+                    self.epochs_increasing = 0
 
-    pipeline_logger.info("Début de l'exécution du pipeline.")
-    success = True
-    
-    # Step 1: Run hyperparameter search if requested
-    if args.hyperparameter_search:
-        pipeline_logger.info("Lancement de la recherche d'hyperparamètres avec early stopping (F1≥0.70)...")
-        # Run the standalone function that implements early stopping
-        run_hyperparameter_search()
-        pipeline_logger.info("Recherche d'hyperparamètres terminée. Les meilleurs paramètres seront utilisés pour l'entraînement.")
-    
-    # Step 2: Download data if not skipped
-    if not args.skip_download:
-        if not run_download_data():
-            pipeline_logger.warning("Problème lors du téléchargement des données, mais continue le pipeline...")
-            success = False
-    else:
-        pipeline_logger.info("Étape de téléchargement des données sautée.")
-    
-    # Step 3: Run training if not skipped
-    if not args.skip_training:
-        pipeline_logger.info("Début de l'entraînement avec les hyperparamètres" + 
-                           (" optimisés" if args.hyperparameter_search else ""))
-        if not run_training():
-            pipeline_logger.error("L'entraînement a échoué. L'évaluation risque de ne pas fonctionner.")
-            success = False
-    else:
-        pipeline_logger.info("Étape d'entraînement sautée.")
-    
-    # Step 4: Run evaluation if not skipped
-    if not args.skip_evaluation:
-        if not run_evaluation():
-            pipeline_logger.error("L'évaluation a échoué.")
-            success = False
-    else:
-        pipeline_logger.info("Étape d'évaluation sautée.")
-    
-    # Final report
-    if success:
-        pipeline_logger.info("Exécution du pipeline terminée avec succès.")
-    else:
-        pipeline_logger.warning("Exécution du pipeline terminée avec des erreurs. Consultez les logs pour plus de détails.")
+class MetricsCallback(Callback):
+    # ... (code inchangé) ...
+    def __init__(self, validation_data, threshold=0.5):
+        super(MetricsCallback, self).__init__()
+        self.validation_data = validation_data
+        self.threshold = threshold
+        self.val_f1_scores = []
+        self.best_val_f1 = 0
+        self.best_val_loss = float('inf')
+        self.epochs_without_improvement = 0
 
+    def on_epoch_end(self, epoch, logs=None):
+        logs = logs or {}
+        x_val, y_val = self.validation_data
+        y_pred = self.model.predict(x_val)
+        y_pred_direction = y_pred[0] if isinstance(y_pred, list) else y_pred
+        y_val_direction = y_val[0] if isinstance(y_val, list) or isinstance(y_val, tuple) else y_val
+        y_pred_classes = (y_pred_direction > self.threshold).astype(int)
+        val_f1 = f1_score(y_val_direction, y_pred_classes, average='weighted', zero_division=0)
+        val_precision = precision_score(y_val_direction, y_pred_classes, average='weighted', zero_division=0)
+        val_recall = recall_score(y_val_direction, y_pred_classes, average='weighted', zero_division=0)
+        val_accuracy = accuracy_score(y_val_direction, y_pred_classes)
+        logs['val_f1_score'] = val_f1
+        logs['val_precision'] = val_precision
+        logs['val_recall'] = val_recall
+        logs['val_accuracy'] = val_accuracy
+        self.val_f1_scores.append(val_f1)
+        logger.info(f"Époque {epoch+1}: val_loss = {logs.get('val_loss', 'N/A'):.4f}, val_accuracy = {val_accuracy:.4f}, val_f1_score = {val_f1:.4f}")
+        if val_f1 > self.best_val_f1:
+            improvement = val_f1 - self.best_val_f1
+            self.best_val_f1 = val_f1
+            logger.info(f"Amélioration du F1 score: +{improvement:.4f} (nouveau meilleur: {val_f1:.4f})")
+            self.epochs_without_improvement = 0
+        else:
+            self.epochs_without_improvement += 1
+        current_val_loss = logs.get('val_loss', float('inf'))
+        if current_val_loss < self.best_val_loss:
+            self.best_val_loss = current_val_loss
+        if (epoch + 1) % 5 == 0 or epoch == 0:
+            logger.info(f"Progression après {epoch+1} époques:")
+            logger.info(f"  Meilleur val_f1_score: {self.best_val_f1:.4f}")
+            logger.info(f"  Meilleure val_loss: {self.best_val_loss:.4f}")
+            logger.info(f"  Époques sans amélioration du F1: {self.epochs_without_improvement}")
+
+
+# --- Fonction train_model (MODIFIÉE pour l'appel à split_data) ---
+def train_model(args):
+    """
+    Entraîne un modèle LSTM pour la prédiction des prix (version corrigée utilisant args)
+    """
+    # ... (Extraction des paramètres depuis args comme avant) ...
+    symbol = args.symbol
+    timeframe = args.timeframe
+    data_dir_path = args.data_path
+    model_path = args.model_path
+    epochs = args.epochs
+    batch_size_arg = args.batch_size
+    lstm_units_str = args.lstm_units
+    dropout_arg = args.dropout
+    learning_rate_arg = args.learning_rate
+    use_attention_arg = args.use_attention
+    optimizer_arg = args.optimizer
+    use_early_stopping = args.use_early_stopping
+    validation_split_arg = args.validation_split # Garder la valeur originale de l'argument ligne de commande
+    sequence_length_arg = args.sequence_length
+    test_size = args.test_size
+    random_state = args.random_state
+    feature_scaler = args.feature_scaler
+    train_val_split_method = args.train_val_split_method
+    l1_reg_arg = args.l1_reg
+    l2_reg_arg = args.l2_reg
+    patience_arg = args.patience
+
+    logger.info(f"Début de l'entraînement du modèle pour {symbol} {timeframe}")
+
+    # --- 1. Chargement et Validation des Paramètres ---
+    # ... (Logique de priorité inchangée) ...
+    default_params = LSTM_DEFAULT_PARAMS
+    optimized_params = {}
+    try:
+        optimized_params_path = os.path.join("config", "optimized_params.json")
+        if os.path.exists(optimized_params_path):
+            with open(optimized_params_path, 'r') as f:
+                all_optimized_params = json.load(f)
+            if timeframe in all_optimized_params:
+                 optimized_params = all_optimized_params[timeframe]
+                 logger.info(f"Paramètres optimisés chargés pour {timeframe}")
+            else:
+                 logger.info(f"Aucun paramètre optimisé trouvé pour timeframe {timeframe}")
+    except Exception as e:
+        logger.warning(f"Erreur lors du chargement des paramètres optimisés: {str(e)}")
+
+    def get_final_param(cmd_value, opt_key, default_key, default_value, is_list=False, is_bool=False):
+        # ... (Logique inchangée) ...
+        if cmd_value is not None and cmd_value != default_params.get(default_key, default_value):
+            logger.info(f"Utilisation de '{opt_key}' depuis la ligne de commande: {cmd_value}")
+            if is_list and isinstance(cmd_value, str):
+                try:
+                    return [int(unit) for unit in cmd_value.split(',')]
+                except ValueError:
+                    logger.warning(f"Format lstm_units invalide ('{cmd_value}'), utilisation du défaut.")
+                    return default_params.get(default_key, default_value)
+            return cmd_value
+        elif opt_key in optimized_params:
+            opt_val = optimized_params[opt_key]
+            if opt_val is not None:
+                 logger.info(f"Utilisation de '{opt_key}' depuis les paramètres optimisés: {opt_val}")
+                 if is_list and not isinstance(opt_val, list):
+                      logger.warning(f"Paramètre optimisé '{opt_key}' n'est pas une liste, tentative de conversion.")
+                      try:
+                           return [int(u) for u in str(opt_val).split(',')]
+                      except:
+                           return default_params.get(default_key, default_value)
+                 return opt_val
+            else:
+                 logger.warning(f"Valeur optimisée pour '{opt_key}' est None, utilisation du défaut.")
+                 return default_params.get(default_key, default_value)
+        else:
+            final_value = default_params.get(default_key, default_value)
+            logger.info(f"Utilisation de '{opt_key}' par défaut: {final_value}")
+            return final_value
+
+    final_lstm_units = get_final_param(lstm_units_str, 'lstm_units', 'lstm_units', default_params.get('lstm_units', [128, 64, 32]), is_list=True)
+    final_dropout = get_final_param(dropout_arg, 'dropout', 'dropout_rate', default_params.get('dropout_rate', 0.2))
+    final_learning_rate = get_final_param(learning_rate_arg, 'learning_rate', 'learning_rate', default_params.get('learning_rate', 0.001))
+    final_optimizer = get_final_param(optimizer_arg, 'optimizer', 'optimizer', default_params.get('optimizer', "adam"))
+    final_use_attention = get_final_param(use_attention_arg, 'use_attention', 'use_attention', default_params.get('use_attention', False), is_bool=True)
+    final_sequence_length = get_final_param(sequence_length_arg, 'sequence_length', 'sequence_length', default_params.get('sequence_length', 60))
+    final_batch_size = get_final_param(batch_size_arg, 'batch_size', 'batch_size', default_params.get('batch_size', 64))
+    # Utiliser la valeur finale de l'argument --validation_split pour la division
+    final_validation_size = get_final_param(validation_split_arg, 'validation_size', 'validation_split', default_params.get('validation_split', 0.2))
+    final_l1_reg = get_final_param(l1_reg_arg, 'l1_reg', 'l1_regularization', default_params.get('l1_regularization', 0.0001))
+    final_l2_reg = get_final_param(l2_reg_arg, 'l2_reg', 'l2_regularization', default_params.get('l2_regularization', 0.0001))
+    final_patience = get_final_param(patience_arg, 'patience', 'early_stopping_patience', default_params.get('early_stopping_patience', 10))
+
+    logger.info("Paramètres finaux pour l'entraînement:")
+    # ... (logs des paramètres finaux) ...
+    logger.info(f"- Unités LSTM: {final_lstm_units}")
+    logger.info(f"- Dropout: {final_dropout}")
+    logger.info(f"- Taux d'apprentissage: {final_learning_rate}")
+    logger.info(f"- Optimiseur: {final_optimizer}")
+    logger.info(f"- Utiliser Attention: {final_use_attention}")
+    logger.info(f"- Longueur Séquence: {final_sequence_length}")
+    logger.info(f"- Taille Batch: {final_batch_size}")
+    logger.info(f"- Split Validation: {final_validation_size}") # Log de la valeur utilisée
+    logger.info(f"- Régularisation L1: {final_l1_reg}, L2: {final_l2_reg}")
+    logger.info(f"- Patience EarlyStopping: {final_patience}")
+
+
+    # --- 2. Chargement et Préparation des Données ---
+    df = load_data(data_dir_path, symbol, timeframe)
+    feature_engineering = FeatureEngineering(save_scalers=True)
+    data_with_features = feature_engineering.create_features(df)
+    normalized_data = feature_engineering.scale_features(
+        data_with_features,
+        is_training=True,
+        method=feature_scaler,
+        feature_group=f"{symbol}_{timeframe}"
+    )
+
+    # --- 3. Vérification de Cohérence des Caractéristiques ---
+    # ... (code de vérification inchangé) ...
+    actual_features = list(normalized_data.columns)
+    expected_features = FIXED_FEATURES
+    missing_features = [f for f in expected_features if f not in actual_features]
+    extra_features = [f for f in actual_features if f not in expected_features]
+    order_correct = False
+    if not missing_features and not extra_features:
+         order_correct = (actual_features == expected_features)
+
+    if missing_features or extra_features or not order_correct:
+        error_msg = "Caractéristiques incompatibles détectées après normalisation:\n"
+        # ... (logique d'erreur et réharmonisation) ...
+        logger.warning("Tentative de réharmonisation des caractéristiques...")
+        try:
+            normalized_data = normalized_data.reindex(columns=FIXED_FEATURES, fill_value=0)
+            if normalized_data.shape[1] == len(FIXED_FEATURES):
+                 logger.info(f"Réharmonisation réussie avec {len(normalized_data.columns)} caractéristiques")
+            else:
+                 raise ValueError("Échec réharmonisation: dimensions incorrectes")
+        except Exception as e:
+            error_detail = f"Échec de la réharmonisation: {str(e)}"
+            logger.error(error_detail)
+            raise ValueError(f"Impossible de continuer: {error_detail}")
+
+
+    # --- 4. Division des Données (Workflow Corrigé) ---
+    logger.info("Division des données en ensembles train/validation/test...")
+    split_result = split_data(
+        normalized_data,
+        sequence_length=final_sequence_length,
+        validation_size=final_validation_size,
+        test_size=test_size,
+        random_state=random_state
+    )
+    train_df = split_result['train']
+    val_df = split_result['validation']
+    test_df = split_result['test']
+    logger.info("Génération des séquences pour l'entraînement...")
+    X_train, y_train = feature_engineering.create_multi_horizon_data(train_df, sequence_length=final_sequence_length, is_training=True)
+    X_val, y_val = feature_engineering.create_multi_horizon_data(val_df, sequence_length=final_sequence_length, is_training=True)
+    X_test, y_test = feature_engineering.create_multi_horizon_data(test_df, sequence_length=final_sequence_length, is_training=True)
+
+    # --- 5. Validation des Dimensions ---
+    # ... (code de validation inchangé) ...
+    logger.info("=== Dimensions et types des données d'entraînement ===")
+    logger.info(f"X_train: shape={X_train.shape}, dtype={X_train.dtype}")
+    if isinstance(y_train, list) or isinstance(y_train, tuple):
+        for i, y in enumerate(y_train): logger.info(f"y_train[{i}]: shape={y.shape}, dtype={y.dtype}")
+    else: logger.info(f"y_train: shape={y_train.shape}, dtype={y_train.dtype}")
+    logger.info("=== Dimensions et types des données de validation ===")
+    logger.info(f"X_val: shape={X_val.shape}, dtype={X_val.dtype}")
+    if isinstance(y_val, list) or isinstance(y_val, tuple):
+        for i, y in enumerate(y_val): logger.info(f"y_val[{i}]: shape={y.shape}, dtype={y.dtype}")
+    else: logger.info(f"y_val: shape={y_val.shape}, dtype={y_val.dtype}")
+    try:
+        assert X_train.shape[1] == final_sequence_length, f"Dimension temporelle X_train: {X_train.shape[1]} != {final_sequence_length}"
+        assert X_val.shape[1] == final_sequence_length, f"Dimension temporelle X_val: {X_val.shape[1]} != {final_sequence_length}"
+        assert X_test.shape[1] == final_sequence_length, f"Dimension temporelle X_test: {X_test.shape[1]} != {final_sequence_length}"
+        expected_features_count = len(FIXED_FEATURES)
+        assert X_train.shape[2] == expected_features_count, f"Nb caractéristiques X_train: {X_train.shape[2]} != {expected_features_count}"
+        assert X_val.shape[2] == expected_features_count, f"Nb caractéristiques X_val: {X_val.shape[2]} != {expected_features_count}"
+        assert X_test.shape[2] == expected_features_count, f"Nb caractéristiques X_test: {X_test.shape[2]} != {expected_features_count}"
+        if isinstance(y_train, list) or isinstance(y_train, tuple):
+            for i, y in enumerate(y_train): assert y.shape[0] == X_train.shape[0], f"Incohérence X_train/y_train[{i}]"
+        else: assert y_train.shape[0] == X_train.shape[0], "Incohérence X_train/y_train"
+        if isinstance(y_val, list) or isinstance(y_val, tuple):
+            for i, y in enumerate(y_val): assert y.shape[0] == X_val.shape[0], f"Incohérence X_val/y_val[{i}]"
+        else: assert y_val.shape[0] == X_val.shape[0], "Incohérence X_val/y_val"
+        logger.info("✅ Validation des dimensions: Toutes les vérifications ont réussi")
+    except AssertionError as e:
+         logger.critical(f"ERREUR CRITIQUE DE DIMENSION: {str(e)}")
+         raise ValueError(f"Arrêt de l'entraînement: {str(e)}")
+
+
+    # --- 6. Création du Modèle ---
+    # ... (code inchangé) ...
+    input_shape = (final_sequence_length, X_train.shape[2])
+    model_kwargs = {
+        'dropout': final_dropout,
+        'l1_reg': final_l1_reg,
+        'l2_reg': final_l2_reg
+    }
+    if final_use_attention:
+        model = create_attention_lstm_model(input_shape, final_lstm_units, **model_kwargs)
+        logger.info(f"Modèle LSTM avec attention créé: {final_lstm_units}")
+    else:
+        model = create_lstm_model(input_shape, final_lstm_units, **model_kwargs)
+        logger.info(f"Modèle LSTM standard créé: {final_lstm_units}")
+
+
+    # --- 7. Configuration de l'Optimiseur ---
+    # ... (code inchangé) ...
+    if final_optimizer.lower() == 'adam':
+        opt = Adam(learning_rate=final_learning_rate)
+    elif final_optimizer.lower() == 'rmsprop':
+        opt = RMSprop(learning_rate=final_learning_rate)
+    else:
+        opt = Adam(learning_rate=final_learning_rate)
+
+
+    # --- 8. Compilation du Modèle ---
+    # ... (code inchangé) ...
+    model.compile(optimizer=opt, loss='binary_crossentropy', metrics=['accuracy'])
+    logger.info("Modèle compilé.")
+
+
+    # --- 9. Callbacks ---
+    # ... (code inchangé) ...
+    callbacks = []
+    metrics_callback = MetricsCallback(validation_data=(X_val, y_val), threshold=0.5)
+    callbacks.append(metrics_callback)
+    model_path_keras = model_path
+    if model_path and not model_path.endswith('.keras'):
+        model_path_keras = os.path.splitext(model_path)[0] + '.keras'
+        logger.warning(f"ModelCheckpoint utilisera l'extension .keras: {model_path_keras}")
+    if model_path_keras:
+        os.makedirs(os.path.dirname(model_path_keras), exist_ok=True)
+        checkpoint = ModelCheckpoint(model_path_keras, monitor='val_loss', save_best_only=True, mode='min', verbose=1)
+        callbacks.append(checkpoint)
+    csv_log_path = os.path.splitext(model_path_keras)[0] + '_history.csv' if model_path_keras else f'training_{symbol}_{timeframe}_history.csv'
+    os.makedirs(os.path.dirname(csv_log_path), exist_ok=True)
+    csv_logger = CSVLogger(csv_log_path, append=True)
+    callbacks.append(csv_logger)
+    logger.info(f"Logging CSV activé vers: {csv_log_path}")
+    if use_early_stopping:
+        early_stopping_loss = EarlyStopping(monitor='val_loss', patience=final_patience, restore_best_weights=True, mode='min', verbose=1)
+        callbacks.append(early_stopping_loss)
+        # early_stopping_f1 = EarlyStopping(monitor='val_f1_score', patience=final_patience + 5, restore_best_weights=True, mode='max', verbose=1)
+        # callbacks.append(early_stopping_f1)
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=final_patience // 2, min_lr=1e-6, verbose=1)
+    callbacks.append(reduce_lr)
+    memory_leak_callback = EarlyStoppingOnMemoryLeak(patience=3, threshold_mb=300)
+    callbacks.append(memory_leak_callback)
+
+
+    # --- 10. Calcul des Poids de Classe ---
+    # ... (code inchangé) ...
+    class_weights = None
+    try:
+        y_target_for_weights = y_train[0] if isinstance(y_train, list) else y_train
+        y_train_direction = y_target_for_weights.flatten().astype(int)
+        unique_classes = np.unique(y_train_direction)
+        if len(unique_classes) == 2:
+            class_weights_values = compute_class_weight('balanced', classes=unique_classes, y=y_train_direction)
+            class_weights = {int(unique_classes[i]): float(class_weights_values[i]) for i in range(len(unique_classes))}
+            logger.info(f"Poids des classes calculés: {class_weights}")
+        else:
+            logger.warning(f"Impossible de calculer les poids de classe ({len(unique_classes)} classes uniques).")
+    except Exception as e:
+        logger.warning(f"Erreur lors du calcul des poids de classe: {str(e)}")
+
+
+    # --- 11. Entraînement ---
+    logger.info("Début de l'entraînement du modèle...")
+    history = model.fit(
+        X_train, y_train,
+        epochs=epochs,
+        batch_size=final_batch_size,
+        validation_data=(X_val, y_val),
+        # class_weight=class_weights,  # Ensure this line is removed or commented out
+        callbacks=callbacks,
+        verbose=args.verbose
+    )
+
+    # --- 12. Évaluation Finale et Résumé ---
+    # ... (code inchangé) ...
+    logger.info("Évaluation finale sur les données de test...")
+    test_eval_results = model.evaluate(X_test, y_test, verbose=0)
+    test_loss = test_eval_results[0]
+    test_acc = test_eval_results[1]
+    y_pred_test = model.predict(X_test)
+    y_pred_test_classes = (y_pred_test[0] > 0.5).astype(int) if isinstance(y_pred_test, list) else (y_pred_test > 0.5).astype(int)
+    y_test_direction = y_test[0] if isinstance(y_test, list) else y_test
+    test_f1 = f1_score(y_test_direction, y_pred_test_classes, average='weighted', zero_division=0)
+    logger.info("==========================================")
+    logger.info("Résumé final de l'entraînement du modèle:")
+    logger.info(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_acc:.4f}, Test F1: {test_f1:.4f}")
+    best_val_loss = min(history.history.get('val_loss', [float('inf')]))
+    best_val_f1 = max(metrics_callback.val_f1_scores) if metrics_callback.val_f1_scores else 0
+    logger.info(f"Meilleure val_loss: {best_val_loss:.4f}")
+    logger.info(f"Meilleur val_f1_score: {best_val_f1:.4f}")
+    if best_val_f1 >= 0.75: logger.info("✅ Performance cible atteinte: F1 score ≥ 0.75")
+    elif best_val_f1 >= 0.65: logger.info("⚠️ Performance acceptable: 0.65 ≤ F1 score < 0.75")
+    else: logger.warning("❌ Performance insuffisante: F1 score < 0.65")
+    initial_val_loss = history.history.get('val_loss', [0])[0]
+    final_val_loss = history.history.get('val_loss', [0])[-1]
+    if initial_val_loss > 0:
+         loss_improvement = (initial_val_loss - final_val_loss) / initial_val_loss * 100
+         if loss_improvement >= 30: logger.info(f"✅ Bonne convergence: Réduction de la perte de {loss_improvement:.1f}%")
+         elif loss_improvement >= 10: logger.info(f"⚠️ Convergence modérée: Réduction de la perte de {loss_improvement:.1f}%")
+         else: logger.warning(f"❌ Faible convergence: Réduction de la perte de seulement {loss_improvement:.1f}%")
+    else: logger.warning("Impossible de calculer l'amélioration de la perte.")
+    logger.info("==========================================")
+
+    return {
+        "test_loss": test_loss,
+        "test_accuracy": test_acc,
+        "test_f1_score": test_f1,
+        "best_val_loss": best_val_loss,
+        "best_val_f1": best_val_f1,
+        "trained_epochs": len(history.history['loss'])
+    }
+
+# --- Point d'entrée principal (MODIFIÉ pour définir le chemin par défaut) ---
 if __name__ == "__main__":
-    run_pipeline()
+    args = parse_args()
+    # Set default model path if none provided
+    if args.model_path is None:
+        default_model_dir = r"c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\trained_models"
+        os.makedirs(default_model_dir, exist_ok=True)
+        args.model_path = os.path.join(default_model_dir, f"{args.symbol}_{args.timeframe}.keras")
+        logger.info(f"Default model path set to: {args.model_path}")
+    try:
+        train_model(args)
+    except ValueError as ve:
+        logger.critical(f"Erreur critique pendant l'entraînement: {ve}")
+        sys.exit(1)
+    except Exception as e:
+        logger.critical(f"Erreur inattendue pendant l'entraînement: {e}", exc_info=True)
+        sys.exit(1)

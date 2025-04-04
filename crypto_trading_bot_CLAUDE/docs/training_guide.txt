@@ -5,8 +5,7 @@ GUIDE ADAPTÃ‰ AU BOT DE TRADING CRYPTO
 ==============================================
 
 Ce guide dÃ©taille les Ã©tapes spÃ©cifiques pour utiliser les fonctionnalitÃ©s de votre bot, de l'entraÃ®nement au backtesting.
-
---------------------------------------------------
+python "c:/Users/timot/OneDrive/Bureau/BOT TRADING BIG 2025/crypto_trading_bot_CLAUDE/run_training_pipeline.py" --symbol BTCUSDT --timeframe 15m --data_path "c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\market_data"
 1. TÃ‰LÃ‰CHARGEMENT DES DONNÃ‰ES HISTORIQUES
 --------------------------------------------------
 Utilisez le script data_loader.py pour tÃ©lÃ©charger les donnÃ©es depuis Binance:

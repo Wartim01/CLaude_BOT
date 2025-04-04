@@ -12,6 +12,7 @@ from datetime import datetime
 from trading_bot import TradingBot
 from config.config import CONFIG_PATH, load_config
 from utils.logger import setup_logger
+from utils.path_utils import get_path, build_path, get_market_data_path, get_model_path
 
 logger = setup_logger("main")
 
@@ -59,6 +60,9 @@ def start_bot(config_path=CONFIG_PATH, headless=False):
     finally:
         if bot.running:
             bot.stop()
+
+def get_data_for_symbol(symbol, timeframe):
+    return get_market_data_path(symbol, timeframe)
 
 if __name__ == "__main__":
     # Setup argument parser
