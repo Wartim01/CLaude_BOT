@@ -13,12 +13,11 @@ from urllib.parse import urlencode
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
 
-from config.config import (
-    ACTIVE_API_KEY,           # Changed from BINANCE_API_KEY
-    ACTIVE_API_SECRET,        # Changed from BINANCE_API_SECRET
-    USE_TESTNET,
-    MAX_API_RETRIES,
-    API_RETRY_DELAY
+from config.config import (  # Updated: import all needed variables from config/config
+    API_KEYS,
+    USE_TESTNET,                 # Changed from testnet to USE_TESTNET
+    MAX_API_RETRIES,             # Previously imported from config.trading_params
+    API_RETRY_DELAY              # Previously imported from config.trading_params
 )
 from utils.logger import setup_logger
 from utils.exceptions import ExchangeAPIException
@@ -37,9 +36,11 @@ class BinanceConnector:
         Args:
             use_testnet: Override config to use testnet or not
         """
-        self.api_key = ACTIVE_API_KEY
-        self.api_secret = ACTIVE_API_SECRET
         self.use_testnet = USE_TESTNET if use_testnet is None else use_testnet
+        network = "testnet" if self.use_testnet else "production"
+        # Accéder aux clés via le dictionnaire API_KEYS
+        self.api_key = API_KEYS["binance"][network]["API_KEY"]
+        self.api_secret = API_KEYS["binance"][network]["API_SECRET"]
         
         self.base_url = "https://testnet.binance.vision/api" if self.use_testnet else "https://api.binance.com/api"
         self.wss_url = "wss://testnet.binance.vision/ws" if self.use_testnet else "wss://stream.binance.com:9443/ws"
@@ -79,7 +80,7 @@ class BinanceConnector:
         Returns:
             Signature encodée en hexadécimal
         """
-        query_string = urllib.parse.urlencode(params)
+        query_string = urlencode(params)
         signature = hmac.new(
             self.api_secret.encode('utf-8'),
             query_string.encode('utf-8'),

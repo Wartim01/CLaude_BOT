@@ -98,6 +98,11 @@ DEFAULT_CONFIG = {
     }
 }
 
+# API configuration
+USE_TESTNET = False
+MAX_API_RETRIES = 3         # Maximum number of API retries
+API_RETRY_DELAY = 1         # Delay (in seconds) for retry backoff
+
 # Export the API keys for use in other modules
 API_KEYS = {
     "binance": {
@@ -182,3 +187,18 @@ def _update_dict_recursively(target_dict: Dict, source_dict: Dict) -> None:
             _update_dict_recursively(target_dict[key], value)
         else:
             target_dict[key] = value
+
+# Explicitly export our variables for other modules.
+__all__ = [
+    "API_KEYS",
+    "USE_TESTNET",
+    "MAX_API_RETRIES",
+    "API_RETRY_DELAY",
+    "load_config",
+    "save_config",
+    "DATA_DIR",
+    "MODEL_DIR",
+    "BACKTEST_RESULTS_DIR",
+    "RESULTS_DIR",
+    "LOG_DIR"
+]

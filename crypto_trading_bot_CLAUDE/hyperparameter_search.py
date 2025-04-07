@@ -637,7 +637,7 @@ class LSTMHyperparameterOptimizer:
                 "sequence_length": 60,
                 "l1_regularization": 6.358e-5,
                 "l2_regularization": 0.001,
-                "epochs": 100,
+                "epochs": 30,
                 "early_stopping_patience": trial.suggest_int("early_stopping_patience", 5, 15),
                 "reduce_lr_patience": trial.suggest_int("reduce_lr_patience", 3, 7)
             }
@@ -658,13 +658,22 @@ class LSTMHyperparameterOptimizer:
         feature_dim = X_train.shape[2] if len(X_train.shape)==3 else X_train.shape[1]//60
         config = suggest_hyperparameters(trial, feature_dim)
         
+        # Calculate class weights based on the training labels
+        class_counts = np.bincount(y_train.flatten().astype(int))
+        class_weights = {
+            0: len(y_train) / (2 * class_counts[0]) if class_counts[0] > 0 else 1.0,
+            1: len(y_train) / (2 * class_counts[1]) if class_counts[1] > 0 else 1.0
+        }
+        
         # Utiliser directement ModelTrainer pour construire et entraîner le modèle
         trainer = ModelTrainer(config)
         history = trainer.train(
             X_train, y_train,
-            epochs=config["epochs"],
+            epochs=30,  # Fixed epochs value (30)
             batch_size=config["batch_size"],
-            verbose=0
+            verbose=0,
+            validation_data=(X_val, y_val),  # Added validation data for EarlyStopping and ReduceLROnPlateau
+            class_weight=class_weights
         )
         model = trainer.model
         # --- existing code continues ---
@@ -685,6 +694,7 @@ class LSTMHyperparameterOptimizer:
         trial.set_user_attr("val_loss", val_loss)
         trial.set_user_attr("f1_score", f1)
         trial.set_user_attr("params", config)
+        tf.keras.backend.clear_session()  # Libère la mémoire GPU/CPU
         return f1
 
     def _save_trials_history(self):

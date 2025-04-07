@@ -215,7 +215,7 @@ class MarketStateAnalyzer:
         else:
             return "sideways"
     
-    def _evaluate_market_favorability(self, trend_analysis: Dict, volatility_analysis: Dict, volume_analysis: Dict, regime: str) -> (bool, str):
+    def _evaluate_market_favorability(self, _trend_analysis: Dict, _volatility_analysis: Dict, volume_analysis: Dict, regime: str) -> tuple[bool, str]:
         """
         Évalue si le marché est favorable pour le trading à partir des analyses de tendance, de volatilité et de volume
         

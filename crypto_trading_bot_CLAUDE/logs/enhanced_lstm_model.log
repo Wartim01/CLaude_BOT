@@ -56,3 +56,137 @@
 2025-04-01 13:10:47,559 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
 2025-04-01 13:10:47,559 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
 2025-04-04 09:23:31,212 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-04 09:41:43,862 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-04 09:42:41,880 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-04 09:43:32,298 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-04 09:43:41,938 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=2.9380279387035354e-06, l2_reg=2.9375384576328313e-06
+2025-04-04 09:49:06,248 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-04 09:49:16,372 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=2.9380279387035354e-06, l2_reg=2.9375384576328313e-06
+2025-04-04 09:55:56,587 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-04 09:56:06,815 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=2.9380279387035354e-06, l2_reg=2.9375384576328313e-06
+2025-04-04 09:56:06,815 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 09:57:44,270 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-04 09:57:54,332 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=2.9380279387035354e-06, l2_reg=2.9375384576328313e-06
+2025-04-04 09:57:54,333 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 10:01:19,467 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-04 10:01:30,169 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=2.9380279387035354e-06, l2_reg=2.9375384576328313e-06
+2025-04-04 10:01:30,170 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 10:01:30,170 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 10:05:44,842 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[224], dropout=0.2545474901621302, learning_rate=2.3270677083837777e-05, l1_reg=8.179499475211674e-06, l2_reg=3.752055855124284e-05
+2025-04-04 10:05:44,842 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 10:05:44,843 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 10:08:29,469 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[152, 76, 76], dropout=0.25990213464750794, learning_rate=0.00010677482709481354, l1_reg=5.987474910461405e-05, l2_reg=1.3783237455007196e-06
+2025-04-04 10:08:29,470 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 10:08:29,470 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 10:14:05,249 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[122], dropout=0.40526990795364704, learning_rate=7.591104805282687e-05, l1_reg=2.3233503515390116e-06, l2_reg=3.058656666978529e-05
+2025-04-04 10:14:05,250 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 10:14:05,251 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 10:15:53,550 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[169], dropout=0.49087538832936756, learning_rate=0.0003550304858128307, l1_reg=0.0006584106160121611, l2_reg=0.00048359527764659497
+2025-04-04 10:15:53,550 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 10:15:53,551 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 10:18:30,709 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[139], dropout=0.4486212527455788, learning_rate=5.170191786366994e-05, l1_reg=6.963114377829292e-06, l2_reg=4.247058562261871e-05
+2025-04-04 10:18:30,709 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 10:18:30,710 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 10:19:47,947 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[65, 32, 32], dropout=0.4120572031542852, learning_rate=0.0002870875348195468, l1_reg=0.00020597335357437193, l2_reg=1.6677615430197902e-06
+2025-04-04 10:19:47,947 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 10:19:47,948 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 10:21:42,630 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[124], dropout=0.41888185350141927, learning_rate=0.00018841476921545086, l1_reg=0.0004588156549160974, l2_reg=2.6100256506134754e-05
+2025-04-04 10:21:42,631 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 10:21:42,631 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 10:23:32,114 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[164, 82], dropout=0.20762573802322856, learning_rate=1.6435497475111308e-05, l1_reg=1.2424747083660194e-06, l2_reg=8.11392957263784e-05
+2025-04-04 10:23:32,115 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 10:23:32,116 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 10:28:17,550 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[108], dropout=0.28692543587413044, learning_rate=2.101079931010355e-05, l1_reg=0.0006153085601625311, l2_reg=0.00026568139241144923
+2025-04-04 10:28:17,550 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 10:28:17,551 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 10:30:01,793 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[214, 107], dropout=0.3386932542828202, learning_rate=0.0007321173243252607, l1_reg=1.5609210968907196e-05, l2_reg=6.714613725318954e-06
+2025-04-04 10:30:01,793 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 10:30:01,794 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 10:37:55,047 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[188, 94, 94], dropout=0.33198476135848476, learning_rate=0.00014135362144715652, l1_reg=7.284391582723402e-05, l2_reg=1.1389813462198596e-06
+2025-04-04 10:37:55,048 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 10:37:55,048 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 10:42:43,477 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-04 10:42:53,591 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=2.9380279387035354e-06, l2_reg=2.9375384576328313e-06
+2025-04-04 10:42:53,592 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 10:42:53,592 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 10:45:51,019 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-04 10:46:01,266 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[136, 68, 68], dropout=0.4195981825434215, learning_rate=0.00015751320499779721, l1_reg=2.9380279387035354e-06, l2_reg=2.9375384576328313e-06
+2025-04-04 10:46:01,267 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 10:46:01,267 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 10:49:47,651 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[224], dropout=0.2545474901621302, learning_rate=2.3270677083837777e-05, l1_reg=8.179499475211674e-06, l2_reg=3.752055855124284e-05
+2025-04-04 10:49:47,652 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 10:49:47,652 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 10:51:47,130 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[152, 76, 76], dropout=0.25990213464750794, learning_rate=0.00010677482709481354, l1_reg=5.987474910461405e-05, l2_reg=1.3783237455007196e-06
+2025-04-04 10:51:47,131 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 10:51:47,131 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 10:57:01,956 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[122], dropout=0.40526990795364704, learning_rate=7.591104805282687e-05, l1_reg=2.3233503515390116e-06, l2_reg=3.058656666978529e-05
+2025-04-04 10:57:01,956 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 10:57:01,957 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 10:58:31,742 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[169], dropout=0.49087538832936756, learning_rate=0.0003550304858128307, l1_reg=0.0006584106160121611, l2_reg=0.00048359527764659497
+2025-04-04 10:58:31,742 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 10:58:31,743 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 11:00:25,271 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[139], dropout=0.4486212527455788, learning_rate=5.170191786366994e-05, l1_reg=6.963114377829292e-06, l2_reg=4.247058562261871e-05
+2025-04-04 11:00:25,271 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 11:00:25,272 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 11:01:25,477 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[65, 32, 32], dropout=0.4120572031542852, learning_rate=0.0002870875348195468, l1_reg=0.00020597335357437193, l2_reg=1.6677615430197902e-06
+2025-04-04 11:01:25,478 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 11:01:25,479 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 11:02:56,371 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[124], dropout=0.41888185350141927, learning_rate=0.00018841476921545086, l1_reg=0.0004588156549160974, l2_reg=2.6100256506134754e-05
+2025-04-04 11:02:56,372 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 11:02:56,372 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 11:04:04,768 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[164, 82], dropout=0.20762573802322856, learning_rate=1.6435497475111308e-05, l1_reg=1.2424747083660194e-06, l2_reg=8.11392957263784e-05
+2025-04-04 11:04:04,768 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 11:04:04,769 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 11:07:26,011 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[108], dropout=0.28692543587413044, learning_rate=2.101079931010355e-05, l1_reg=0.0006153085601625311, l2_reg=0.00026568139241144923
+2025-04-04 11:07:26,012 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 11:07:26,012 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 11:09:07,201 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[214, 107], dropout=0.4908611332363598, learning_rate=0.0007744587501347516, l1_reg=8.322724281704741e-05, l2_reg=0.0005284384205738857
+2025-04-04 11:09:07,202 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 11:09:07,202 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 11:15:29,255 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[188, 94], dropout=0.48374291599211394, learning_rate=5.320779032527568e-05, l1_reg=1.4111117206857276e-05, l2_reg=0.0009616810808090185
+2025-04-04 11:15:29,256 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 11:15:29,256 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 11:19:17,837 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[177], dropout=0.46470181242768055, learning_rate=0.0005322560593458855, l1_reg=1.766339272261294e-05, l2_reg=6.659703893931952e-06
+2025-04-04 11:19:17,838 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 11:19:17,838 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 11:20:56,451 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[256], dropout=0.354491124206283, learning_rate=4.478988924252087e-05, l1_reg=5.2619058346144065e-06, l2_reg=0.0001773653298196444
+2025-04-04 11:20:56,452 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 11:20:56,452 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 11:24:22,363 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[252, 126], dropout=0.33863442752033845, learning_rate=0.0003307292855311429, l1_reg=3.860067367323165e-05, l2_reg=0.0001798209445013635
+2025-04-04 11:24:22,364 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 11:24:22,364 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 11:32:57,916 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[251], dropout=0.35519226225047484, learning_rate=1.0519095028133849e-05, l1_reg=0.00022035146000827136, l2_reg=0.00018364845818099026
+2025-04-04 11:32:57,917 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 11:32:57,918 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 11:37:44,888 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[209, 104], dropout=0.34541473199720274, learning_rate=3.698780123639233e-05, l1_reg=0.00014601920314970504, l2_reg=0.0004605994473159608
+2025-04-04 11:37:44,889 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 11:37:44,889 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 11:43:45,413 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[86], dropout=0.3782470830273994, learning_rate=0.0008231721741646312, l1_reg=4.279051801851417e-06, l2_reg=8.974835513193227e-05
+2025-04-04 11:43:45,413 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 11:43:45,414 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 11:45:50,031 - enhanced_lstm_model - INFO - Model parameters: sequence_length=60, lstm_units=[232, 116], dropout=0.3130987912299136, learning_rate=0.00012213101502721942, l1_reg=2.2864506918313213e-05, l2_reg=1.1150950860431821e-05
+2025-04-04 11:45:50,031 - enhanced_lstm_model - INFO - Construction du modèle LSTM avec input_shape=(60, 89)
+2025-04-04 11:45:50,032 - enhanced_lstm_model - INFO - Dimensions explicites: sequence_length=60, features=89
+2025-04-04 11:53:35,928 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-04 11:53:56,067 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-04 11:55:56,218 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-04 11:56:21,595 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-04 11:56:54,036 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-04 11:57:23,790 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-04 12:01:37,892 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-04 12:02:11,761 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-04 12:04:51,184 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-04 12:05:24,055 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-04 12:06:36,608 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-05 13:08:30,096 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-05 13:09:32,216 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-05 13:10:14,132 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-05 13:10:56,173 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-05 13:11:33,946 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-05 13:17:43,320 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-06 08:53:56,133 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-06 08:55:36,790 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-06 08:59:23,666 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-06 09:40:08,612 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-06 09:41:04,106 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.
+2025-04-06 09:43:41,782 - enhanced_lstm_model - WARNING - Aucun GPU détecté. L'entraînement s'exécutera sur CPU.

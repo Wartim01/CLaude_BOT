@@ -153,7 +153,7 @@ class ModelTrainer:
         
         logger.info(f"Created model with parameters from config/optimization: {model_params}")
     
-    def train(self, X_train, y_train, epochs=100, batch_size=32, verbose=1, validation_data=None, callbacks=None):
+    def train(self, X_train, y_train, epochs=100, batch_size=32, verbose=1, validation_data=None, callbacks=None, class_weight=None):
         """
         Train the model on the provided data
         
@@ -165,6 +165,7 @@ class ModelTrainer:
             verbose: Verbosity mode
             validation_data: Validation data (features, labels)
             callbacks: List of Keras callbacks (creates default if None)
+            class_weight: Dictionary mapping class indices to a weight for the class
             
         Returns:
             Training history
@@ -191,7 +192,8 @@ class ModelTrainer:
             batch_size=batch_size,
             verbose=verbose,
             validation_data=validation_data,  # new parameter passed here
-            callbacks=callbacks
+            callbacks=callbacks,
+            class_weight=class_weight
         )
         
         return history

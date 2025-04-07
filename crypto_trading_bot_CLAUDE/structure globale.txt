@@ -4,7 +4,9 @@ Directory structure:
         ├── README.md
         ├── backtest.py
         ├── bot_cli.py
+        ├── check_features.py
         ├── concigne.txt
+        ├── data_generator.py
         ├── download_data.py
         ├── evaluate_model.py
         ├── hyperparameter_search.py
@@ -45,6 +47,7 @@ Directory structure:
         │   ├── config.py
         │   ├── feature_config.py
         │   ├── model_params.py
+        │   ├── optimized_params.json
         │   ├── trading_params.py
         │   └── __pycache__/
         ├── core/
@@ -66,12 +69,20 @@ Directory structure:
         │       ├── checkpoints/
         │       │   └── lstm_BTCUSDT_15m_checkpoint.keras
         │       ├── optimization/
-        │       │   └── trials_history_20250322.json
+        │       │   ├── best_params_20250323.json
+        │       │   ├── trials_history_20250322.json
+        │       │   ├── trials_history_20250323.json
+        │       │   └── trials_history_20250326.json
         │       └── scalers/
         │           ├── feature_config.json
+        │           ├── feature_list.json
         │           ├── feature_metadata.json
         │           ├── lstm_optim_standard_scaler.pkl
-        │           └── lstm_standard_scaler.pkl
+        │           ├── lstm_standard_scaler.pkl
+        │           └── backup_20250325_110915/
+        │               ├── feature_metadata.json
+        │               ├── lstm_optim_standard_scaler.pkl
+        │               └── lstm_standard_scaler.pkl
         ├── docs/
         │   ├── a faire.txt
         │   ├── feature_optimization.md
@@ -94,10 +105,18 @@ Directory structure:
         │   ├── volume.py
         │   └── __pycache__/
         ├── logs/
+        ├── models/
+        │   └── scalers/
+        │       ├── BTCUSDT_15m_standard_scaler.pkl
+        │       └── feature_metadata.json
+        ├── pipeline/
+        │   └── data_pipeline.py
         ├── risk/
         │   ├── market_risk_analyzer.py
         │   ├── position_sizer.py
         │   └── risk_manager.py
+        ├── scripts/
+        │   └── hyperparameter_search.py
         ├── strategies/
         │   ├── __init__.py
         │   ├── breakout.py
@@ -121,14 +140,20 @@ Directory structure:
         └── utils/
             ├── __init__.py
             ├── backtest_engine.py
+            ├── capture_all_features.py
+            ├── check_features.py
             ├── correlation_matrix.py
             ├── cross_market_signals.py
+            ├── data_splitting.py
             ├── data_utils.py
             ├── elliott_wave.py
             ├── encoding_converter.py
             ├── exceptions.py
+            ├── feature_analyzer.py
             ├── feature_consistency_check.py
             ├── feature_optimizer.py
+            ├── force_regenerate_features.py
+            ├── hyperparameter_utils.py
             ├── logger.py
             ├── market_indicators.py
             ├── market_risk_feed.py
@@ -138,10 +163,14 @@ Directory structure:
             ├── network_utils.py
             ├── notification_handler.py
             ├── notification_service.py
+            ├── path_utils.py
             ├── performance_analyzer.py
             ├── performance_metrics.py
             ├── prepare_validation_data.py
+            ├── regenerate_all_features.py
+            ├── subprocess_utils.py
             ├── threshold_dashboard.py
+            ├── update_feature_metadata.py
             ├── visualization.py
             ├── visualizer.py
             └── __pycache__/

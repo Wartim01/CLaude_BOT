@@ -14,9 +14,9 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from ai.models.feature_engineering import FeatureEngineering
-from data.data_manager import load_market_data
+from core.data_fetcher import MarketDataFetcher
 from utils.logger import setup_logger
-from config.feature_config import update_optimal_feature_count, get_optimal_feature_count
+from config.feature_config import update_optimal_feature_count, get_optimal_feature_count, DEFAULT_MIN_FEATURES, DEFAULT_MAX_FEATURES, DEFAULT_STEP_SIZE
 
 logger = setup_logger("feature_optimizer")
 
@@ -92,7 +92,7 @@ def run_feature_optimization(data_path: str, symbol: str = 'BTCUSDT',
         Dictionnaire avec les résultats d'optimisation
     """
     # Utiliser la configuration centralisée si les paramètres ne sont pas spécifiés
-    from config.feature_config import DEFAULT_MIN_FEATURES, DEFAULT_MAX_FEATURES, DEFAULT_STEP_SIZE
+    # The default constants are now imported at the module level.
     
     min_features = min_features if min_features is not None else DEFAULT_MIN_FEATURES
     max_features = max_features if max_features is not None else DEFAULT_MAX_FEATURES
@@ -100,7 +100,6 @@ def run_feature_optimization(data_path: str, symbol: str = 'BTCUSDT',
     
     logger.info(f"Démarrage de l'optimisation des caractéristiques pour {symbol} {timeframe}")
     
-    # Charger les données
     try:
         if os.path.exists(data_path):
             data = pd.read_csv(data_path, parse_dates=['timestamp'])
@@ -108,9 +107,26 @@ def run_feature_optimization(data_path: str, symbol: str = 'BTCUSDT',
             logger.info(f"Données chargées: {len(data)} lignes")
         else:
             logger.info(f"Fichier non trouvé: {data_path}. Tentative de chargement via DataLoader.")
-            data_loader = load_market_data()
-            data = data_loader.load_historical_data(symbol, timeframe)
-            logger.info(f"Données chargées via DataLoader: {len(data)} lignes")
+            # Création du DataFetcher en mode simulé (sans API)
+            data_loader = MarketDataFetcher(api_connector=None)
+            logger.info(f"Mode simulé activé - génération de données factices pour {symbol} {timeframe}")
+            
+            # Récupération des données simulées
+            market_data = data_loader.get_market_data(symbol, timeframe=timeframe, indicators=False)
+            
+            # Vérifier si les données du timeframe sont disponibles
+            if "primary_timeframe" in market_data and "ohlcv" in market_data["primary_timeframe"]:
+                data = market_data["primary_timeframe"]["ohlcv"]
+                logger.info(f"Données chargées via DataLoader: {len(data)} lignes")
+            else:
+                # Fallback option: créer une structure pour stocker temporairement les données
+                from utils.path_utils import get_market_data_path
+                temp_path = get_market_data_path(symbol, timeframe)
+                os.makedirs(os.path.dirname(temp_path), exist_ok=True)
+                
+                logger.warning(f"Données de timeframe {timeframe} non trouvées. Utilisation d'une structure vide.")
+                # Créer un DataFrame vide ou charger depuis une autre source
+                raise Exception(f"Impossible de charger les données pour {symbol} {timeframe}")
     except Exception as e:
         logger.error(f"Erreur lors du chargement des données: {str(e)}")
         return None
@@ -118,6 +134,7 @@ def run_feature_optimization(data_path: str, symbol: str = 'BTCUSDT',
     # Créer l'instance de FeatureEngineering avec auto-optimisation activée
     fe = FeatureEngineering(save_scalers=True, auto_optimize=True)
     
+
     # Exécuter l'optimisation
     try:
         optimization_results = fe.optimize_feature_count(
@@ -127,13 +144,14 @@ def run_feature_optimization(data_path: str, symbol: str = 'BTCUSDT',
             step_size=step_size,
             cv_folds=3
         )
-        
-        # Mise à jour de la configuration centralisée
+                # Mise à jour de la configuration centralisée
         update_optimal_feature_count(optimization_results)
         
+
         # Configuration complète du pipeline avec le nombre optimal de caractéristiques
         full_results = fe.optimize_and_configure(data)
         
+
         # Générer un graphique si demandé
         if plot_results:
             output_dir = os.path.join(root_dir, "data", "reports")
@@ -153,10 +171,17 @@ def run_feature_optimization(data_path: str, symbol: str = 'BTCUSDT',
                 f.write(f"Nombre optimal de caractéristiques: {optimization_results}\n\n")
                 f.write(f"TOP 20 CARACTÉRISTIQUES PAR IMPORTANCE:\n")
                 
-                # Liste des caractéristiques triées par importance
-                sorted_features = sorted(fe.feature_importances.items(), key=lambda x: x[1], reverse=True)
+ 
+                # Liste des caractéristiques triées par importance - Tri robuste
+                sorted_features = sorted(fe.feature_importances.items(), 
+                                        key=lambda x: x[1] if isinstance(x[1], (int, float)) else -1, 
+                                        reverse=True)
+                
                 for i, (feature, importance) in enumerate(sorted_features[:20], 1):
-                    f.write(f"{i:2d}. {feature}: {importance:.6f}\n")
+                    if isinstance(importance, (int, float)):
+                        f.write(f"{i:2d}. {feature}: {importance:.6f}\n")
+                    else:
+                        f.write(f"{i:2d}. {feature}: N/A (Invalid score: {type(importance)})\n")
                 
                 logger.info(f"Rapport généré: {report_path}")
         
@@ -181,6 +206,7 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
+
     # Si aucun chemin de données n'est fourni, utiliser le chemin par défaut
     if args.data is None:
         data_dir = os.path.join(root_dir, "data", "historical")

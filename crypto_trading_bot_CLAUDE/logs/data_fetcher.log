@@ -1,0 +1,3 @@
+2025-04-06 09:40:16,605 - data_fetcher - ERROR - Erreur lors de la récupération du prix actuel pour BTCUSDT: 'NoneType' object has no attribute 'get_recent_trades'
+2025-04-06 09:41:05,012 - data_fetcher - ERROR - Erreur lors de la récupération du prix actuel pour BTCUSDT: 'NoneType' object has no attribute 'get_recent_trades'
+2025-04-06 09:43:42,709 - data_fetcher - ERROR - Erreur lors de la récupération du prix actuel pour BTCUSDT: 'NoneType' object has no attribute 'get_recent_trades'

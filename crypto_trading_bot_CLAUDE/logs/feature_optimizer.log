@@ -1,0 +1,10 @@
+2025-04-06 09:40:16,604 - feature_optimizer - INFO - Démarrage de l'optimisation des caractéristiques pour BTCUSDT 1h
+2025-04-06 09:40:16,604 - feature_optimizer - INFO - Fichier non trouvé: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\historical\BTCUSDT_1h.csv. Tentative de chargement via DataLoader.
+2025-04-06 09:40:16,605 - feature_optimizer - ERROR - Erreur lors du chargement des données: name 'PRIMARY_TIMEFRAME' is not defined
+2025-04-06 09:41:05,010 - feature_optimizer - INFO - Démarrage de l'optimisation des caractéristiques pour BTCUSDT 1h
+2025-04-06 09:41:05,011 - feature_optimizer - INFO - Fichier non trouvé: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\historical\BTCUSDT_1h.csv. Tentative de chargement via DataLoader.
+2025-04-06 09:41:05,013 - feature_optimizer - ERROR - Erreur lors du chargement des données: name 'PRIMARY_TIMEFRAME' is not defined
+2025-04-06 09:43:42,708 - feature_optimizer - INFO - Démarrage de l'optimisation des caractéristiques pour BTCUSDT 1h
+2025-04-06 09:43:42,708 - feature_optimizer - INFO - Fichier non trouvé: c:\Users\timot\OneDrive\Bureau\BOT TRADING BIG 2025\crypto_trading_bot_CLAUDE\data\historical\BTCUSDT_1h.csv. Tentative de chargement via DataLoader.
+2025-04-06 09:43:42,709 - feature_optimizer - INFO - Mode simulé activé - génération de données factices pour BTCUSDT 1h
+2025-04-06 09:43:42,710 - feature_optimizer - ERROR - Erreur lors du chargement des données: name 'PRIMARY_TIMEFRAME' is not defined

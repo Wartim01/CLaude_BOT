@@ -1,0 +1,10 @@
+{
+  "optimal_feature_count": 80,
+  "last_updated": "2025-04-05T13:18:05.766138",
+  "parameters": {
+    "min_features": 20,
+    "max_features": 100,
+    "step_size": 10,
+    "cv_folds": 3
+  }
+}

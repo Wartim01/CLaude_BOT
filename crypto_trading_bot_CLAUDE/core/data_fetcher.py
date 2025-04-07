@@ -8,7 +8,7 @@ import time
 from typing import Dict, List, Optional, Tuple, Union
 from datetime import datetime, timedelta
 
-from config.config import PRIMARY_TIMEFRAME, SECONDARY_TIMEFRAMES
+from config.trading_params import * # correctEFRAME, SECONDARY_TIMEFRAMES # correct
 from core.api_connector import BinanceConnector
 from utils.logger import setup_logger
 
@@ -23,6 +23,11 @@ class MarketDataFetcher:
         self.data_cache = {}  # Cache pour les données OHLCV
         self.last_update = {}  # Dernière mise à jour des données
         self.cache_duration = 60  # Durée de validité du cache en secondes
+        self.mock_mode = api_connector is None  # Mode simulé si pas d'API
+        
+        # Définir des valeurs par défaut pour le mode simulé
+        if self.mock_mode:
+            self.mock_price = 50000.0  # Prix simulé pour le Bitcoin
         
     def get_current_price(self, symbol: str) -> float:
         """
@@ -34,6 +39,10 @@ class MarketDataFetcher:
         Returns:
             Prix actuel
         """
+        # Si nous sommes en mode simulé (pas d'API), retourner une valeur factice
+        if self.mock_mode:
+            return self.mock_price
+            
         try:
             # Utilisation des trades récents pour obtenir le dernier prix
             recent_trades = self.api.get_recent_trades(symbol, limit=1)
@@ -61,6 +70,9 @@ class MarketDataFetcher:
         Returns:
             DataFrame pandas avec les données OHLCV
         """
+        # Si nous sommes en mode simulé (pas d'API), générer des données factices
+        if self.mock_mode:
+            return self._generate_mock_data(symbol, timeframe, limit)
     
         cache_key = f"{symbol}_{timeframe}_{limit}_{start_time}_{end_time}"
         current_time = time.time()
@@ -120,18 +132,90 @@ class MarketDataFetcher:
             columns = ['open', 'high', 'low', 'close', 'volume']
             return pd.DataFrame(columns=columns)
 
-    
-    def get_market_data(self, symbol: str, indicators: bool = True) -> Dict:
+    def _generate_mock_data(self, symbol: str, timeframe: str, limit: int = 100) -> pd.DataFrame:
+        """
+        Génère des données OHLCV factices pour les tests sans API
+        
+        Args:
+            symbol: Paire de trading
+            timeframe: Intervalle de temps
+            limit: Nombre de chandeliers à générer
+            
+        Returns:
+            DataFrame pandas avec des données OHLCV fictives
+        """
+        # Créer des dates avec le bon intervalle
+        if timeframe == '1h':
+            freq = 'H'
+        elif timeframe == '15m':
+            freq = '15min'
+        elif timeframe == '1d':
+            freq = 'D'
+        else:
+            freq = 'H'  # Défaut à 1h
+            
+        end_date = pd.Timestamp.now()
+        dates = pd.date_range(end=end_date, periods=limit, freq=freq)
+        
+        # Générer des prix avec une tendance aléatoire
+        import numpy as np
+        base_price = 50000.0  # Pour BTC
+        if 'ETH' in symbol:
+            base_price = 3000.0
+        elif 'BNB' in symbol:
+            base_price = 500.0
+            
+        # Générer un mouvement de prix réaliste
+        price_changes = np.random.normal(0, 0.015, limit)  # Variation moyenne de 1.5%
+        prices = [base_price]
+        
+        for i in range(1, limit):
+            prices.append(prices[-1] * (1 + price_changes[i]))
+            
+        # Créer les colonnes OHLCV
+        df = pd.DataFrame(index=dates)
+        df['close'] = prices
+        df['open'] = df['close'].shift(1)
+        df.loc[df.index[0], 'open'] = df['close'].iloc[0] * 0.998
+        
+        # Ajouter la volatilité pour high/low
+        volatility = np.random.uniform(0.005, 0.02, limit)
+        df['high'] = df['close'] * (1 + volatility)
+        df['low'] = df['close'] * (1 - volatility)
+        
+        # S'assurer que high est toujours >= open/close et low est toujours <= open/close
+        df['high'] = df[['high', 'open', 'close']].max(axis=1)
+        df['low'] = df[['low', 'open', 'close']].min(axis=1)
+        
+        # Volume aléatoire
+        df['volume'] = np.random.uniform(50, 500, limit) * base_price / 10000
+        
+        return df.sort_index()
+        
+    def get_market_data(self, symbol: str, timeframe: str = None, indicators: bool = True) -> Dict:
         """
         Récupère toutes les données de marché pertinentes pour un symbole
         
         Args:
             symbol: Paire de trading
+            timeframe: Intervalle de temps spécifique (utilise PRIMARY_TIMEFRAME si None)
             indicators: Indique si les indicateurs techniques doivent être calculés
             
         Returns:
             Dictionnaire contenant toutes les données de marché
         """
+        # Définir des valeurs par défaut pour les timeframes si nous sommes en mode simulé
+        if self.mock_mode:
+            PRIMARY_TF = '1h'
+            SECONDARY_TFS = ['15m', '4h', '1d']
+        else:
+            from config.trading_params import PRIMARY_TIMEFRAME, SECONDARY_TIMEFRAMES
+            PRIMARY_TF = PRIMARY_TIMEFRAME
+            SECONDARY_TFS = SECONDARY_TIMEFRAMES
+        
+        # Utiliser PRIMARY_TIMEFRAME par défaut si aucun timeframe n'est spécifié
+        tf = timeframe if timeframe else PRIMARY_TF
+        
         data = {
             "symbol": symbol,
             "current_price": self.get_current_price(symbol),
@@ -139,17 +223,18 @@ class MarketDataFetcher:
             "secondary_timeframes": {}
         }
         
-        # Données du timeframe principal
-        primary_data = self.get_ohlcv(symbol, PRIMARY_TIMEFRAME, limit=100)
+        # Données du timeframe demandé (comme timeframe principal)
+        primary_data = self.get_ohlcv(symbol, tf, limit=100)
         data["primary_timeframe"]["ohlcv"] = primary_data
         
         # Données des timeframes secondaires
-        for tf in SECONDARY_TIMEFRAMES:
-            secondary_data = self.get_ohlcv(symbol, tf, limit=100)
-            data["secondary_timeframes"][tf] = {"ohlcv": secondary_data}
+        secondary_tfs = [t for t in SECONDARY_TFS if t != tf]
+        for secondary_tf in secondary_tfs:
+            secondary_data = self.get_ohlcv(symbol, secondary_tf, limit=100)
+            data["secondary_timeframes"][secondary_tf] = {"ohlcv": secondary_data}
         
         # Calcul des indicateurs techniques si demandé
-        if indicators:
+        if indicators and not self.mock_mode:
             from indicators.trend import calculate_ema, calculate_adx
             from indicators.momentum import calculate_rsi
             from indicators.volatility import calculate_bollinger_bands, calculate_atr
@@ -170,6 +255,15 @@ class MarketDataFetcher:
                     "rsi": calculate_rsi(tf_data["ohlcv"]),
                     "adx": calculate_adx(tf_data["ohlcv"])
                 }
+        elif indicators and self.mock_mode:
+            # En mode simulé, créer des indicateurs factices
+            data["primary_timeframe"]["indicators"] = {
+                "ema": primary_data.copy(),
+                "rsi": pd.DataFrame(index=primary_data.index, data={'rsi': [50.0] * len(primary_data)}),
+                "bollinger": primary_data.copy(),
+                "atr": pd.DataFrame(index=primary_data.index, data={'atr': [100.0] * len(primary_data)}),
+                "adx": pd.DataFrame(index=primary_data.index, data={'adx': [25.0] * len(primary_data)})
+            }
         
         return data
     

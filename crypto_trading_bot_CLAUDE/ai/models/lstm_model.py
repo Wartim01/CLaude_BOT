@@ -351,67 +351,73 @@ class LSTMModel(tf.keras.Model):  # Assurez-vous que LSTMModel hérite de tf.ker
 
     def build_model(self):
         """Construit l'architecture du modèle LSTM"""
-        from tensorflow.keras.layers import Input, LSTM, Dense, Dropout, BatchNormalization
-        from tensorflow.keras.models import Model
-        
-        # Logging des dimensions d'entrée
+        # Imports locaux (vérifiez qu'ils sont bien présents en haut du fichier)
+        from tensorflow.keras.layers import Input, LSTM, Dense, Dropout, BatchNormalization, Bidirectional, Add # type: ignore
+        from tensorflow.keras.models import Model # type: ignore
+        from tensorflow.keras.regularizers import l1_l2 # type: ignore
+        # Assurez-vous que SpatialDropout1D est importé ou défini si vous l'utilisez
+        # from .attention import SpatialDropout1D # Exemple d'import si dans attention.py
+        # Ou si c'est une classe interne:
+        # class SpatialDropout1D(Dropout): ... (définition de la classe)
+
+        # Définition de self.input_shape pour corriger l'AttributeError
+        self.input_shape = (self.input_length, self.feature_dim)
         logger.info(f"Construction du modèle LSTM avec input_shape={self.input_shape}")
         logger.info(f"Dimensions explicites: sequence_length={self.input_length}, features={self.feature_dim}")
-        
-        # Couche d'entrée avec dimensions explicites
-        input_layer = Input(shape=(self.input_length, self.feature_dim), name='input_layer')
-        
-        inputs = Input(shape=(self.input_length, self.feature_dim))
-        x = inputs
 
+        # --- Définition de l'entrée unique ---
+        input_layer = Input(shape=self.input_shape, name='input_layer')
+        x = input_layer # Utiliser input_layer comme point de départ
+
+        # --- Couches LSTM ---
         # Première couche LSTM bidirectionnelle
         if len(self.lstm_units) > 0:
-            x = Bidirectional(LSTM(self.lstm_units[0], return_sequences=len(self.lstm_units) > 1))(x)
-            x = SpatialDropout1D(self.dropout_rate)(x)
-            
+            # Note: L'utilisation de SpatialDropout1D dépend de sa définition/importation
+            x = Bidirectional(LSTM(self.lstm_units[0], return_sequences=len(self.lstm_units) > 1, kernel_regularizer=l1_l2(l1=self.l1_reg, l2=self.l2_reg)), name='bidirectional_1')(x)
+            x = Dropout(self.dropout_rate, name='dropout_1')(x) # Utiliser Dropout standard si SpatialDropout1D n'est pas défini
+
             # Couches LSTM intermédiaires
             for i in range(1, len(self.lstm_units)-1):
-                x = Bidirectional(LSTM(self.lstm_units[i], return_sequences=True))(x)
-                x = SpatialDropout1D(self.dropout_rate)(x)
-            
+                x = Bidirectional(LSTM(self.lstm_units[i], return_sequences=True, kernel_regularizer=l1_l2(l1=self.l1_reg, l2=self.l2_reg)), name=f'bidirectional_{i+1}')(x)
+                x = Dropout(self.dropout_rate, name=f'dropout_{i+1}')(x) # Utiliser Dropout standard
+
             # Dernière couche LSTM
             if len(self.lstm_units) > 1:
-                lstm_out = Bidirectional(LSTM(self.lstm_units[-1], return_sequences=False))(x)
-            else:
-                lstm_out = x
-        else:
-            lstm_out = Bidirectional(LSTM(64, return_sequences=False))(x)
-        
-        # Application de dropout
-        x = Dropout(self.dropout_rate)(lstm_out)
-        
-        # Couche dense avec régularisation
-        x = Dense(64, activation='relu', kernel_regularizer=l1_l2(l1=self.l1_reg, l2=self.l2_reg))(x)
-        
-        # Sorties pour chaque horizon
+                lstm_out = Bidirectional(LSTM(self.lstm_units[-1], return_sequences=False, kernel_regularizer=l1_l2(l1=self.l1_reg, l2=self.l2_reg)), name=f'bidirectional_{len(self.lstm_units)}')(x)
+            else: # Si une seule couche LSTM
+                 lstm_out = x # La sortie de la première couche LSTM (qui avait return_sequences=False)
+        else: # Si aucune unité spécifiée (cas par défaut)
+             lstm_out = Bidirectional(LSTM(64, return_sequences=False, kernel_regularizer=l1_l2(l1=self.l1_reg, l2=self.l2_reg)), name='bidirectional_default')(x)
+
+        # --- Couches post-LSTM ---
+        x_processed = Dropout(self.dropout_rate, name='dropout_final')(lstm_out)
+        x_processed = Dense(64, activation='relu', kernel_regularizer=l1_l2(l1=self.l1_reg, l2=self.l2_reg), name='dense_relu')(x_processed)
+
+        # --- Sorties Multi-Horizon ---
         outputs = []
         for horizon in self.prediction_horizons:
-            # Handle both tuple format and simple format for backward compatibility
             if isinstance(horizon, tuple) and len(horizon) >= 2:
-                horizon_value = horizon[0]  # The numeric part (e.g., 4)
-                horizon_name = horizon[1]   # The name part (e.g., '1h')
+                horizon_value = horizon[0]
+                horizon_name = horizon[1]
                 output_name = f'direction_{horizon_value}_{horizon_name}'
-            else:
-                # Fallback for backward compatibility if horizon is just a number
+            else: # Compatibilité ascendante
                 output_name = f'direction_{horizon}'
-                
-            direction = Dense(1, activation='sigmoid', name=output_name)(x)
+
+            direction = Dense(1, activation='sigmoid', name=output_name)(x_processed)
             outputs.append(direction)
-        
-        self.model = Model(inputs=inputs, outputs=outputs)
-        
-        # Fix: Use a list for metrics instead of a string
+
+        # --- Création et Compilation du Modèle ---
+        # Utiliser input_layer comme entrée du modèle
+        self.model = Model(inputs=input_layer, outputs=outputs)
+
+        # Compiler le modèle (vérifier que Adam est importé)
+        from tensorflow.keras.optimizers import Adam # type: ignore
         self.model.compile(
             optimizer=Adam(learning_rate=self.learning_rate),
-            loss=['binary_crossentropy' for _ in outputs],
-            metrics=['accuracy']  # Use a list instead of a string
+            loss=['binary_crossentropy' for _ in outputs], # Liste de pertes pour multi-sorties
+            metrics=['accuracy'] # Métrique standard
         )
-        return self.model
+        # Pas besoin de retourner self.model ici car on modifie l'attribut de l'instance
 
     def build_single_output_model(self, horizon_idx=0):
         """Construit un modèle LSTM avec une seule sortie pour l'optimisation
